@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "845557431925",
+    "project_id": "smartband-9a14d",
+    "storage_bucket": "smartband-9a14d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845557431925:android:e6579d757ed4a0f33d023c",
+        "android_client_info": {
+          "package_name": "com.example.smartband"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "845557431925-dfl9j6buglfieuum5bbfv5v45kqa0gq2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqdTRTjfHgpf-a1zwhrcHhkp8rwRFdMEg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "845557431925-dfl9j6buglfieuum5bbfv5v45kqa0gq2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "845557431925-0oieh7qtadvbjq8iugm8n2ap1ovuv8hg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.smartband"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
