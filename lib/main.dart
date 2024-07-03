@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/Dashboard/dashboard.dart';
+import 'package:smartband/Screens/Dashboard/notConnected.dart';
 import 'package:smartband/Screens/SplashScreen/splash.dart';
 
 import 'firebase_options.dart';
@@ -12,7 +15,13 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  runApp(
+    const ProviderScope(child: const MyApp())
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -36,7 +45,7 @@ class _MyAppState extends State<MyApp> {
     if (user == null) {
       initialScreen = const SignIn();
     } else {
-      initialScreen = const Homepage();
+      initialScreen = const NotConnectedPage();
     }
     setState(() {});
   }
@@ -58,7 +67,7 @@ class _MyAppState extends State<MyApp> {
               ),
             );
           } else if (snapshot.hasData) {
-            return const Homepage();
+            return DashboardScreen();
           } else {
             return const SplashScreen();
           }

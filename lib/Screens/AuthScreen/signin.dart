@@ -1,9 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:smartband/Screens/AuthScreen/forgot_password.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/Dashboard/dashboard.dart';
+import 'package:smartband/Screens/Dashboard/notConnected.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 
 class SignIn extends StatefulWidget {
@@ -25,7 +28,7 @@ class _SignInState extends State<SignIn> {
         password: _password.text,
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => Homepage()),
+        MaterialPageRoute(builder: (context) => NotConnectedPage()),
       );
       print("Login Successful");
     } on FirebaseAuthException catch (e) {
@@ -49,8 +52,28 @@ class _SignInState extends State<SignIn> {
       idToken: googleAuth?.idToken,
     );
     final data = await FirebaseAuth.instance.signInWithCredential(credential);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final docRef = FirebaseFirestore.instance.collection('users').doc(currentUser?.uid);
+    final docSnapshot = await docRef.get();
+    if (!docSnapshot.exists) {
+      // Document does not exist, perform the set operation
+      await docRef.set({
+        'name': currentUser?.displayName,
+        'dob': "",
+        'height': 0,
+        'weight': 0,
+        'email': currentUser?.email,
+        'relations': [],
+        'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
+        'role': 'watch wearer'
+      });
+      print('User document created successfully');
+    } else {
+      print('User document already exists');
+    }
+
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => Homepage()),
+      MaterialPageRoute(builder: (context) => DashboardScreen()),
     );
     return data;
   }
@@ -141,7 +164,7 @@ class _SignInState extends State<SignIn> {
                           Navigator.of(context, rootNavigator: true)
                               .push(MaterialPageRoute(
                             maintainState: true,
-                            builder: (context) => const SignIn(),
+                            builder: (context) => const ForgotPassword(),
                           ));
                         },
                         child: const Text.rich(
