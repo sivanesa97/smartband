@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+
 class InstructionsScreen extends StatefulWidget {
+  final VoidCallback onNext;
+  const InstructionsScreen({super.key, required this.onNext});
   @override
   _InstructionsScreenState createState() => _InstructionsScreenState();
 }
@@ -12,57 +17,55 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Column(
-
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                children: [
-                  GestureScreen(
-                    imagePath: 'assets/images/gesture1.png', // replace with your actual image path
-                    title: 'Please follow the Gestures',
-                    description: 'Follow the Gestures to add more Synchronization',
-                  ),
-                  GestureScreen(
-                    imagePath: 'assets/images/gesture2.png',
-                    title: 'Gestures',
-                    description: 'Starting point: Fist',
-                  ),
-                  GestureScreen(
-                    imagePath: 'assets/images/gesture3.png',
-                    title: 'Gestures',
-                    description: 'Play: Open little finger & index finger',
-                  ),
-                  GestureScreen(
-                    imagePath: 'assets/images/gesture4.png',
-                    title: 'Gestures',
-                    description: 'Open Vigour: Open little finger & thumb',
-                    isLastPage: true,
-                    onNext: () {
-                      // Define what happens when the "Get Started" button is pressed
-                    },
-                  ),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBarWidget(),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: _currentPage==3 ? 600 : 500,
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              children: [
+                GestureScreen(
+                  imagePath: 'assets/img0.jpg',
+                  title: 'Please follow the Gestures',
+                  description: 'Follow the Gestures to add more Synchronization',
+                ),
+                GestureScreen(
+                  imagePath: 'assets/img1.jpg',
+                  title: 'Gestures',
+                  description: 'Starting point: Fist',
+                ),
+                GestureScreen(
+                  imagePath: 'assets/img2.jpg',
+                  title: 'Gestures',
+                  description: 'Play: Open little finger & index finger',
+                ),
+                GestureScreen(
+                  imagePath: 'assets/img3.jpg',
+                  title: 'Gestures',
+                  description: 'Open Vigour: Open little finger & thumb',
+                  isLastPage: true,
+                  onNext: () {
+                    Navigator.of(context, rootNavigator: true).pushReplacement(MaterialPageRoute(builder: (context) => HomepageScreen()));
+                  },
+                ),
+              ],
             ),
-            SmoothPageIndicator(
-              controller: _pageController,  // PageController
-              count: 4,
-              effect: WormEffect(),  // Customize the effect as needed
-            ),
-          ],
-        ),
+          ),
+          _currentPage==3 ? SizedBox.shrink() : SmoothPageIndicator(
+            controller: _pageController,  // PageController
+            count: 4,
+            effect: ScaleEffect(),  // Customize the effect as needed
+          ),
+        ],
       ),
     );
   }
@@ -85,9 +88,10 @@ class GestureScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(onNext);
     return SafeArea(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -100,30 +104,24 @@ class GestureScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          Expanded(
+          Container(
+            height: 300,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset(
                     imagePath,
-                    height: 200.0,
-                    width: 200.0,
-                  ),
-                  SizedBox(height: 20.0),
-                  Text(
-                    description,
-                    style: TextStyle(fontSize: 18.0),
-                    textAlign: TextAlign.center,
+                    width: 250,
+                    height: 250,
                   ),
                 ],
               ),
             ),
           ),
           if (isLastPage)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
+            Center(
+              child: TextButton(
                 onPressed: onNext,
                 child: Text('Get Started'),
               ),

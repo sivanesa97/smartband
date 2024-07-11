@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
-import 'package:smartband/Screens/Dashboard/dashboard.dart';
-import 'package:smartband/Screens/Dashboard/notConnected.dart';
+import 'package:smartband/Screens/Dashboard/homepage.dart';
 import 'package:smartband/Screens/SplashScreen/splash.dart';
 
 import 'firebase_options.dart';
@@ -45,7 +44,7 @@ class _MyAppState extends State<MyApp> {
     if (user == null) {
       initialScreen = const SignIn();
     } else {
-      initialScreen = const NotConnectedPage();
+      initialScreen = const HomepageScreen();
     }
     setState(() {});
   }
@@ -53,6 +52,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Firebase Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -67,7 +67,7 @@ class _MyAppState extends State<MyApp> {
               ),
             );
           } else if (snapshot.hasData) {
-            return DashboardScreen();
+            return const HomepageScreen();
           } else {
             return const SplashScreen();
           }
@@ -76,3 +76,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+

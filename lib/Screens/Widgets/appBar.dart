@@ -13,12 +13,13 @@ class _AppBarWidgetState extends State<AppBarWidget> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      surfaceTintColor: Colors.transparent,
       backgroundColor: Colors.white,
       leading: Padding(
         padding: const EdgeInsets.only(left: 0),
         child: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop();
+          onTap: () async {
+            Navigator.of(context, rootNavigator: true).pop();
           },
           child: const Icon(Icons.chevron_left),
         ),

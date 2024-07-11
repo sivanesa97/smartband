@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:smartband/Screens/AuthScreen/forgot_password.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
-import 'package:smartband/Screens/Dashboard/dashboard.dart';
-import 'package:smartband/Screens/Dashboard/notConnected.dart';
+import 'package:smartband/Screens/Dashboard/homepage.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 
 class SignIn extends StatefulWidget {
@@ -20,31 +18,59 @@ class _SignInState extends State<SignIn> {
   final TextEditingController _username = TextEditingController();
   final TextEditingController _password = TextEditingController();
 
-  Future<void> signInWithCredentials() async
-  {
+  Future<void> signInWithCredentials() async {
     try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Signing In... Please wait")));
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _username.text,
         password: _password.text,
       );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => NotConnectedPage()),
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(maintainState: true, builder: (context) => const HomepageScreen()),
       );
       print("Login Successful");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Successful")));
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
-      } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+      String errorMessage;
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No user found for that email.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Wrong password provided for that user.';
+      } else {
+        errorMessage = 'Error: ${e.message}';
       }
+      _showErrorDialog(errorMessage);
     } catch (e) {
       print(e);
+      _showErrorDialog('An unexpected error occurred.');
     }
   }
 
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Authentication Error'),
+        content: Text(message),
+        actions: <Widget>[
+          ElevatedButton(
+            child: const Text('Ok'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<UserCredential?> signinWithGoogle() async {
-    await GoogleSignIn().signOut();
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    try{
+      await GoogleSignIn().disconnect();
+      await GoogleSignIn().signOut();
+    }
+    catch(error){};
+    final GoogleSignInAccount? googleUser = await GoogleSignIn(signInOption: SignInOption.standard,).signIn();
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
     final credential = GoogleAuthProvider.credential(
@@ -62,8 +88,10 @@ class _SignInState extends State<SignIn> {
         'dob': "",
         'height': 0,
         'weight': 0,
+        'phone_number': 0,
         'email': currentUser?.email,
         'relations': [],
+        'location': GeoPoint(12.489328, 84.283984),
         'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
         'role': 'watch wearer'
       });
@@ -72,8 +100,8 @@ class _SignInState extends State<SignIn> {
       print('User document already exists');
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => DashboardScreen()),
+    Navigator.of(context, rootNavigator: true).pushReplacement(
+      MaterialPageRoute(maintainState: true, builder: (context) => const HomepageScreen()),
     );
     return data;
   }
@@ -136,6 +164,7 @@ class _SignInState extends State<SignIn> {
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _password,
+                      obscureText: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: 'Password',

@@ -1,10 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:smartband/Screens/Dashboard/dashboard.dart';
-import 'package:smartband/Screens/Widgets/string_extensions.dart';
-
-import '../Dashboard/notConnected.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Screens/Dashboard/homepage.dart';
 import '../Widgets/appBar.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -19,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailId = TextEditingController();
   final TextEditingController _password = TextEditingController();
   final TextEditingController _dateofBirth = TextEditingController();
+  final TextEditingController _phone_number = TextEditingController();
   final TextEditingController _height = TextEditingController();
   final TextEditingController _weight = TextEditingController();
   final TextEditingController _emailConn = TextEditingController();
@@ -29,7 +28,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _validateUsername(String value) {
     setState(() {
-      _isValid = value.isNotEmpty && value.length >= 3 && RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value);
+      _isValid = value.isNotEmpty &&
+          value.length >= 3 &&
+          RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value);
     });
   }
 
@@ -40,32 +41,87 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  Future<GeoPoint> getLocation() async {
+    Position location = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    return GeoPoint(location.latitude, location.longitude);
+  }
+
   Future<void> signUpWithCredentials() async {
     try {
-      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Creating account... Please wait")));
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailId.text,
         password: _password.text,
       );
-      await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
-        'name': _username.text,
-        'dob': _dateofBirth.text,
-        'height': double.parse(_height.text),
-        'weight': double.parse(_weight.text),
-        'email': _emailId.text,
-        'relations': [],
-        'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-        'role': _selectedRole ?? 'watch wearer'
-      });
+      if (_selectedRole == "watch wearer") {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Fetching Location... Please wait")));
+        final locationData = await getLocation();
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .set({
+          'name': _username.text,
+          'dob': _dateofBirth.text,
+          'height': double.parse(_height.text),
+          'weight': double.parse(_weight.text),
+          'email': _emailId.text,
+          'phone_number': int.parse(_phone_number.text),
+          'relations': [],
+          'location': locationData,
+          'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
+          'role': _selectedRole
+        });
+      }
+      /*
+      else
 
+        {
+          await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
+            'name': _username.text,
+            'dob': _dateofBirth.text,
+            'height': double.parse(_height.text),
+            'weight': double.parse(_weight.text),
+            'email': _emailId.text,
+            'phone_number': int.parse(_phone_number.text),
+            'relations': [],
+            'location': GeoPoint(0.0120000, 0.0034000),
+            'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
+            'role': _selectedRole
+          });
+
+          var data1 = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: _emailConn.text)
+            .get();
+
+          if (data1.docs.isNotEmpty) {
+            var Data = data1.docs.first.data();
+            List<String> relations = List<String>.from(Data['relations'] ?? []);
+            relations.add(_emailId.text);
+            Data['relations'] = relations;
+            print(Data);
+          } else {
+            print('No user found with this email.');
+          }
+      }
+       */
       print("User created");
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Account created successfully")));
       Navigator.of(context, rootNavigator: true).pushReplacement(
-        MaterialPageRoute(maintainState:true, builder: (context) => DashboardScreen()),
+        MaterialPageRoute(
+            maintainState: true, builder: (context) => HomepageScreen()),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("The password provided is too weak.")));
       } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("The account already exists for that email.")));
       }
     } catch (e) {
       print(e);
@@ -93,7 +149,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       items: ['watch wearer', 'supervisor'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value[0].toUpperCase() + value.substring(1)),
+                          child:
+                              Text(value[0].toUpperCase() + value.substring(1)),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -105,12 +162,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _emailConn,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Email',
-                      ),
-                    )
+                            controller: _emailConn,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Email',
+                            ),
+                          )
                         : const SizedBox.shrink(),
                   ],
                 ),
@@ -136,7 +193,6 @@ class _SignupScreenState extends State<SignupScreen> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +224,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       labelText: 'Name',
-                      suffixIcon: _isValid ? const Icon(Icons.check, color: Colors.green) : null,
+                      suffixIcon: _isValid
+                          ? const Icon(Icons.check, color: Colors.green)
+                          : null,
                     ),
                     onChanged: _validateUsername,
                   ),
@@ -187,15 +245,33 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.015,),
+              SizedBox(
+                height: height * 0.015,
+              ),
               Center(
                 child: SizedBox(
                   width: width * 0.9,
                   child: TextFormField(
                     controller: _password,
+                    obscureText: true,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Password',
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: height * 0.015,
+              ),
+              Center(
+                child: SizedBox(
+                  width: width * 0.9,
+                  child: TextFormField(
+                    controller: _phone_number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Phone Number',
                     ),
                   ),
                 ),
@@ -237,7 +313,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.015,),
+              SizedBox(
+                height: height * 0.015,
+              ),
               Center(
                 child: SizedBox(
                   width: width * 0.9,
@@ -290,7 +368,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.015,),
+              SizedBox(
+                height: height * 0.015,
+              ),
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
@@ -307,6 +387,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     style: TextStyle(fontSize: 18),
                   ),
                 ),
+              ),
+              SizedBox(
+                height: height * 0.03,
               ),
             ],
           ),

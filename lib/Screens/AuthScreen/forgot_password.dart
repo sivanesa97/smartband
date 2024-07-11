@@ -36,21 +36,21 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBarWidget(),
+      appBar: const AppBarWidget(),
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               "Forgot Password",
               style: TextStyle(
                 fontSize: 36
               ),
             ),
             SizedBox(height: height * 0.1,),
-            Text(
+            const Text(
               "Please, enter your email address. You will receive a link to create a new password via email."
             ),
             SizedBox(
@@ -70,7 +70,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 ),
               ),
             ),
-            _active == true ? SizedBox(height: height * 0.05) : SizedBox.shrink(),
+            _active == true ? SizedBox(height: height * 0.05) : const SizedBox.shrink(),
             _active == true ? Center(
               child: SizedBox(
                 width: width * 0.9,
@@ -84,7 +84,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   onChanged: _validateUsername,
                 ),
               ),
-            ) : SizedBox.shrink(),
+            ) : const SizedBox.shrink(),
             SizedBox(height: height * 0.05),
             SizedBox(
               height: 50,
