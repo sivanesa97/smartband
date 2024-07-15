@@ -88,7 +88,8 @@ class _SignupScreenState extends State<SignupScreen> {
           },
           'steps_goal': 0
         });
-      } else {
+      }
+      else {
         if (_otpConn.text == otp_num.toString()) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Fetching Location... Please wait")));
@@ -160,6 +161,7 @@ class _SignupScreenState extends State<SignupScreen> {
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
+      print(data);
       await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
     }
     return relationDetails;
@@ -208,12 +210,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                 suffixIcon: IconButton(
                                     onPressed: () {
                                       sent = true;
+                                      _otpConn.text="";
                                       _fetchRelationDetails(
                                           _emailConn.text, otp_num);
                                     },
                                     icon: Icon(sent ? Icons.check : Icons.send))),
                           )
                         : const SizedBox.shrink(),
+                    SizedBox(height: 16,),
                     _selectedRole == "supervisor"
                         ? TextFormField(
                             controller: _otpConn,

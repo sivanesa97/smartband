@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../Models/twilio_service.dart';
 import '../Models/usermodel.dart';
@@ -21,7 +22,7 @@ class SupervisorDashboard extends ConsumerStatefulWidget {
 class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String dropdownValue = 'No Users';
 
-  void _showSupervisorDialog(int otp_num) async {
+    void _showSupervisorDialog(int otp_num) async {
     if (_emailConn.text!=FirebaseAuth.instance.currentUser!.email && _otpConn.text == otp_num.toString())
     {
       String emailToCheck = _emailConn.text;
@@ -171,7 +172,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
       drawer: const DrawerScreen(),
       body: user_data.when(
         data: (user) {
-          final List<String> relations = user!.relations;
+          List<String> relations = [];
+          if (user != null) {
+            relations = user!.relations;
+          }
           if (relations.isNotEmpty && dropdownValue == 'No Users') {
             dropdownValue = relations[0];
           }
@@ -299,12 +303,26 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                         ),
                                       ),
                                       SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.2,
-                                        child: InfoCard(
-                                          title: 'Steps',
-                                          value: data.first.metrics['steps'].toString(),
-                                          icon: Icons.directions_walk,
-                                          subtitle: 'Today',
+                                        height: MediaQuery.of(context).size.height * 0.25,
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: InfoCard(
+                                                title: 'Steps',
+                                                value: data.first.metrics['heart_rate'].toString(),
+                                                icon: Icons.favorite,
+                                                subtitle: 'Resting',
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: InfoCard(
+                                                title: 'Location',
+                                                value: data.first.metrics['fall_axis'].toString(),
+                                                icon: Icons.location_on,
+                                                subtitle: '${data.first.latitude}°N \n${data.first.longitude}°E',
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       Center(

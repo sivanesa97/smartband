@@ -5,7 +5,9 @@ import 'package:smartband/Screens/Widgets/appBarProfile.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
 class Settingscreen extends StatefulWidget {
-  const Settingscreen({super.key});
+  String device_name;
+  String mac_address;
+  Settingscreen({super.key, required this.device_name, required this.mac_address});
 
   @override
   State<Settingscreen> createState() => _SettingscreenState();
@@ -15,8 +17,8 @@ class _SettingscreenState extends State<Settingscreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarProfileWidget(),
-      drawer: DrawerScreen(),
+      appBar: const AppBarProfileWidget(),
+      drawer: const DrawerScreen(),
       backgroundColor: Colors.white,
       body: Column(
         children: [
@@ -29,7 +31,7 @@ class _SettingscreenState extends State<Settingscreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Watch Name',
+                      widget.device_name,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -37,7 +39,7 @@ class _SettingscreenState extends State<Settingscreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Status of watch',
+                      widget.mac_address,
                       style: TextStyle(
                         fontSize: 16,
                       ),

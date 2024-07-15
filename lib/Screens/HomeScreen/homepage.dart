@@ -19,24 +19,22 @@ class _HomepageScreenState extends State<HomepageScreen> {
   StreamController<List<BluetoothDevice>>();
 
   void _initializeBluetooth() {
-    flutterBlue.state.listen((state) {
+    flutterBlue.state.listen((state) async {
       if (state == BluetoothState.on) {
+        // Ensure permissions are granted before fetching connected devices
+        await getPermissions();
+
+        // Retrieve the list of connected devices
+        List<BluetoothDevice> devices = await flutterBlue.connectedDevices;
+        _connectedDevicesController.add(devices);
+
+        // Listen for changes in connected devices
         flutterBlue.connectedDevices.asStream().listen((List<BluetoothDevice> devices) {
           _connectedDevicesController.add(devices);
-          // Optionally, you can print out the connected devices for debug purposes
-          print("Devices: $devices");
         });
       } else {
         _connectedDevicesController.add([]);
       }
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getPermissions().then((_) {
-      _initializeBluetooth();
     });
   }
 
@@ -47,6 +45,14 @@ class _HomepageScreenState extends State<HomepageScreen> {
       Permission.bluetoothConnect,
       Permission.locationWhenInUse,
     ].request();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getPermissions().then((_) {
+      _initializeBluetooth();
+    });
   }
 
   @override
@@ -68,20 +74,16 @@ class _HomepageScreenState extends State<HomepageScreen> {
           return Center(
             child: Text('Error: ${snapshot.error}'),
           );
-        } else if (snapshot.hasData) {
-          if (snapshot.data!.length>0) {
-            // Navigate to DashboardScreen if devices are connected
-            return DashboardScreen();
-          } else {
-            // Show NotConnectedPage if no devices are connected
-            return NotConnectedPage();
-          }
+        } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
+          // Navigate to DashboardScreen if devices are connected
+          print("Devices: ${snapshot.data}");
+          String deviceName = snapshot.data!.first.name;
+          return DashboardScreen(device_name: deviceName, mac_address: snapshot.data!.first.id.toString(),);
         } else {
-          // Show NotConnectedPage if no data or Bluetooth is off
+          // Show NotConnectedPage if no devices are connected or Bluetooth is off
           return NotConnectedPage();
         }
       },
     );
   }
 }
-

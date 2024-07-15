@@ -6,16 +6,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
-import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
-import 'package:smartband/Screens/Widgets/appBarProfile.dart';
-import 'package:smartband/Screens/Widgets/drawer.dart';
 
 import '../Models/twilio_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  String device_name;
+  String mac_address;
+  DashboardScreen({Key? key, required this.device_name, required this.mac_address}) : super(key: key);
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -35,18 +34,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final userData = ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
     return userData.when(data: (data) {
-      String user = data!.role;
+      String? user = data?.role;
       List<Widget> _widgetOptions = user == "watch wearer"
           ? <Widget>[
         const WearerDashboard(),
         const SupervisorDashboard(),
         const Emergencycard(),
-        const Settingscreen(),
+        Settingscreen(device_name: widget.device_name, mac_address: widget.mac_address,),
       ]
           : <Widget>[
         const SupervisorDashboard(),
-        const Emergencycard(),
-        const Settingscreen(),
       ];
 
       List<BottomNavigationBarItem> _bottomNavigationBarItems = user == "watch wearer"
@@ -72,14 +69,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const BottomNavigationBarItem(
           icon: Icon(Icons.add_box_outlined),
           label: 'Health',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.highlight),
-          label: 'Emergency',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings', // Label for the new page
         ),
       ];
 
@@ -189,23 +178,37 @@ class _EmergencyCardState extends State<EmergencyCard> {
     fromNumber: '+17628009114',
   );
 
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> relations, String user) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> relations, String user_email) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     for (String email in relations) {
+      User? user = FirebaseAuth.instance.currentUser;
       var userDoc = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).get();
       if (userDoc.docs.isNotEmpty) {
+        FirebaseFirestore.instance
+            .collection("users")
+            .doc(user!.uid)
+            .update({"isSOSClicked": true});
+
         final data = userDoc.docs.first.data()['phone_number'];
         Position current = await updateLocation();
-        await twilioService.sendSms('+91${data}', 'SOS Button Clicked by ${user} from ${current.latitude}°N ${current.longitude}°E');
+
+        await twilioService.sendSms('+91${data}', 'SOS Button Clicked by ${user_email} from ${current.latitude}°N ${current.longitude}°E');
         if (!madeCall)
           {
             await twilioService.makeCall(
               '+91$data',
-              "<Response><Say>$user has clicked the SOS button. Please check out.</Say></Response>",
+              "<Response><Say>$user_email has clicked the SOS button. Please check out.</Say></Response>",
             );
             madeCall = !madeCall;
           }
+
+        Future.delayed(Duration(seconds: 5), () {
+          FirebaseFirestore.instance
+              .collection("users")
+              .doc(user!.uid)
+              .update({"isSOSClicked": false});
+        });
       }
     }
     return relationDetails;

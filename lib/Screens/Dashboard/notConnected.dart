@@ -53,7 +53,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
             onNext: () {
               print("Finished Instructions");
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => DashboardScreen()),
+                MaterialPageRoute(builder: (context) => DashboardScreen(device_name: device.name, mac_address: device.id.toString(),)),
               );
             },
           ),

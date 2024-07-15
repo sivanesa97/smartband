@@ -53,13 +53,12 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
           var data1 = data.data();
           print(data1!['phone_number']);
           setState(() {
-            _contactController.text = data1!['phone_number'].toString() ?? '';
-            _genderController.text = data1!['gender'] ?? '';
-            _birthdayController.text = data1!['dob'] ?? '';
-            _heightController.text = data1!['height'].toString() ?? '';
-            _weightController.text = data1!['weight'].toString() ?? '';
-            _stepsgoalController.text =
-            data1['steps_goal'].toString();
+            _contactController.text = data1['phone_number'].toString() ?? '';
+            _genderController.text = data1['gender'] ?? '';
+            _birthdayController.text = data1['dob'] ?? '';
+            _heightController.text = data1['height'].toString() ?? '';
+            _weightController.text = data1['weight'].toString() ?? '';
+            _stepsgoalController.text = data1['steps_goal'].toString();
           });
         } else {
           print('Document does not exist');
@@ -85,12 +84,15 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBarWidget(),
+      appBar: const AppBarWidget(),
       body: SingleChildScrollView(
         child: SafeArea(
           child: user_data.when(
             data: (data) {
-              final relations = data!.relations;
+              List<String> relations = [];
+              if (data != null) {
+                relations = data.relations;
+              }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,7 +140,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                               SizedBox(
                                 width: 160,
                                 child: Text(
-                                  "${data!.email}",
+                                  data!.email,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       fontSize: 16,
