@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'dashboard.dart';
-import 'notConnected.dart';
+import '../Dashboard/dashboard.dart';
+import '../Dashboard/notConnected.dart';
 
 class HomepageScreen extends StatefulWidget {
   const HomepageScreen({Key? key}) : super(key: key);
@@ -69,7 +69,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
             child: Text('Error: ${snapshot.error}'),
           );
         } else if (snapshot.hasData) {
-          if (snapshot.data!.isNotEmpty) {
+          if (snapshot.data!.length>0) {
             // Navigate to DashboardScreen if devices are connected
             return DashboardScreen();
           } else {

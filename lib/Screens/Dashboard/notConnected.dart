@@ -53,7 +53,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
             onNext: () {
               print("Finished Instructions");
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                MaterialPageRoute(builder: (context) => DashboardScreen()),
               );
             },
           ),
@@ -157,7 +157,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
               },
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Padding(
+                child: Container(
                   padding: const EdgeInsets.all(5),
                   child: Text(
                     "Add a Device",

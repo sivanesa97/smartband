@@ -1,4 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
+import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
+import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
+import 'package:smartband/Screens/DrawerScreens/reportproblem.dart';
+
+import '../AuthScreen/signin.dart';
 
 class DrawerScreen extends StatefulWidget {
   const DrawerScreen({super.key});
@@ -26,24 +34,86 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   width: 75,
                 ),
               ),
-              const ListTile(
-                leading: Icon(Icons.info, color: Colors.black26,),
-                title: Text("About Us"),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                          maintainState: true,
+                          builder: (context) => const Aboutus()));
+                },
+                child: const ListTile(
+                  leading: Icon(
+                    Icons.info,
+                    color: Colors.black26,
+                  ),
+                  title: Text("About Us"),
+                ),
               ),
-              const ListTile(
-                leading: Icon(Icons.assignment, color: Colors.black26,),
-                title: Text("Emergency Card"),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                          maintainState: true,
+                          builder: (context) => const Emergencycard()));
+                },
+                child: const ListTile(
+                  leading: Icon(
+                    Icons.assignment,
+                    color: Colors.black26,
+                  ),
+                  title: Text("Emergency Card"),
+                ),
               ),
-              const ListTile(
-                leading: Icon(Icons.help, color: Colors.black26,),
-                title: Text("Help and Support"),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                          maintainState: true,
+                          builder: (context) => const Helpandsupport()));
+                },
+                child: const ListTile(
+                  leading: Icon(
+                    Icons.help,
+                    color: Colors.black26,
+                  ),
+                  title: Text("Help and support"),
+                ),
               ),
+
               SizedBox(
-                height: height * 0.5,
+                height: height * 0.4,
               ),
-              const ListTile(
-                leading: Icon(Icons.warning, color: Colors.black26,),
-                title: Text("Report an issue"),
+              InkWell(
+                onTap: () async {
+                  Navigator.of(context, rootNavigator: true).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const SignIn()),
+                  );
+                  final GoogleSignIn googleSignIn = GoogleSignIn();
+                  await googleSignIn.signOut();
+                  await FirebaseAuth.instance.signOut();
+                },
+                child: const ListTile(
+                  leading: Icon(
+                    Icons.help,
+                    color: Colors.black26,
+                  ),
+                  title: Text("Sign Out"),
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                          maintainState: true,
+                          builder: (context) => const Reportproblem()));
+                },
+                child: const ListTile(
+                  leading: Icon(
+                    Icons.help,
+                    color: Colors.black26,
+                  ),
+                  title: Text("Report an issue"),
+                ),
               ),
             ],
           ),

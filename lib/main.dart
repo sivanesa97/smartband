@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/SplashScreen/splash.dart';
 
 import 'firebase_options.dart';
@@ -18,6 +18,12 @@ void main() async{
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.white,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark));
   runApp(
     const ProviderScope(child: const MyApp())
   );

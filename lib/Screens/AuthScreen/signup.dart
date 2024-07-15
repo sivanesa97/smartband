@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/HomeScreen/homepage.dart';
+import '../Models/twilio_service.dart';
 import '../Widgets/appBar.dart';
+import 'dart:math';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -16,11 +18,12 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _username = TextEditingController();
   final TextEditingController _emailId = TextEditingController();
   final TextEditingController _password = TextEditingController();
-  final TextEditingController _dateofBirth = TextEditingController();
+  final TextEditingController _dateOfBirth = TextEditingController();
   final TextEditingController _phone_number = TextEditingController();
   final TextEditingController _height = TextEditingController();
   final TextEditingController _weight = TextEditingController();
   final TextEditingController _emailConn = TextEditingController();
+  final TextEditingController _otpConn = TextEditingController();
 
   bool _isValid = false;
   String? _selectedGender;
@@ -47,7 +50,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return GeoPoint(location.latitude, location.longitude);
   }
 
-  Future<void> signUpWithCredentials() async {
+  Future<void> signUpWithCredentials(int otp_num) async {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Creating account... Please wait")));
@@ -64,57 +67,70 @@ class _SignupScreenState extends State<SignupScreen> {
             .doc(FirebaseAuth.instance.currentUser?.uid)
             .set({
           'name': _username.text,
-          'dob': _dateofBirth.text,
+          'dob': _dateOfBirth.text,
           'height': double.parse(_height.text),
           'weight': double.parse(_weight.text),
           'email': _emailId.text,
+          'gender': _selectedGender,
           'phone_number': int.parse(_phone_number.text),
           'relations': [],
           'location': locationData,
           'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-          'role': _selectedRole
+          'role': _selectedRole,
+          "emergency": {
+            "name": "",
+            "blood_group": "",
+            "medical_notes": "",
+            "address": "",
+            "medications": "",
+            "organ_donor": false,
+            "contact": 0,
+          },
+          'steps_goal': 0
         });
-      }
-      /*
-      else
-
-        {
-          await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).set({
+      } else {
+        if (_otpConn.text == otp_num.toString()) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Fetching Location... Please wait")));
+          final locationData = await getLocation();
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser?.uid)
+              .set({
             'name': _username.text,
-            'dob': _dateofBirth.text,
+            'dob': _dateOfBirth.text,
             'height': double.parse(_height.text),
             'weight': double.parse(_weight.text),
             'email': _emailId.text,
+            'gender': _selectedGender,
             'phone_number': int.parse(_phone_number.text),
-            'relations': [],
-            'location': GeoPoint(0.0120000, 0.0034000),
+            'relations': FieldValue.arrayUnion([_emailConn.text]),
+            'location': locationData,
             'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-            'role': _selectedRole
+            'role': "supervisor",
+            "emergency": {
+              "name": "",
+              "blood_group": "",
+              "medical_notes": "",
+              "address": "",
+              "medications": "",
+              "organ_donor": false,
+              "contact": 0,
+            },
+            'steps_goal': 0
           });
-
-          var data1 = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: _emailConn.text)
-            .get();
-
-          if (data1.docs.isNotEmpty) {
-            var Data = data1.docs.first.data();
-            List<String> relations = List<String>.from(Data['relations'] ?? []);
-            relations.add(_emailId.text);
-            Data['relations'] = relations;
-            print(Data);
-          } else {
-            print('No user found with this email.');
-          }
+          print("User created");
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Account created successfully")));
+          Navigator.of(context, rootNavigator: true).pushReplacement(
+            MaterialPageRoute(
+                maintainState: true, builder: (context) => HomepageScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+        }
       }
-       */
-      print("User created");
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully")));
-      Navigator.of(context, rootNavigator: true).pushReplacement(
-        MaterialPageRoute(
-            maintainState: true, builder: (context) => HomepageScreen()),
-      );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -128,7 +144,30 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  final TwilioService twilioService = TwilioService(
+    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
+    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
+    fromNumber: '+17628009114',
+  );
+
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(
+      String email, int otp_num) async {
+    List<Map<String, dynamic>> relationDetails = [];
+    bool madeCall = false;
+    var userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+    if (userDoc.docs.isNotEmpty) {
+      final data = userDoc.docs.first.data()['phone_number'];
+      await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
+    }
+    return relationDetails;
+  }
+
   void _showRoleDialog() {
+    bool sent = false;
+    int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -163,9 +202,24 @@ class _SignupScreenState extends State<SignupScreen> {
                     _selectedRole == "supervisor"
                         ? TextFormField(
                             controller: _emailConn,
+                            decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Email',
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      sent = true;
+                                      _fetchRelationDetails(
+                                          _emailConn.text, otp_num);
+                                    },
+                                    icon: Icon(sent ? Icons.check : Icons.send))),
+                          )
+                        : const SizedBox.shrink(),
+                    _selectedRole == "supervisor"
+                        ? TextFormField(
+                            controller: _otpConn,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Email',
+                              labelText: 'OTP',
                             ),
                           )
                         : const SizedBox.shrink(),
@@ -182,7 +236,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextButton(
                   child: const Text('OK'),
                   onPressed: () {
-                    signUpWithCredentials();
+                    signUpWithCredentials(otp_num);
                     Navigator.of(context, rootNavigator: true).pop();
                   },
                 ),
@@ -281,7 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: SizedBox(
                   width: width * 0.9,
                   child: TextFormField(
-                    controller: _dateofBirth,
+                    controller: _dateOfBirth,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'D.o.B',

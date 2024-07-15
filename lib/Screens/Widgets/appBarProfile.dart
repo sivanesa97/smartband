@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:smartband/Screens/AuthScreen/signin.dart';
+import 'package:smartband/Screens/DrawerScreens/profilepage.dart';
 
 class AppBarProfileWidget extends StatefulWidget implements PreferredSizeWidget {
   const AppBarProfileWidget({super.key});
@@ -19,7 +17,7 @@ class _AppBarProfileWidgetState extends State<AppBarProfileWidget> {
     final width = MediaQuery.of(context).size.width;
 
     return AppBar(
-      surfaceTintColor: Colors.transparent,
+      surfaceTintColor: Colors.white,
       backgroundColor: Colors.white,
       leading: Padding(
         padding: const EdgeInsets.only(left: 0),
@@ -42,12 +40,7 @@ class _AppBarProfileWidgetState extends State<AppBarProfileWidget> {
           ),
           GestureDetector(
             onTap: () async {
-              Navigator.of(context, rootNavigator: true).pushReplacement(
-                MaterialPageRoute(builder: (context) => const SignIn()),
-              );
-              final GoogleSignIn googleSignIn = GoogleSignIn();
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => const Profilepage()));
             },
             child: const Padding(
               padding: EdgeInsets.all(10.0),

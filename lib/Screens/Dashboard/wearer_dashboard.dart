@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smartband/Screens/Widgets/drawer.dart';
 
 import '../Models/usermodel.dart';
 import '../Widgets/appBarProfile.dart';
+import '../Widgets/drawer.dart';
 import 'dashboard.dart';
 
 class WearerDashboard extends ConsumerStatefulWidget {
@@ -14,14 +16,16 @@ class WearerDashboard extends ConsumerStatefulWidget {
 }
 
 class _WearerDashboardState extends ConsumerState<WearerDashboard> {
+
   @override
   Widget build(BuildContext context) {
-    final user_data = ref.watch(userModelProvider);
+    final user_data =
+        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: const AppBarProfileWidget(),
-      drawer: DrawerScreen(),
+      drawer: const DrawerScreen(),
+      backgroundColor: Colors.white,
       body: user_data.when(
         data: (user) {
           return Padding(
@@ -36,14 +40,18 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                     children: [
                       Text(
                         'Hello \n${user?.name}!',
-                        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 30, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       const Row(
                         children: [
                           Icon(Icons.info, size: 16),
                           SizedBox(width: 4),
-                          Text('Last workout 2 days ago', style: TextStyle(fontSize: 20),),
+                          Text(
+                            'Last workout 2 days ago',
+                            style: TextStyle(fontSize: 20),
+                          ),
                         ],
                       ),
                     ],
@@ -85,15 +93,13 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                           subtitle: 'Today',
                         ),
                       ),
-                      Expanded(
-                          child: EmergencyCard()
-                      ),
+                      Expanded(child: EmergencyCard(relations: user!.relations, user: user!.name,)),
                     ],
                   ),
                 ),
                 FactCard(
                   fact:
-                  'Imagine going to the doctor and getting a prescription for a chocolate bar! It happened in the 1800\'s to treat tuberculosis.',
+                      'Imagine going to the doctor and getting a prescription for a chocolate bar! It happened in the 1800\'s to treat tuberculosis.',
                 ),
               ],
             ),

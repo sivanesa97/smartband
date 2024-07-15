@@ -11,9 +11,13 @@ class UserModel {
   double longitude;
   Map<String, int> metrics;
   String name;
-  List<String> relations;
   double weight;
+  List<String> relations;
   int phone_number;
+  String role;
+  Map<String, dynamic> emergency;
+  String gender;
+  int steps_goal;
 
   UserModel({
     required this.dob,
@@ -26,10 +30,15 @@ class UserModel {
     required this.phone_number,
     required this.relations,
     required this.weight,
+    required this.role,
+    required this.emergency,
+    required this.gender,
+    required this.steps_goal,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    print(data['emergency']);
     return UserModel(
       dob: data['dob'] ?? '',
       email: data['email'] ?? '',
@@ -39,8 +48,12 @@ class UserModel {
       latitude: data['location'].latitude ?? 0.1,
       longitude: data['location'].longitude ?? 0.1,
       phone_number: data['phone_number'] ?? 0,
-      relations: List<String>.from(data['relation'] ?? []),
+      relations: List<String>.from(data['relations']) ?? [],
       weight: data['weight'].toDouble() ?? 0,
+      role: data['role'],
+      emergency: Map<String, dynamic>.from(data['emergency']),
+      gender: data['gender'],
+      steps_goal: data['steps_goal']
     );
   }
 
@@ -56,6 +69,10 @@ class UserModel {
       'phone_number': phone_number,
       'relations': relations,
       'weight': weight,
+      'role' : role,
+      'emergency' : emergency,
+      'gender' : gender,
+      'steps_goal': steps_goal
     };
   }
 }
@@ -64,12 +81,12 @@ class FirestoreService {
   final FirebaseFirestore db = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
 
-  Stream<UserModel?> streamCurrentUser() {
+  Stream<UserModel?> streamCurrentUser(String userId) {
     return auth.authStateChanges().switchMap((user) {
       if (user == null) {
         return Stream.value(null); // User signed out
       } else {
-        return db.collection('users').doc(user.uid).snapshots().map((doc) {
+        return db.collection('users').doc(userId).snapshots().map((doc) {
           if (doc.exists) {
             return UserModel.fromFirestore(doc);
           } else {
@@ -85,10 +102,16 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
 
-final userModelProvider = StreamProvider.autoDispose<UserModel?>((ref) {
+final userModelProvider = StreamProvider.family<UserModel?, String>((ref, userId) {
   final firestoreService = ref.watch(firestoreServiceProvider);
-  return firestoreService.streamCurrentUser().handleError((error) {
+  return firestoreService.streamCurrentUser(userId).handleError((error) {
     print('Error streaming user data: $error');
     return null;
   });
+});
+
+final supervisorModelProvider = StreamProviderFamily<List<UserModel>?, String>((ref, userId) {
+  return FirebaseFirestore.instance.collection('users').where('email', isEqualTo: userId)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
 });

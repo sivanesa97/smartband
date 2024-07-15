@@ -13,7 +13,7 @@ class _AppBarWidgetState extends State<AppBarWidget> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      surfaceTintColor: Colors.transparent,
+      surfaceTintColor: Colors.white,
       backgroundColor: Colors.white,
       leading: Padding(
         padding: const EdgeInsets.only(left: 0),

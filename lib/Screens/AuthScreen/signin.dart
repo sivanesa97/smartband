@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:smartband/Screens/AuthScreen/forgot_password.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 
 class SignIn extends StatefulWidget {
@@ -64,63 +65,94 @@ class _SignInState extends State<SignIn> {
     );
   }
 
-  Future<UserCredential?> signinWithGoogle() async {
-    try{
+  Future<GeoPoint> getLocation() async {
+    Position location = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    return GeoPoint(location.latitude, location.longitude);
+  }
+
+  Future<UserCredential?> signinWithGoogle(BuildContext context) async {
+    try {
       await GoogleSignIn().disconnect();
       await GoogleSignIn().signOut();
-    }
-    catch(error){};
-    final GoogleSignInAccount? googleUser = await GoogleSignIn(signInOption: SignInOption.standard,).signIn();
-    final GoogleSignInAuthentication? googleAuth =
-        await googleUser?.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
-    );
-    final data = await FirebaseAuth.instance.signInWithCredential(credential);
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final docRef = FirebaseFirestore.instance.collection('users').doc(currentUser?.uid);
-    final docSnapshot = await docRef.get();
-    if (!docSnapshot.exists) {
-      // Document does not exist, perform the set operation
-      await docRef.set({
-        'name': currentUser?.displayName,
-        'dob': "",
-        'height': 0,
-        'weight': 0,
-        'phone_number': 0,
-        'email': currentUser?.email,
-        'relations': [],
-        'location': GeoPoint(12.489328, 84.283984),
-        'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-        'role': 'watch wearer'
-      });
-      print('User document created successfully');
-    } else {
-      print('User document already exists');
+    } catch (error) {
+      print('Error signing out: $error');
     }
 
-    Navigator.of(context, rootNavigator: true).pushReplacement(
-      MaterialPageRoute(maintainState: true, builder: (context) => const HomepageScreen()),
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    if (googleUser == null) {
+      print('Google sign-in aborted');
+      return null;
+    }
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
     );
+
+    final UserCredential data = await FirebaseAuth.instance.signInWithCredential(credential);
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      final docRef = FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
+      final docSnapshot = await docRef.get();
+
+      if (!docSnapshot.exists) {
+        await docRef.set({
+          'name': currentUser.displayName,
+          'dob': "",
+          'height': 0,
+          'weight': 0,
+          'phone_number': 0,
+          'email': currentUser.email,
+          'relations': [],
+          'location': await getLocation(),
+          'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
+          'role': 'watch wearer',
+          "emergency": {
+            "name": "",
+            "blood_group": "",
+            "medical_notes": "",
+            "address": "",
+            "medications": "",
+            "organ_donor": false,
+            "contact": 0,
+          },
+          'gender': '',
+          'steps_goal': 0,
+        });
+        print('User document created successfully');
+      } else {
+        print('User document already exists');
+      }
+
+      Navigator.of(context, rootNavigator: true).pushReplacement(
+        MaterialPageRoute(
+          maintainState: true,
+          builder: (context) => const HomepageScreen(),
+        ),
+      );
+    }
     return data;
   }
-  bool _isValid = false;
+
 
   void _validateUsername(String value) {
     setState(() {
-      // Example validation: username should be at least 3 characters long and alphanumeric
       _isValid = value.isNotEmpty && value.length >= 3 && RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value);
     });
   }
 
   @override
-  void dispose()
-  {
+  void dispose() {
     _username.dispose();
     _password.dispose();
     super.dispose();
   }
+
+  bool _isValid = false;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +277,7 @@ class _SignInState extends State<SignIn> {
                   children: [
                     InkWell(
                         onTap: () {
-                          signinWithGoogle();
+                          signinWithGoogle(context);
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -269,7 +301,7 @@ class _SignInState extends State<SignIn> {
                     SizedBox(width: width*0.05,),
                     InkWell(
                         onTap: () {
-                          signinWithGoogle();
+                          signinWithGoogle(context);
                         },
                         child: Container(
                           decoration: BoxDecoration(

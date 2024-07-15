@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smartband/Screens/Dashboard/homepage.dart';
+import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -18,6 +18,7 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBarWidget(),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -88,7 +89,6 @@ class GestureScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(onNext);
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
