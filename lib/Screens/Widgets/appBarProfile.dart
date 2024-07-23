@@ -20,35 +20,31 @@ class _AppBarProfileWidgetState extends State<AppBarProfileWidget> {
       surfaceTintColor: Colors.white,
       backgroundColor: Colors.white,
       leading: Padding(
-        padding: const EdgeInsets.only(left: 0),
+        padding: const EdgeInsets.only(left: 5),
         child: GestureDetector(
           onTap: () {
             Scaffold.of(context).openDrawer();
           },
-          child: const Icon(Icons.menu),
+          child: const Icon(Icons.menu, size: 30,),
         ),
       ),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(left: width * 0.17),
-            child: Image.network(
-              "https://placements.lk/storage/Company/LogoImages/1637824455.jpg",
-              width: 100,
-            ),
+      // title: Center(
+      //   child: Image.asset(
+      //     "assets/logo.jpg",
+      //     height: 60,
+      //   ),
+      // ),
+      actions: [
+        GestureDetector(
+          onTap: () async {
+            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => const Profilepage()));
+          },
+          child: const Padding(
+            padding: EdgeInsets.only(right: 10),
+            child: const Icon(Icons.account_circle_outlined, size: 30,),
           ),
-          GestureDetector(
-            onTap: () async {
-              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => const Profilepage()));
-            },
-            child: const Padding(
-              padding: EdgeInsets.all(10.0),
-              child: const Icon(Icons.account_circle_outlined),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

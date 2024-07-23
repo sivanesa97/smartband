@@ -1,20 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_wearer.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
-
+import 'package:smartband/pushnotifications.dart';
 import '../Models/twilio_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  String device_name;
-  String mac_address;
-  DashboardScreen({Key? key, required this.device_name, required this.mac_address}) : super(key: key);
+  final String device_name;
+  final String mac_address;
+  final BluetoothDevice device;
+
+  DashboardScreen({
+    Key? key,
+    required this.device_name,
+    required this.mac_address,
+    required this.device,
+  }) : super(key: key);
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -29,70 +38,68 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
+  String? user;
+
   @override
   Widget build(BuildContext context) {
     final userData = ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
-    return userData.when(data: (data) {
-      String? user = data?.role;
-      List<Widget> _widgetOptions = user == "watch wearer"
-          ? <Widget>[
-        const WearerDashboard(),
-        const SupervisorDashboard(),
-        const Emergencycard(),
-        Settingscreen(device_name: widget.device_name, mac_address: widget.mac_address,),
-      ]
-          : <Widget>[
-        const SupervisorDashboard(),
-      ];
+    return userData.when(
+      data: (data) {
+        setState(() {
+          user = data?.role;
+        });
+        List<Widget> _widgetOptions = <Widget>[
+          WearerDashboard(device: widget.device),
+          const SupervisorWearer(),
+          const Emergencycard(),
+          Settingscreen(device_name: widget.device_name, mac_address: widget.mac_address),
+        ];
 
-      List<BottomNavigationBarItem> _bottomNavigationBarItems = user == "watch wearer"
-          ? <BottomNavigationBarItem>[
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.add_box_outlined),
-          label: 'Health',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.highlight),
-          label: 'Emergency',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings', // Label for the new page
-        ),
-      ]
-          : <BottomNavigationBarItem>[
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.add_box_outlined),
-          label: 'Health',
-        ),
-      ];
+        List<BottomNavigationBarItem> _bottomNavigationBarItems = <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.add_box_outlined),
+            label: 'Health',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.highlight),
+            label: 'Emergency',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ];
 
-      return Scaffold(
-        body: Center(
-          child: _widgetOptions.elementAt(_selectedIndex),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          items: _bottomNavigationBarItems,
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.black,
-          showUnselectedLabels: false,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-        ),
-      );
-    }, error: (error, StackTrace) {
-      return SizedBox();
-    }, loading: () {
-      return SizedBox();
-    });
+        print(user);
+
+        return user == "watch wearer"
+            ? Scaffold(
+          body: Center(
+            child: _widgetOptions.elementAt(_selectedIndex),
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            backgroundColor: Colors.white,
+            items: _bottomNavigationBarItems,
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.black,
+            showUnselectedLabels: false,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+          ),
+        )
+            : const Scaffold(
+          body: SupervisorDashboard(),
+        );
+      },
+      error: (error, StackTrace) => SizedBox(),
+      loading: () => SizedBox(),
+    );
   }
-
 }
 
 class InfoCard extends StatelessWidget {
@@ -101,11 +108,12 @@ class InfoCard extends StatelessWidget {
   final IconData icon;
   final String subtitle;
 
-  InfoCard(
-      {required this.title,
-      required this.value,
-      required this.icon,
-      required this.subtitle});
+  InfoCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +133,7 @@ class InfoCard extends StatelessWidget {
                 SizedBox(width: width * 0.02),
                 Text(
                   title,
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(fontSize: width * 0.05),
                 ),
               ],
             ),
@@ -136,12 +144,10 @@ class InfoCard extends StatelessWidget {
                   value,
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(
-                  width: width * 0.02,
-                ),
+                SizedBox(width: width * 0.02),
                 Text(subtitle),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -150,18 +156,60 @@ class InfoCard extends StatelessWidget {
 }
 
 class EmergencyCard extends StatefulWidget {
-  List<String> relations;
-  String user;
-  EmergencyCard({super.key, required this.relations, required this.user});
+  final List<String> relations;
+  final String user;
+  bool sosClicked = false;
+
+  EmergencyCard({
+    super.key,
+    required this.relations,
+    required this.user,
+    required this.sosClicked,
+  });
 
   @override
   State<EmergencyCard> createState() => _EmergencyCardState();
 }
 
 class _EmergencyCardState extends State<EmergencyCard> {
+  final TwilioService twilioService = TwilioService(
+    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
+    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
+    fromNumber: '+17628009114',
+  );
+
+  @override
+  void didUpdateWidget(covariant EmergencyCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if sosClicked value has changed
+    if (widget.sosClicked != oldWidget.sosClicked && widget.sosClicked) {
+      _handleSOSClick();
+    }
+  }
+
+  Future<void> _handleSOSClick() async {
+    // Update location and fetch relation details
+    Position location = await updateLocation();
+    //await _fetchRelationDetails(widget.relations, widget.user);
+
+    SendNotification send = SendNotification();
+    for(String i in widget.relations)
+    {
+      // String? email = await FirebaseAuth.instance.currentUser!.email;
+      send.sendNotification(i, "Emergency!!", "User has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+    }
+
+    // Notify user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("SOS alert sent to supervisors")),
+    );
+  }
+
   Future<Position> updateLocation() async {
     Position location = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
     print("Fetched Location");
 
     final user = FirebaseAuth.instance.currentUser;
@@ -172,54 +220,43 @@ class _EmergencyCardState extends State<EmergencyCard> {
     return location;
   }
 
-  final TwilioService twilioService = TwilioService(
-    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
-    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
-    fromNumber: '+17628009114',
-  );
-
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> relations, String user_email) async {
-    List<Map<String, dynamic>> relationDetails = [];
+  Future<void> _fetchRelationDetails(List<String> relations, String user_email) async {
     bool madeCall = false;
     for (String email in relations) {
-      User? user = FirebaseAuth.instance.currentUser;
-      var userDoc = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).get();
+      var userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
       if (userDoc.docs.isNotEmpty) {
-        FirebaseFirestore.instance
-            .collection("users")
-            .doc(user!.uid)
-            .update({"isSOSClicked": true});
+        print(userDoc.docs.first.data());
 
         final data = userDoc.docs.first.data()['phone_number'];
         Position current = await updateLocation();
 
-        await twilioService.sendSms('+91${data}', 'SOS Button Clicked by ${user_email} from ${current.latitude}°N ${current.longitude}°E');
-        if (!madeCall)
-          {
-            await twilioService.makeCall(
-              '+91$data',
-              "<Response><Say>$user_email has clicked the SOS button. Please check out.</Say></Response>",
-            );
-            madeCall = !madeCall;
-          }
+        await twilioService.sendSms(
+          '+91$data',
+          'SOS Button Clicked by $user_email from ${current.latitude}°N ${current.longitude}°E',
+        );
 
-        Future.delayed(Duration(seconds: 5), () {
-          FirebaseFirestore.instance
-              .collection("users")
-              .doc(user!.uid)
-              .update({"isSOSClicked": false});
-        });
+        if (!madeCall) {
+          await twilioService.makeCall(
+            '+91$data',
+            "<Response><Say>$user_email has clicked the SOS button. Please check out.</Say></Response>",
+          );
+          madeCall = true;
+        }
       }
     }
-    return relationDetails;
   }
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+
     return Card(
-      color: Colors.white54.withOpacity(0.5),
+      color: Color.fromRGBO(255, 100, 100, 0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 4,
       child: Padding(
@@ -236,47 +273,53 @@ class _EmergencyCardState extends State<EmergencyCard> {
             ),
             InkWell(
               onTap: () async {
-                _fetchRelationDetails(widget.relations, widget.user);
-                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                //     content: Text(
-                //         "Location Updated to ${current.latitude}°N, ${current.longitude}°E")));
-
+                // Toggle SOS click status and trigger notifications
+                setState(() {
+                  widget.sosClicked = !widget.sosClicked;
+                });
+                if (widget.sosClicked) {
+                  _handleSOSClick();
+                }
               },
-              child: Stack(alignment: Alignment.center, children: [
-                Container(
-                  width: width * 0.3,
-                  height: width * 0.3,
-                  decoration: BoxDecoration(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: width * 0.25,
+                    height: width * 0.25,
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(width * 0.5),
-                      color: Colors.white70,
+                      color: widget.sosClicked ? Colors.redAccent : Colors.white,
                       boxShadow: const [
                         BoxShadow(
-                          color: Colors.grey,
+                          color: Colors.redAccent,
                           blurRadius: 5.0,
                         ),
                       ],
-                      border: Border.all(color: Colors.grey, width: 10.0)),
-                ),
-                Container(
-                  width: width * 0.15,
-                  height: width * 0.15,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(width * 0.5),
-                    color: Colors.black26,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.grey,
-                        blurRadius: 5.0,
-                      ),
-                    ],
+                      border: Border.all(color: Colors.redAccent, width: 10.0),
+                    ),
                   ),
-                ),
-                Text(
-                  "SOS",
-                  style: TextStyle(color: Colors.white, fontSize: 20),
-                )
-              ]),
-            )
+                  Container(
+                    width: width * 0.15,
+                    height: width * 0.15,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(width * 0.5),
+                      color: Colors.black26,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.redAccent,
+                          blurRadius: 5.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    "SOS",
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

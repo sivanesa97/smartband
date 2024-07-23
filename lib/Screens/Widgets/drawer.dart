@@ -5,6 +5,7 @@ import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
 import 'package:smartband/Screens/DrawerScreens/reportproblem.dart';
+import 'package:smartband/Screens/SplashScreen/splash.dart';
 
 import '../AuthScreen/signin.dart';
 
@@ -25,95 +26,102 @@ class _DrawerScreenState extends State<DrawerScreen> {
         backgroundColor: Colors.white,
         child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30.0),
-                child: Image.network(
-                  "https://placements.lk/storage/Company/LogoImages/1637824455.jpg",
-                  width: 75,
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                          maintainState: true,
-                          builder: (context) => const Aboutus()));
-                },
-                child: const ListTile(
-                  leading: Icon(
-                    Icons.info,
-                    color: Colors.black26,
+              Column(
+                children: [
+                  // Padding(
+                  //   padding: EdgeInsets.symmetric(horizontal: 30.0),
+                  //   child: Image.asset(
+                  //     "assets/logo.jpg",
+                  //     width: 75,
+                  //   ),
+                  // ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const Aboutus()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.info,
+                        color: Colors.black26,
+                      ),
+                      title: Text("About Us"),
+                    ),
                   ),
-                  title: Text("About Us"),
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                          maintainState: true,
-                          builder: (context) => const Emergencycard()));
-                },
-                child: const ListTile(
-                  leading: Icon(
-                    Icons.assignment,
-                    color: Colors.black26,
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const Emergencycard()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.assignment,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Emergency Card"),
+                    ),
                   ),
-                  title: Text("Emergency Card"),
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                          maintainState: true,
-                          builder: (context) => const Helpandsupport()));
-                },
-                child: const ListTile(
-                  leading: Icon(
-                    Icons.help,
-                    color: Colors.black26,
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const Helpandsupport()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.help,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Help and support"),
+                    ),
                   ),
-                  title: Text("Help and support"),
-                ),
+                ],
               ),
-
-              SizedBox(
-                height: height * 0.4,
-              ),
-              InkWell(
-                onTap: () async {
-                  Navigator.of(context, rootNavigator: true).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const SignIn()),
-                  );
-                  final GoogleSignIn googleSignIn = GoogleSignIn();
-                  await googleSignIn.signOut();
-                  await FirebaseAuth.instance.signOut();
-                },
-                child: const ListTile(
-                  leading: Icon(
-                    Icons.help,
-                    color: Colors.black26,
+              Column(
+                children: [
+                  InkWell(
+                    onTap: () async {
+                      Navigator.of(context, rootNavigator: true)
+                          .pushAndRemoveUntil(MaterialPageRoute(
+                              builder: (context) => const SplashScreen()), (Route<dynamic> route) => false);
+                      final GoogleSignIn googleSignIn = GoogleSignIn();
+                      await googleSignIn.signOut();
+                      await FirebaseAuth.instance.signOut();
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.help,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Sign Out"),
+                    ),
                   ),
-                  title: Text("Sign Out"),
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                          maintainState: true,
-                          builder: (context) => const Reportproblem()));
-                },
-                child: const ListTile(
-                  leading: Icon(
-                    Icons.help,
-                    color: Colors.black26,
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const Reportproblem()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.help,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Report an issue"),
+                    ),
                   ),
-                  title: Text("Report an issue"),
-                ),
+                  SizedBox(
+                    height: height * 0.05,
+                  )
+                ],
               ),
             ],
           ),

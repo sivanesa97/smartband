@@ -3,10 +3,11 @@ import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-
 class InstructionsScreen extends StatefulWidget {
   final VoidCallback onNext;
+
   const InstructionsScreen({super.key, required this.onNext});
+
   @override
   _InstructionsScreenState createState() => _InstructionsScreenState();
 }
@@ -25,7 +26,7 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            height: _currentPage==3 ? 600 : 500,
+            height: _currentPage == 3 ? 600 : 500,
             child: PageView(
               controller: _pageController,
               onPageChanged: (index) {
@@ -37,7 +38,8 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
                 GestureScreen(
                   imagePath: 'assets/img0.jpg',
                   title: 'Please follow the Gestures',
-                  description: 'Follow the Gestures to add more Synchronization',
+                  description:
+                      'Follow the Gestures to add more Synchronization',
                 ),
                 GestureScreen(
                   imagePath: 'assets/img1.jpg',
@@ -55,17 +57,23 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
                   description: 'Open Vigour: Open little finger & thumb',
                   isLastPage: true,
                   onNext: () {
-                    Navigator.of(context, rootNavigator: true).pushReplacement(MaterialPageRoute(builder: (context) => HomepageScreen()));
+                    Navigator.of(context, rootNavigator: true)
+                        .pushReplacement(MaterialPageRoute(
+                            builder: (context) => HomepageScreen(
+                                  hasDeviceId: true,
+                                )));
                   },
                 ),
               ],
             ),
           ),
-          _currentPage==3 ? SizedBox.shrink() : SmoothPageIndicator(
-            controller: _pageController,  // PageController
-            count: 4,
-            effect: ScaleEffect(),  // Customize the effect as needed
-          ),
+          _currentPage == 3
+              ? SizedBox.shrink()
+              : SmoothPageIndicator(
+                  controller: _pageController, // PageController
+                  count: 4,
+                  effect: ScaleEffect(), // Customize the effect as needed
+                ),
         ],
       ),
     );
@@ -131,6 +139,5 @@ class GestureScreen extends StatelessWidget {
     );
   }
 }
-
 
 //instructions

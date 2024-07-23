@@ -24,13 +24,13 @@ class _AppBarWidgetState extends State<AppBarWidget> {
           child: const Icon(Icons.chevron_left),
         ),
       ),
-      title: Align(
-        alignment: const Alignment(-0.25, 0),
-        child: Image.network(
-          "https://placements.lk/storage/Company/LogoImages/1637824455.jpg",
-          width: 100,
-        ),
-      )
+      // title: Align(
+      //   alignment: const Alignment(-0.25, 0),
+      //   child: Image.asset(
+      //     "assets/logo.jpg",
+      //     height: 60,
+      //   ),
+      // )
     );
   }
 }

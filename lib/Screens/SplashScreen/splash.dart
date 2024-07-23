@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -21,8 +22,8 @@ class _SplashScreenState extends State<SplashScreen> {
             children: [
               Expanded(
                 flex: 9,
-                child: Image.network(
-                  "https://placements.lk/storage/Company/LogoImages/1637824455.jpg",
+                child: Image.asset(
+                  "assets/logo.jpg",
                   fit: BoxFit.contain,
                 ),
               ),
@@ -33,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                       maintainState: true,
                       builder: (context) =>
-                          const SignIn(),
+                          SignIn(),
                     ));
                   },
                   style: ElevatedButton.styleFrom(

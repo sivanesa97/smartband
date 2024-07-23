@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../Models/twilio_service.dart';
 import '../Models/usermodel.dart';
@@ -22,14 +23,18 @@ class SupervisorDashboard extends ConsumerStatefulWidget {
 class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String dropdownValue = 'No Users';
 
-    void _showSupervisorDialog(int otp_num) async {
-    if (_emailConn.text!=FirebaseAuth.instance.currentUser!.email && _otpConn.text == otp_num.toString())
-    {
+  // Function to show supervisor dialog and handle OTP verification
+  void _showSupervisorDialog(int otp_num) async {
+    if (_emailConn.text != FirebaseAuth.instance.currentUser!.email &&
+        _otpConn.text == otp_num.toString()) {
       String emailToCheck = _emailConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
-      var querySnapshot = await usersCollection.where('email', isEqualTo: emailToCheck).get();
+      var querySnapshot =
+          await usersCollection.where('email', isEqualTo: emailToCheck).get();
       if (querySnapshot.docs.isNotEmpty) {
-        await usersCollection.doc(FirebaseAuth.instance.currentUser!.uid).update({
+        await usersCollection
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .update({
           "relations": FieldValue.arrayUnion([emailToCheck])
         });
 
@@ -38,21 +43,26 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         // Handle email not existing case
         print("Email does not exist in the collection.");
       }
-    }
-    else
-    {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> relations) async {
+  // Function to fetch relation details where current user email is in relations array
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> email) async {
     List<Map<String, dynamic>> relationDetails = [];
-    for (String email in relations) {
-      var userDoc = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).get();
-      if (userDoc.docs.isNotEmpty) {
-        relationDetails.add(userDoc.docs.first.data());
+    print(email);
+    for(String i in email)
+      {
+        var userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: i)
+            .get();
+        if (userDoc.docs.isNotEmpty) {
+          relationDetails.add(userDoc.docs.first.data());
+        }
       }
-    }
     return relationDetails;
   }
 
@@ -76,9 +86,22 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     }
     return relationDetails;
   }
+
+  Future<void> openGoogleMaps(double start, double end) async {
+    final String googleMapsUrl =
+        'https://www.google.com/maps/search/?api=1&query=$start,$end';
+
+    if (await canLaunch(googleMapsUrl)) {
+      await launch(googleMapsUrl);
+    } else {
+      throw 'Could not open the map.';
+    }
+  }
+
   String? _selectedRole = "watch wearer";
   final TextEditingController _emailConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
+
   void _showRoleDialog() {
     bool sent = false;
     int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
@@ -103,7 +126,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                         return DropdownMenuItem<String>(
                           value: value,
                           child:
-                          Text(value[0].toUpperCase() + value.substring(1)),
+                              Text(value[0].toUpperCase() + value.substring(1)),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -115,27 +138,29 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _emailConn,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Email',
-                          suffixIcon: IconButton(
-                              onPressed: () {
-                                sent = true;
-                                _fetchPhoneDetails(
-                                    _emailConn.text, otp_num);
-                              },
-                              icon: Icon(sent ? Icons.check : Icons.send))),
-                    )
+                            controller: _emailConn,
+                            decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Email',
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      sent = true;
+                                      _fetchPhoneDetails(
+                                          _emailConn.text, otp_num);
+                                    },
+                                    icon:
+                                        Icon(sent ? Icons.check : Icons.send))),
+                          )
                         : const SizedBox.shrink(),
+                    const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _otpConn,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'OTP',
-                      ),
-                    )
+                            controller: _otpConn,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'OTP',
+                            ),
+                          )
                         : const SizedBox.shrink(),
                   ],
                 ),
@@ -164,7 +189,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   @override
   Widget build(BuildContext context) {
     final user_data =
-    ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -172,26 +197,23 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
       drawer: const DrawerScreen(),
       body: user_data.when(
         data: (user) {
-          List<String> relations = [];
-          if (user != null) {
-            relations = user!.relations;
-          }
-          if (relations.isNotEmpty && dropdownValue == 'No Users') {
-            dropdownValue = relations[0];
-          }
-
+          Map<String, dynamic> relation = {};
           return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _fetchRelationDetails(relations),
+            future: _fetchRelationDetails(user!.relations),
             builder: (context, snapshot) {
+              print(snapshot.data);
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator(color: Colors.blueAccent));
+                return Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent));
               } else if (snapshot.hasError) {
                 return Center(child: Text("Error fetching relation details"));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
                 if (dropdownValue == 'No Users') {
-                  dropdownValue = relationDetails.first['name'];
+                  dropdownValue = relationDetails.first['email'];
+                  relation = relationDetails.first;
                 }
+                print("DropDown : ${dropdownValue}");
 
                 return Column(
                   children: [
@@ -211,82 +233,94 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                               dropdownValue = value!;
                             });
                           },
-                          items: relationDetails.map<DropdownMenuItem<String>>((Map<String, dynamic> relation) {
-                            return DropdownMenuItem<String>(
-                              value: relation['email'],
-                              child: Padding(
-                                padding: EdgeInsets.all(5),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.grey.withOpacity(0.5),
-                                  ),
+                          items: relationDetails.map<DropdownMenuItem<String>>(
+                                  (Map<String, dynamic> relation) {
+                                return DropdownMenuItem<String>(
+                                  value: relation['email'],
                                   child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const CircleAvatar(
-                                          radius: 30.0,
-                                          backgroundColor: Colors.white,
-                                          child: Icon(
-                                            Icons.account_circle_outlined,
-                                            size: 35,
-                                            color: Colors.black,
-                                          ),
+                                    padding: EdgeInsets.all(5),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: Colors.grey.withOpacity(0.5),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const CircleAvatar(
+                                              radius: 30.0,
+                                              backgroundColor: Colors.white,
+                                              child: Icon(
+                                                Icons.account_circle_outlined,
+                                                size: 35,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                            Text(
+                                              relation['name'],
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 16,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.stacked_line_chart,
+                                              size: 50,
+                                              color: Colors.black,
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          relation['name'],
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 16,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const Icon(
-                                          Icons.stacked_line_chart,
-                                          size: 50,
-                                          color: Colors.black,
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                                );
+                              }).toList(),
                         ),
                       ),
                     ),
                     Expanded(
                       child: Consumer(
                         builder: (context, watch, child) {
-                          final supervisorModel = ref.watch(supervisorModelProvider(dropdownValue));
+                          final supervisorModel =
+                          ref.watch(supervisorModelProvider(dropdownValue));
                           return supervisorModel.when(
                             data: (data) {
                               return Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: SingleChildScrollView(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                     children: [
                                       SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.2,
+                                        height:
+                                        MediaQuery.of(context).size.height *
+                                            0.2,
                                         child: InfoCard(
                                           title: 'Heart Rate',
-                                          value: data!.first.metrics['heart_rate'].toString(),
+                                          value: data!
+                                              .first.metrics['heart_rate']
+                                              .toString(),
                                           icon: Icons.favorite,
                                           subtitle: 'Resting',
                                         ),
                                       ),
                                       SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.25,
+                                        height:
+                                        MediaQuery.of(context).size.height *
+                                            0.25,
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: InfoCard(
                                                 title: 'Heart Rate',
-                                                value: data.first.metrics['heart_rate'].toString(),
+                                                value: data
+                                                    .first.metrics['heart_rate']
+                                                    .toString(),
                                                 icon: Icons.favorite,
                                                 subtitle: 'Resting',
                                               ),
@@ -294,7 +328,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                             Expanded(
                                               child: InfoCard(
                                                 title: 'Fall Axis',
-                                                value: data.first.metrics['fall_axis'].toString(),
+                                                value: data
+                                                    .first.metrics['fall_axis']
+                                                    .toString(),
                                                 icon: Icons.device_hub,
                                                 subtitle: 'Resting',
                                               ),
@@ -303,23 +339,39 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                         ),
                                       ),
                                       SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.25,
+                                        height:
+                                        MediaQuery.of(context).size.height *
+                                            0.25,
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: InfoCard(
                                                 title: 'Steps',
-                                                value: data.first.metrics['heart_rate'].toString(),
-                                                icon: Icons.favorite,
-                                                subtitle: 'Resting',
+                                                value: data
+                                                    .first.metrics['steps']
+                                                    .toString(),
+                                                icon: Icons.directions_walk,
+                                                subtitle: 'Today',
                                               ),
                                             ),
-                                            Expanded(
-                                              child: InfoCard(
-                                                title: 'Location',
-                                                value: data.first.metrics['fall_axis'].toString(),
-                                                icon: Icons.location_on,
-                                                subtitle: '${data.first.latitude}°N \n${data.first.longitude}°E',
+                                            InkWell(
+                                              onTap: () {
+                                                openGoogleMaps(
+                                                    data.first.latitude,
+                                                    data.first.longitude);
+                                              },
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                    2.1,
+                                                child: InfoCard(
+                                                  title: 'Location',
+                                                  value: "",
+                                                  icon: Icons.location_on,
+                                                  subtitle:
+                                                  '${data.first.latitude}°N \n${data.first.longitude}°E',
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -332,7 +384,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                             print("Adding users");
                                           },
                                           child: Padding(
-                                            padding: EdgeInsets.symmetric(vertical: 10.0),
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 10.0),
                                             child: const Text(
                                               "Add users",
                                               style: TextStyle(fontSize: 18),
@@ -350,7 +403,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                             },
                             loading: () {
                               return Center(
-                                child: CircularProgressIndicator(color: Colors.blueAccent),
+                                child: CircularProgressIndicator(
+                                    color: Colors.blueAccent),
                               );
                             },
                           );

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart' as blue;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -14,123 +16,210 @@ class BluetoothDeviceManager {
     return _instance;
   }
 
-  BluetoothDeviceManager._internal();
+  BluetoothDeviceManager._internal() {
+    _initialize();
+  }
 
-  blue.FlutterBlue flutterBlue = blue.FlutterBlue.instance;
-  List<blue.BluetoothDevice> connectedDevices = [];
+  List<ScanResult> scanResults = [];
+  bool isComplete = false;
+  List<BluetoothDevice> connectedDevices = [];
+  List<BluetoothService> services = [];
+  Map<String, String> characteristicValues = {};
 
-  final StreamController<List<blue.BluetoothDevice>> _connectedDevicesController =
-  StreamController<List<blue.BluetoothDevice>>();
+  final StreamController<List<BluetoothDevice>> connectedDevicesController =
+  StreamController<List<BluetoothDevice>>.broadcast();
 
-  void initializeBluetooth() {
-    flutterBlue.state.listen((state) async {
-      if (state == blue.BluetoothState.on) {
-        // Ensure permissions are granted before fetching connected devices
-        await getPermissions();
+  // Public getter for connectedDevicesStream
+  Stream<List<BluetoothDevice>> get connectedDevicesStream => connectedDevicesController.stream;
 
-        // Retrieve the list of connected devices
-        List<blue.BluetoothDevice> devices =
-        await flutterBlue.connectedDevices;
-        connectedDevices.addAll(devices);
-        _connectedDevicesController.add(connectedDevices);
+  final StreamController<Map<String, String>> characteristicValuesController =
+  StreamController<Map<String, String>>.broadcast();
 
-        // Listen for changes in connected devices
-        flutterBlue.connectedDevices.asStream().listen(
-              (List<blue.BluetoothDevice> devices) {
-            connectedDevices.clear();
-            connectedDevices.addAll(devices);
-            _connectedDevicesController.add(connectedDevices);
-          },
-        );
+  Stream<Map<String, String>> get characteristicValuesStream => characteristicValuesController.stream;
+
+  void _initialize() {
+    FlutterBluePlus.adapterState.listen((state) async {
+      if (state == BluetoothAdapterState.on) {
+        scanForDevices();
       } else {
-        connectedDevices.clear();
-        _connectedDevicesController.add([]);
+        scanResults.clear();
+        connectedDevicesController.add(connectedDevices); // Clear connected devices when Bluetooth is off
+        print("Bluetooth is off");
       }
+    }, onError: (error) {
+      print("Bluetooth state error: $error");
     });
   }
 
   Future<void> getPermissions() async {
-    await [
+    final statuses = await [
       Permission.bluetooth,
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.locationWhenInUse,
     ].request();
-  }
 
-  void scanForDevices(bool mounted) {
-    if (mounted) {
-      try {
-        FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
-        print("Scan started");
-
-        FlutterBluePlus.scanResults.listen((List<ScanResult> results) {
-          // Update your UI with the scanned devices
-          // Example:
-          results.forEach((result) {
-            print('Device found: ${result.device.name}');
-          });
-        });
-
-        Future.delayed(const Duration(seconds: 15), () {
-          FlutterBluePlus.stopScan();
-          print("Scan stopped");
-        });
-      } catch (e) {
-        print('Error scanning for devices: $e');
-      }
+    if (statuses[Permission.bluetooth] != PermissionStatus.granted ||
+        statuses[Permission.bluetoothScan] != PermissionStatus.granted ||
+        statuses[Permission.bluetoothConnect] != PermissionStatus.granted ||
+        statuses[Permission.locationWhenInUse] != PermissionStatus.granted) {
+      print("Some permissions are not granted");
     }
   }
 
-  void connectToDevice(
-      BluetoothDevice device, BuildContext context) async {
+  void scanForDevices() {
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+    print("Scan started");
+
+    FlutterBluePlus.scanResults.listen((results) {
+      scanResults = [];
+      for (var result in results) {
+        print('Device found: ${result.device.platformName} (${result.device.remoteId})');
+        if (result.device.platformName.isNotEmpty) {
+          scanResults.add(result);
+        }
+      }
+    });
+
+    Future.delayed(const Duration(seconds: 15), () {
+      FlutterBluePlus.stopScan();
+      print("Scan stopped");
+    });
+  }
+
+  Future<void> connectToDevice(BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
-      await device.connect();
+      final data = await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get();
+      String device_name = data.data()!['device_id'];
+      print(device_name);
+      if( device_name == device.platformName)
+        {
+          await device.connect();
+          connectedDevices.add(device);
+          connectedDevicesController.add(connectedDevices); // Update connected devices list
 
-      final bsSubscription = device.bondState.listen((value) {
-        print("Bond state: $value");
-      });
-      device.cancelWhenDisconnected(bsSubscription);
-      await device.createBond();
+          final bsSubscription = device.bondState.listen((value) {
+            print("Bond State: $value");
+          });
+          device.cancelWhenDisconnected(bsSubscription);
+          await device.createBond();
 
-      print("Connected to device: ${device.name}");
+          device.connectionState.listen((state) {
+            if (state == BluetoothConnectionState.disconnected) {
+              print("Not connected to device: ${device.platformName}");
+              connectedDevices.remove(device);
+              connectedDevicesController.add(connectedDevices); // Update list on disconnection
+            } else {
+              print("Connected to device: ${device.platformName}");
+              connectedDevicesController.add(connectedDevices);
+            }
+          });
 
-      // Add device to connectedDevices list
-      connectedDevices.add(device as blue.BluetoothDevice);
-      _connectedDevicesController.add(connectedDevices);
-
-      // Navigate to another screen or update UI
-      // Example:
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => InstructionsScreen(
-            onNext: () {
-              print("Finished Instructions");
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => DashboardScreen(
-                    device_name: device.name,
-                    mac_address: device.id.toString(),
-                  ),
+          if (connectedDevices.isNotEmpty) {
+            isComplete = true;
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => InstructionsScreen(
+                  onNext: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => DashboardScreen(
+                          device: device,
+                          device_name: device.platformName,
+                          mac_address: device.remoteId.toString(),
+                        ),
+                      ),
+                    );
+                  },
                 ),
+              ),
+            );
+          }
+        }
+      else
+        {
+          print("Device ID don't match");
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Error'),
+                content: Text('Device ID are not matching. Please check'),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                  ),
+                ],
               );
             },
-          ),
-        ),
-      );
+          );
+        }
+
     } catch (e) {
       print('Error connecting to device: $e');
     }
   }
 
-  void disconnectFromDevice(blue.BluetoothDevice device) async {
+  Future<void> discoverServicesAndCharacteristics(BluetoothDevice device) async {
     try {
-      await device.disconnect();
-      connectedDevices.remove(device);
-      _connectedDevicesController.add(connectedDevices);
-      print("Disconnected from device: ${device.name}");
+      List<BluetoothService> services = await device.discoverServices();
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic in service.characteristics) {
+          if (characteristic.properties.read) {
+            // Periodically read the characteristic value
+            Timer.periodic(Duration(seconds: 3), (timer) async {
+              try {
+                List<int> value = await characteristic.read();
+                String decodedValue = utf8.decode(value).toString();
+                characteristicValues[characteristic.uuid.toString()] = decodedValue;
+                characteristicValuesController.add(characteristicValues);
+              } catch (e) {
+                print('Error reading characteristic: $e');
+                timer.cancel(); // Stop the timer if there's an error
+              }
+            });
+          }
+
+          if (characteristic.properties.notify) {
+            try {
+              await characteristic.setNotifyValue(true);
+              characteristic.lastValueStream.listen((value) {
+                String decodedValue = utf8.decode(value).toString();
+                characteristicValues[characteristic.uuid.toString()] = decodedValue;
+                characteristicValuesController.add(characteristicValues);
+              });
+            } catch (e) {
+              print('Error setting notification: $e');
+            }
+          }
+        }
+      }
     } catch (e) {
-      print('Error disconnecting from device: $e');
+      print('Error discovering services and characteristics: $e');
     }
+  }
+
+
+  void disconnectFromDevice() async {
+    if (connectedDevices.isNotEmpty) {
+      try {
+        print("Disconnecting from device: ${connectedDevices.first}");
+        await connectedDevices.first.disconnect();
+        connectedDevices.removeAt(0); // Remove the first device
+        connectedDevicesController.add(connectedDevices); // Update the list after disconnection
+        print("Disconnected from device");
+      } catch (e) {
+        print('Error disconnecting from device: $e');
+      }
+    } else {
+      print("No device to disconnect from");
+    }
+  }
+  void dispose() {
+    connectedDevicesController.close();
+    characteristicValuesController.close();
   }
 }

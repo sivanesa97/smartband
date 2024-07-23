@@ -1,39 +1,44 @@
-import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
+import 'package:smartband/bluetooth.dart';
 
 import '../Dashboard/dashboard.dart';
 import '../Dashboard/notConnected.dart';
 
 class HomepageScreen extends StatefulWidget {
-  const HomepageScreen({Key? key}) : super(key: key);
+  bool hasDeviceId;
+
+  HomepageScreen({Key? key, required this.hasDeviceId}) : super(key: key);
 
   @override
   _HomepageScreenState createState() => _HomepageScreenState();
 }
 
 class _HomepageScreenState extends State<HomepageScreen> {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
-  final StreamController<List<BluetoothDevice>> _connectedDevicesController =
-  StreamController<List<BluetoothDevice>>();
+  String role1 = "";
+  final BluetoothDeviceManager bluetoothDeviceManager =
+      BluetoothDeviceManager();
 
   void _initializeBluetooth() {
-    flutterBlue.state.listen((state) async {
-      if (state == BluetoothState.on) {
-        // Ensure permissions are granted before fetching connected devices
+    print(widget.hasDeviceId);
+    FlutterBluePlus.adapterState.listen((state) async {
+      if (state == BluetoothAdapterState.on) {
         await getPermissions();
 
         // Retrieve the list of connected devices
-        List<BluetoothDevice> devices = await flutterBlue.connectedDevices;
-        _connectedDevicesController.add(devices);
+        List<BluetoothDevice> devices = await FlutterBluePlus.connectedDevices;
+        bluetoothDeviceManager.connectedDevicesController.add(devices);
 
         // Listen for changes in connected devices
-        flutterBlue.connectedDevices.asStream().listen((List<BluetoothDevice> devices) {
-          _connectedDevicesController.add(devices);
-        });
+        bluetoothDeviceManager.connectedDevicesController
+            .add(FlutterBluePlus.connectedDevices);
       } else {
-        _connectedDevicesController.add([]);
+        bluetoothDeviceManager.connectedDevicesController.add([]);
       }
     });
   }
@@ -44,46 +49,84 @@ class _HomepageScreenState extends State<HomepageScreen> {
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.locationWhenInUse,
+      Permission.notification
     ].request();
+  }
+
+  Future<Position> updateLocation() async {
+    Position location = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    print("Fetched Location");
+
+    final user = FirebaseAuth.instance.currentUser;
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user!.uid)
+        .update({"location": GeoPoint(location.latitude, location.longitude)});
+    return location;
+  }
+
+  Future<String?> getRole() async {
+    final role = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    setState(() {
+      role1 = role.data()?['role'] ?? "";
+    });
+    return null;
   }
 
   @override
   void initState() {
     super.initState();
-    getPermissions().then((_) {
+    updateLocation();
+    getRole();
+    getPermissions().then((_) async {
       _initializeBluetooth();
     });
   }
 
   @override
   void dispose() {
-    _connectedDevicesController.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<BluetoothDevice>>(
-      stream: _connectedDevicesController.stream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(),
+    print(role1);
+    return role1 == 'supervisor'
+        ? SupervisorDashboard()
+        : StreamBuilder<List<BluetoothDevice>>(
+            stream: bluetoothDeviceManager.connectedDevicesStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              } else if (snapshot.hasData &&
+                      snapshot.data != null &&
+                      snapshot.data!.isNotEmpty) {
+                // Navigate to DashboardScreen if devices are connected
+                String deviceName = snapshot.data!.first.platformName;
+                bluetoothDeviceManager
+                    .discoverServicesAndCharacteristics(snapshot.data!.first);
+                return DashboardScreen(
+                  device: snapshot.data!.first,
+                  device_name: deviceName,
+                  mac_address: snapshot.data!.first.remoteId.toString(),
+                );
+              } else {
+                // Show NotConnectedPage if no devices are connected or Bluetooth is off
+                return NotConnectedPage(
+                  hasDeviceId: false,
+                );
+              }
+            },
           );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
-        } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
-          // Navigate to DashboardScreen if devices are connected
-          print("Devices: ${snapshot.data}");
-          String deviceName = snapshot.data!.first.name;
-          return DashboardScreen(device_name: deviceName, mac_address: snapshot.data!.first.id.toString(),);
-        } else {
-          // Show NotConnectedPage if no devices are connected or Bluetooth is off
-          return NotConnectedPage();
-        }
-      },
-    );
   }
 }

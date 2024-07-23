@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -26,8 +27,14 @@ class _SignInState extends State<SignIn> {
         email: _username.text,
         password: _password.text,
       );
+      User? user = await FirebaseAuth.instance.currentUser;
+      FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+        'fcmKey' : await FirebaseMessaging.instance.getToken()
+      });
+      final data = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+      bool hasDeviceId = data.data()!['device_id']=="" ? false : true;
       Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(maintainState: true, builder: (context) => const HomepageScreen()),
+        MaterialPageRoute(maintainState: true, builder: (context) => HomepageScreen(hasDeviceId: hasDeviceId,)),
       );
       print("Login Successful");
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Successful")));
@@ -122,22 +129,34 @@ class _SignInState extends State<SignIn> {
           },
           'gender': '',
           'steps_goal': 0,
+          'isSOSCLicked': false,
+          'device_id': "",
+          'fcmKey' : await FirebaseMessaging.instance.getToken()
         });
         print('User document created successfully');
-      } else {
-        print('User document already exists');
-      }
-
-      Navigator.of(context, rootNavigator: true).pushReplacement(
+        Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           maintainState: true,
-          builder: (context) => const HomepageScreen(),
+          builder: (context) => HomepageScreen(hasDeviceId: false,),
         ),
       );
+      } else {
+        FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).update({
+          'fcmKey' : await FirebaseMessaging.instance.getToken()
+        });
+        print('User document already exists');
+        final data = await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).get();
+        bool hasDeviceId = data.data()!['device_id']=="" ? false : true;
+        Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          maintainState: true,
+          builder: (context) => HomepageScreen(hasDeviceId: hasDeviceId,),
+        ),
+      );
+      }
     }
     return data;
   }
-
 
   void _validateUsername(String value) {
     setState(() {

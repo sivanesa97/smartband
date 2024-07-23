@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
@@ -52,12 +53,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> signUpWithCredentials(int otp_num) async {
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Creating account... Please wait")));
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailId.text,
         password: _password.text,
       );
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Creating account... Please wait")));
       if (_selectedRole == "watch wearer") {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Fetching Location... Please wait")));
@@ -74,6 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'gender': _selectedGender,
           'phone_number': int.parse(_phone_number.text),
           'relations': [],
+          'isSOSClicked': false,
           'location': locationData,
           'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
           'role': _selectedRole,
@@ -86,11 +88,18 @@ class _SignupScreenState extends State<SignupScreen> {
             "organ_donor": false,
             "contact": 0,
           },
-          'steps_goal': 0
+          'device_id' : "",
+          'steps_goal': 0,
+          'fcmKey': await FirebaseMessaging.instance.getToken()
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Account created successfully")));
+        Navigator.of(context, rootNavigator: true).pushReplacement(
+            MaterialPageRoute(
+                maintainState: true, builder: (context) => HomepageScreen(hasDeviceId: false,)));
       }
       else {
-        if (_otpConn.text == otp_num.toString()) {
+        if ( _otpConn.text!="" && _otpConn.text == otp_num.toString()) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Fetching Location... Please wait")));
           final locationData = await getLocation();
@@ -109,6 +118,7 @@ class _SignupScreenState extends State<SignupScreen> {
             'location': locationData,
             'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
             'role': "supervisor",
+            'isSOSClicked': false,
             "emergency": {
               "name": "",
               "blood_group": "",
@@ -118,14 +128,16 @@ class _SignupScreenState extends State<SignupScreen> {
               "organ_donor": false,
               "contact": 0,
             },
-            'steps_goal': 0
+            "device_id" : "",
+            'steps_goal': 0,
+            'fcmKey': await FirebaseMessaging.instance.getToken()
           });
           print("User created");
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Account created successfully")));
-          Navigator.of(context, rootNavigator: true).pushReplacement(
+          Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(
-                maintainState: true, builder: (context) => HomepageScreen()),
+                maintainState: true, builder: (context) => HomepageScreen(hasDeviceId: false,)),
           );
         } else {
           ScaffoldMessenger.of(context)
@@ -133,6 +145,9 @@ class _SignupScreenState extends State<SignupScreen> {
         }
       }
     } on FirebaseAuthException catch (e) {
+      User? user = FirebaseAuth.instance.currentUser;
+      user?.delete();
+      print("Account deleted");
       if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("The password provided is too weak.")));
@@ -151,8 +166,7 @@ class _SignupScreenState extends State<SignupScreen> {
     fromNumber: '+17628009114',
   );
 
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(
-      String email, int otp_num) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(String email, int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
@@ -240,8 +254,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextButton(
                   child: const Text('OK'),
                   onPressed: () {
-                    signUpWithCredentials(otp_num);
-                    Navigator.of(context, rootNavigator: true).pop();
+                    if (_selectedRole=='supervisor' && _emailConn.text!="" || _selectedRole=='watch wearer')
+                      {
+                        signUpWithCredentials(otp_num);
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
                   },
                 ),
               ],

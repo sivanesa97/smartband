@@ -3,6 +3,9 @@ import 'package:smartband/Screens/HomeScreen/notifications.dart';
 import 'package:smartband/Screens/HomeScreen/upgrade.dart';
 import 'package:smartband/Screens/Widgets/appBarProfile.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
+import 'package:smartband/bluetooth.dart';
+
+BluetoothDeviceManager bluetoothDeviceManager = BluetoothDeviceManager();
 
 class Settingscreen extends StatefulWidget {
   String device_name;
@@ -51,7 +54,11 @@ class _SettingscreenState extends State<Settingscreen> {
                         SizedBox(width: 8),
                         TextButton(
                           onPressed: () {
-                            // Handle remove button
+                            setState(() {
+                              print("DIsconnect : ${bluetoothDeviceManager.connectedDevices}");
+                              bluetoothDeviceManager.disconnectFromDevice();
+                              // bluetoothDeviceManager.connectedDevices = [];
+                            });
                           },
                           child: Container(
                             padding: EdgeInsets.symmetric(

@@ -73,10 +73,10 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
           surfaceTintColor: Colors.transparent,
           backgroundColor: Colors.white,
           title: Align(
-            alignment: const Alignment(0.03, 0),
-            child: Image.network(
-              "https://placements.lk/storage/Company/LogoImages/1637824455.jpg",
-              width: 100,
+            alignment: const Alignment(-0.05, 0),
+            child: Image.asset(
+              "assets/logo.jpg",
+              height: 60,
             ),
           )),
       body: SafeArea(

@@ -5,10 +5,11 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
-        android:label="smartband"
+        android:label="LongLifeCare"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/logo">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,6 +37,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
