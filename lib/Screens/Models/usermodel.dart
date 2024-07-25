@@ -9,7 +9,7 @@ class UserModel {
   double height;
   double latitude;
   double longitude;
-  Map<String, int> metrics;
+  Map<String, dynamic> metrics;
   String name;
   double weight;
   List<String> relations;
@@ -17,7 +17,6 @@ class UserModel {
   String role;
   Map<String, dynamic> emergency;
   String gender;
-  int steps_goal;
   String device_id;
 
   UserModel({
@@ -34,7 +33,6 @@ class UserModel {
     required this.role,
     required this.emergency,
     required this.gender,
-    required this.steps_goal,
     required this.device_id
   });
 
@@ -45,17 +43,16 @@ class UserModel {
       dob: data['dob'] ?? '',
       email: data['email'] ?? '',
       height: data['height']?.toDouble() ?? 0.0,
-      metrics: Map<String, int>.from(data['metrics'] ?? {}),
+      metrics: Map<String, dynamic>.from(data['metrics'] ?? {}),
       name: data['name'] ?? '',
       latitude: data['location'].latitude ?? 0.1,
       longitude: data['location'].longitude ?? 0.1,
       phone_number: data['phone_number'] ?? 0,
-      relations: List<String>.from(data['relations']) ?? [],
+      relations: List<String>.from(data['relations']),
       weight: data['weight'].toDouble() ?? 0,
       role: data['role'],
       emergency: Map<String, dynamic>.from(data['emergency']),
       gender: data['gender'],
-      steps_goal: data['steps_goal'],
       device_id: data['device_id']
     );
   }
@@ -75,7 +72,6 @@ class UserModel {
       'role' : role,
       'emergency' : emergency,
       'gender' : gender,
-      'steps_goal': steps_goal,
       'device_id': device_id
     };
   }

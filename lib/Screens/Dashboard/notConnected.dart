@@ -46,16 +46,6 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
       BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
       await bluetoothDeviceManager.connectToDevice(device, context, widget.hasDeviceId);
-      print(bluetoothDeviceManager.connectedDevices);
-      if (hasDeviceId)
-        {
-          final data = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(FirebaseAuth.instance.currentUser!.uid)
-              .update({
-            "device_id" : device.platformName
-          });
-        }
     } catch (e) {
       print('Error connecting to device: $e');
     }
@@ -115,16 +105,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   },
                   child: const Icon(Icons.chevron_left),
                 ),
-              ),
-              title: Align(
-                alignment: const Alignment(-0.25, 0),
-                child: Image.asset(
-                  "assets/logo.jpg",
-                  height: 60,
-                ),
-              ))
+              ),)
           : const AppBarProfileWidget(),
-      drawer: const DrawerScreen(),
       body: !addDeviceBtn
           ? Column(
               children: [
@@ -263,8 +245,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(right: 15.0),
-                                  child: Image.network(
-                                    "https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?cs=srgb&dl=pexels-ferarcosn-190819.jpg&fm=jpg",
+                                  child: Image.asset(
+                                    "assets/watch.png",
                                     height: 100,
                                     width: 100,
                                   ),

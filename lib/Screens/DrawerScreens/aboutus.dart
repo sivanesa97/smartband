@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
@@ -7,11 +8,11 @@ class Aboutus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
-      drawer: DrawerScreen(),
-      appBar: AppBarWidget(),
-      body: SafeArea(
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first),
+      appBar: const AppBarWidget(),
+      body: const SafeArea(
         child: Padding(
           padding: EdgeInsets.all(20.0),
           child: SingleChildScrollView(

@@ -83,6 +83,11 @@ flutter:
     - assets/img2.jpg
     - assets/img3.jpg
     - assets/logo.jpg
+    - assets/fallaxis.png
+    - assets/watch.png
+    - assets/fallaxis1.png
+    - assets/heartrate.png
+    - assets/spo2.png
     - assets/service_account.json
 
   # To add assets to your application, add an assets section, like this:

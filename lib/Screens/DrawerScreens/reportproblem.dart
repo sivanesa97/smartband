@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
@@ -14,7 +15,7 @@ class _ReportproblemState extends State<Reportproblem> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const DrawerScreen(),
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
       appBar: const AppBarWidget(),
       body: SafeArea(
         child: Padding(

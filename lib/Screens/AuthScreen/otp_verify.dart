@@ -1,9 +1,15 @@
 import 'dart:async';
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
+
+import '../Models/twilio_service.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -20,6 +26,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final _otpControllers = List.generate(6, (index) => TextEditingController());
   final _focusNodes = List.generate(6, (index) => FocusNode());
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
 
   void startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -36,47 +43,44 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _verifyPhone(String phoneNumber) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        if (e.code == 'invalid-phone-number') {
-          print('The provided phone number is not valid.');
-        }
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
-          _verificationId = verificationId;
-        });
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        setState(() {
-          _verificationId = verificationId;
-        });
-      },
-    );
+    if (phoneNumber.substring(3, phoneNumber.length).length == 10)
+      {
+        print(phoneNumber.substring(3, phoneNumber.length));
+        // final TwilioService twilioService = TwilioService(
+        //   accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
+        //   authToken: 'fa856967b5f8bc971b3b783197c3ce33',
+        //   fromNumber: '+17628009114',
+        // );
+        // await twilioService.sendSms('${phoneNumber}', 'Your OTP is ${otp_num}');
+      }
   }
 
-  void _verifyOtp() async {
-
+  void _verifyOtp(String phNo, int generated_otp) async {
     String otp = _otpControllers.map((controller) => controller.text).join();
-    // PhoneAuthCredential credential = PhoneAuthProvider.credential(
-    //   verificationId: _verificationId,
-    //   smsCode: otp,
-    // );
-
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: 'vish2004k@outlook.com',
-        password: 'admin123',
-      );
-
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => HomePage()));
-      // await _auth.signInWithCredential(credential);
-      // Successfully signed in
-      // Navigate to your next screen or do something else
+      print("${otp}  ${generated_otp}");
+      if (true)
+      // if (int.parse(otp) == generated_otp)
+      {
+        final data = await FirebaseFirestore.instance.collection("users").where("phone_number", isEqualTo: int.parse(phNo.substring(3,phNo.length))).get();
+        if (data.docs.isNotEmpty)
+        {
+          final email = data.docs.first.data()['email'];
+          await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: "admin123");
+          print(FirebaseAuth.instance.currentUser!.uid);
+          await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).update({
+            'fcmKey' : await FirebaseMessaging.instance.getToken()
+          });
+          Navigator.of(context, rootNavigator: true).pushReplacement(
+              MaterialPageRoute(
+                  maintainState: true,
+                  builder: (context) => HomepageScreen(hasDeviceId: false,)));
+        }
+        else {
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => HomePage(phNo: widget.phoneNumber,)));
+        }
+      }
     } catch (e) {
       print('Failed to sign in: $e');
     }
@@ -99,6 +103,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+    final TextStyle style = TextStyle(
+      fontSize: width * 0.1,
+      fontWeight: FontWeight.bold,
+    );
+    const Gradient gradient = LinearGradient(
+      colors: <Color>[
+        Colors.redAccent,
+        Colors.yellow,
+        Colors.redAccent,
+      ],
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -107,11 +125,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'SMART TRACKERS',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              ShaderMask(
+                shaderCallback: (bounds) {
+                  return gradient.createShader(
+                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                  );
+                },
+                child: Text(
+                  "LONGLIFECARE",
+                  style: style.copyWith(color: Colors.white),
                 ),
               ),
               SizedBox(height: 20),
@@ -170,6 +192,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               TextButton(
                 onPressed: () {
                   // Resend OTP logic
+                  otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
                   _verifyPhone(widget.phoneNumber);
                   setState(() {
                     _start = 90;
@@ -179,15 +202,32 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: Text('Resend'),
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _verifyOtp,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('Verify the OTP'),
+              Center(
+                  child: Container(
+                    width: width * 0.5,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        gradient: LinearGradient(
+                          colors: <Color>[
+                            Colors.redAccent,
+                            Colors.orangeAccent.withOpacity(0.9),
+                            Colors.redAccent,
+                          ],
+                        )
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        _verifyOtp(widget.phoneNumber, otp_num);
+                        },
+                      child: Text(
+                        'Verify OTP',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: width * 0.05
+                        ),
+                      ),
+                    ),
+                  )
               ),
             ],
           ),

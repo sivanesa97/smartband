@@ -314,7 +314,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                       "dob": _birthdayController.text,
                                       "height": double.parse(_heightController.text),
                                       "weight": double.parse(_weightController.text),
-                                      "steps_goal": int.parse(_stepsgoalController.text)
                                   });
                                   getData();
                                 }
@@ -455,32 +454,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                         ),
                         SizedBox(
                           height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Steps Goal",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _stepsgoalController,
-                                      decoration: InputDecoration(
-                                        hintText: data!.steps_goal.toString(),
-                                      ),
-                                    )
-                                  : Text(
-                                      data!.steps_goal.toString(),
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            )
-                          ],
                         ),
                       ],
                     ),

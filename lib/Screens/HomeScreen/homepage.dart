@@ -11,7 +11,7 @@ import '../Dashboard/dashboard.dart';
 import '../Dashboard/notConnected.dart';
 
 class HomepageScreen extends StatefulWidget {
-  bool hasDeviceId;
+  final bool hasDeviceId;
 
   HomepageScreen({Key? key, required this.hasDeviceId}) : super(key: key);
 
@@ -21,8 +21,7 @@ class HomepageScreen extends StatefulWidget {
 
 class _HomepageScreenState extends State<HomepageScreen> {
   String role1 = "";
-  final BluetoothDeviceManager bluetoothDeviceManager =
-      BluetoothDeviceManager();
+  final BluetoothDeviceManager bluetoothDeviceManager = BluetoothDeviceManager();
 
   void _initializeBluetooth() {
     print(widget.hasDeviceId);
@@ -66,7 +65,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
     return location;
   }
 
-  Future<String?> getRole() async {
+  Future<void> getRole() async {
     final role = await FirebaseFirestore.instance
         .collection("users")
         .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -74,7 +73,6 @@ class _HomepageScreenState extends State<HomepageScreen> {
     setState(() {
       role1 = role.data()?['role'] ?? "";
     });
-    return null;
   }
 
   @override
@@ -88,45 +86,39 @@ class _HomepageScreenState extends State<HomepageScreen> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    print(role1);
     return role1 == 'supervisor'
         ? SupervisorDashboard()
         : StreamBuilder<List<BluetoothDevice>>(
-            stream: bluetoothDeviceManager.connectedDevicesStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              } else if (snapshot.hasData &&
-                      snapshot.data != null &&
-                      snapshot.data!.isNotEmpty) {
-                // Navigate to DashboardScreen if devices are connected
-                String deviceName = snapshot.data!.first.platformName;
-                bluetoothDeviceManager
-                    .discoverServicesAndCharacteristics(snapshot.data!.first);
-                return DashboardScreen(
-                  device: snapshot.data!.first,
-                  device_name: deviceName,
-                  mac_address: snapshot.data!.first.remoteId.toString(),
-                );
-              } else {
-                // Show NotConnectedPage if no devices are connected or Bluetooth is off
-                return NotConnectedPage(
-                  hasDeviceId: false,
-                );
-              }
-            },
+      stream: bluetoothDeviceManager.connectedDevicesStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          print(snapshot.data);
+          return Center(
+            child: CircularProgressIndicator(),
           );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
+        } else if (snapshot.hasData &&
+            snapshot.data != null &&
+            snapshot.data!.isNotEmpty) {
+          // Navigate to DashboardScreen if devices are connected
+          String deviceName = snapshot.data!.first.platformName;
+          bluetoothDeviceManager
+              .discoverServicesAndCharacteristics(snapshot.data!.first);
+          return DashboardScreen(
+            device: snapshot.data!.first,
+            device_name: deviceName,
+            mac_address: snapshot.data!.first.remoteId.toString(),
+          );
+        } else {
+          return NotConnectedPage(
+            hasDeviceId: widget.hasDeviceId,
+          );
+        }
+      },
+    );
   }
 }

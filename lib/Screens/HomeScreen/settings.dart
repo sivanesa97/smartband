@@ -21,7 +21,7 @@ class _SettingscreenState extends State<Settingscreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AppBarProfileWidget(),
-      drawer: const DrawerScreen(),
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first),
       backgroundColor: Colors.white,
       body: Column(
         children: [

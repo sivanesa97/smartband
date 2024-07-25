@@ -21,28 +21,53 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             children: [
               Expanded(
-                flex: 9,
-                child: Image.asset(
-                  "assets/logo.jpg",
-                  fit: BoxFit.contain,
-                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/logo.jpg",
+                      fit: BoxFit.contain,
+                    ),
+                    SizedBox(height: 10,),
+                    Text(
+                        "Your Health Our Priority",
+                      style: TextStyle(fontSize: width * 0.06),
+                    ),
+                    SizedBox(height: 10,),
+                    Text(
+                      "Welcome to Longlifecare..!",
+                      style: TextStyle(fontSize: width * 0.06),
+                    ),
+                  ],
+                )
               ),
               SizedBox(
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
+                child: InkWell(
+                  onTap: () {
                     Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                       maintainState: true,
                       builder: (context) =>
-                          SignIn(),
+                          PhoneSignIn(),
                     ));
                   },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(width * 0.9, 50),
-                    backgroundColor: Colors.grey,
-                    foregroundColor: Colors.white
+                  child: Container(
+                    width: width * 0.9,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        Colors.redAccent,
+                        Colors.orangeAccent.withOpacity(0.9),
+                        Colors.redAccent,
+                      ]),
+                      borderRadius: BorderRadius.circular(30)
+                    ),
+                    child: Text(
+                        "Let's get started",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: width * 0.05),
+                    ),
                   ),
-                  child: const Text("Let's Get Started"),
                 ),
               ),
             ],

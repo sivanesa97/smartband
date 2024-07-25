@@ -1,17 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../Models/twilio_service.dart';
 import '../Models/usermodel.dart';
 import '../Widgets/appBarProfile.dart';
 import '../Widgets/drawer.dart';
-import 'dashboard.dart';
+import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'dart:math';
+
+import 'dashboard.dart';
 
 class SupervisorDashboard extends ConsumerStatefulWidget {
   const SupervisorDashboard({super.key});
@@ -98,7 +100,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     }
   }
 
-  String? _selectedRole = "watch wearer";
+  String? _selectedRole = "supervisor";
   final TextEditingController _emailConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
 
@@ -194,7 +196,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const AppBarProfileWidget(),
-      drawer: const DrawerScreen(),
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
       body: user_data.when(
         data: (user) {
           Map<String, dynamic> relation = {};
@@ -242,7 +244,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
-                                        color: Colors.grey.withOpacity(0.5),
+                                        gradient: LinearGradient(colors: [Colors.redAccent, Colors.blueAccent])
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(10),
@@ -252,25 +254,25 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           children: [
                                             const CircleAvatar(
                                               radius: 30.0,
-                                              backgroundColor: Colors.white,
+                                              backgroundColor: Colors.transparent,
                                               child: Icon(
                                                 Icons.account_circle_outlined,
                                                 size: 35,
-                                                color: Colors.black,
+                                                color: Colors.white,
                                               ),
                                             ),
                                             Text(
                                               relation['name'],
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 16,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: MediaQuery.of(context).size.width * 0.05,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             const Icon(
                                               Icons.stacked_line_chart,
                                               size: 50,
-                                              color: Colors.black,
+                                              color: Colors.white,
                                             ),
                                           ],
                                         ),
@@ -285,98 +287,405 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                     Expanded(
                       child: Consumer(
                         builder: (context, watch, child) {
+                          final height = MediaQuery.of(context).size.height;
+                          final width = MediaQuery.of(context).size.width;
                           final supervisorModel =
                           ref.watch(supervisorModelProvider(dropdownValue));
                           return supervisorModel.when(
                             data: (data) {
                               return Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: SingleChildScrollView(
                                   child: Column(
                                     crossAxisAlignment:
                                     CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(
-                                        height:
-                                        MediaQuery.of(context).size.height *
-                                            0.2,
-                                        child: InfoCard(
-                                          title: 'Heart Rate',
-                                          value: data!
-                                              .first.metrics['heart_rate']
-                                              .toString(),
-                                          icon: Icons.favorite,
-                                          subtitle: 'Resting',
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height:
-                                        MediaQuery.of(context).size.height *
-                                            0.25,
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: InfoCard(
-                                                title: 'Heart Rate',
-                                                value: data
-                                                    .first.metrics['heart_rate']
-                                                    .toString(),
-                                                icon: Icons.favorite,
-                                                subtitle: 'Resting',
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: InfoCard(
-                                                title: 'Fall Axis',
-                                                value: data
-                                                    .first.metrics['fall_axis']
-                                                    .toString(),
-                                                icon: Icons.device_hub,
-                                                subtitle: 'Resting',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height:
-                                        MediaQuery.of(context).size.height *
-                                            0.25,
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: InfoCard(
-                                                title: 'Steps',
-                                                value: data
-                                                    .first.metrics['steps']
-                                                    .toString(),
-                                                icon: Icons.directions_walk,
-                                                subtitle: 'Today',
-                                              ),
-                                            ),
-                                            InkWell(
-                                              onTap: () {
-                                                openGoogleMaps(
-                                                    data.first.latitude,
-                                                    data.first.longitude);
-                                              },
-                                              child: SizedBox(
-                                                width: MediaQuery.of(context)
-                                                    .size
-                                                    .width /
-                                                    2.1,
-                                                child: InfoCard(
-                                                  title: 'Location',
-                                                  value: "",
-                                                  icon: Icons.location_on,
-                                                  subtitle:
-                                                  '${data.first.latitude}°N \n${data.first.longitude}°E',
+                                      SizedBox(height: 16,),
+                                      Center(
+                                          child: Stack(
+                                            children: [
+                                              Container(
+                                                width: width * 0.92,
+                                                height: height * 0.2,
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                  BorderRadius.circular(30),
+                                                  // Rounded corners
+                                                  child: Image.network(
+                                                    "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
+                                                    fit: BoxFit
+                                                        .cover, // Ensure the image covers the container
+                                                  ),
                                                 ),
                                               ),
+                                              Container(
+                                                width:
+                                                MediaQuery.of(context).size.width *
+                                                    0.92,
+                                                height:
+                                                MediaQuery.of(context).size.height *
+                                                    0.2,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                  BorderRadius.circular(30),
+                                                  // Rounded corners
+                                                  gradient: const LinearGradient(
+                                                    colors: [
+                                                      Color.fromRGBO(72, 151, 217, 0.8),
+                                                      Color.fromRGBO(0, 0, 0, 0.2),
+                                                      Color.fromRGBO(72, 151, 217, 0.8),
+                                                    ], // Gradient colors
+                                                    begin: Alignment.center,
+                                                    end: Alignment.centerRight,
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                    left: width * 0.07,
+                                                    top: height * 0.02),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "Location",
+                                                      style: TextStyle(
+                                                          fontSize: width * 0.07,
+                                                          color: Colors.white),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 5,
+                                                    ),
+                                                    Text(
+                                                      "Current Location ID :\n${data!.first.latitude}°N ${data!.first.longitude}°E",
+                                                      style: TextStyle(
+                                                          fontSize: width * 0.04,
+                                                          color: Colors.white),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 10,
+                                                    ),
+                                                    InkWell(
+                                                      onTap: () {
+                                                        openGoogleMaps(
+                                                            data!.first.latitude,
+                                                            data!.first.longitude);
+                                                      },
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(5.0),
+                                                        decoration: BoxDecoration(
+                                                            borderRadius:
+                                                            BorderRadius.circular(
+                                                                10.0),
+                                                            color: Colors.white),
+                                                        child: Text(
+                                                          "Open in Maps",
+                                                          style: TextStyle(
+                                                            fontSize: width * 0.04,
+                                                            color: const Color.fromRGBO(
+                                                                88, 106, 222, 0.9),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                      ),
+                                      SizedBox(height: 16,),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              width: width * 0.45,
+                                              height: height * 0.5,
+                                              child: Column(
+                                                children: [
+                                                  Expanded(
+                                                      flex: 3,
+                                                      child: Card(
+                                                        color: Color.fromRGBO(
+                                                            255, 255, 200, 0.8),
+                                                        shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                20)),
+                                                        elevation: 4,
+                                                        child: Padding(
+                                                          padding:
+                                                          const EdgeInsets.only(
+                                                              left: 12.0,
+                                                              top: 12.0),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                      Icons
+                                                                          .monitor_heart_outlined,
+                                                                      size: 30),
+                                                                  SizedBox(
+                                                                      width: width *
+                                                                          0.02),
+                                                                  Text(
+                                                                    "Fall Detection",
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                        width *
+                                                                            0.045),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Center(
+                                                                child: Image.asset(
+                                                                  "assets/fallaxis.png",
+                                                                  width:
+                                                                  width * 0.4,
+                                                                ),
+                                                              ),
+                                                              Center(
+                                                                child: Image.asset(
+                                                                  "assets/fallaxis1.png",
+                                                                  height:
+                                                                  height * 0.02,
+                                                                ),
+                                                              )
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      )
+                                                  ),
+                                                  Expanded(
+                                                    flex: 2,
+                                                    child: Card(
+                                                      color: Color.fromRGBO(255, 100, 100, 0.5),
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                                      elevation: 4,
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                                                        child: Column(
+                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                          children: [
+                                                            Row(
+                                                              children: [
+                                                                Icon(Icons.warning, size: 25),
+                                                                SizedBox(width: width * 0.01),
+                                                                Text('Emergency', style: TextStyle(fontSize: 20)),
+                                                              ],
+                                                            ),
+                                                            Stack(
+                                                              alignment: Alignment.center,
+                                                              children: [
+                                                                Container(
+                                                                  width: width * 0.25,
+                                                                  height: width * 0.25,
+                                                                  decoration: BoxDecoration(
+                                                                    borderRadius: BorderRadius.circular(width * 0.5),
+                                                                    color: Colors.redAccent,
+                                                                    boxShadow: const [
+                                                                      BoxShadow(
+                                                                        color: Colors.white,
+                                                                        blurRadius: 5.0,
+                                                                      ),
+                                                                    ],
+                                                                    border: Border.all(color: Colors.redAccent, width: 10.0),
+                                                                  ),
+                                                                ),
+                                                                Container(
+                                                                  width: width * 0.15,
+                                                                  height: width * 0.15,
+                                                                  decoration: BoxDecoration(
+                                                                    borderRadius: BorderRadius.circular(width * 0.5),
+                                                                    color: Colors.black26,
+                                                                    boxShadow: const [
+                                                                      BoxShadow(
+                                                                        color: Colors.redAccent,
+                                                                        blurRadius: 5.0,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  "SOS",
+                                                                  style: TextStyle(color: Colors.white, fontSize: 20),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              height: height * 0.5,
+                                              width: width * 0.45,
+                                              child: Column(
+                                                children: [
+                                                  Expanded(
+                                                      flex: 2,
+                                                      child: Card(
+                                                        color: const Color.fromRGBO(
+                                                            111, 211, 255,
+                                                            0.4),
+                                                        shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                20)),
+                                                        elevation: 4,
+                                                        child: Padding(
+                                                          padding:
+                                                          const EdgeInsets.only(top: 12.0, left: 12.0),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  const Icon(
+                                                                      Icons
+                                                                          .favorite_outlined,
+                                                                      size: 30),
+                                                                  SizedBox(
+                                                                      width: width *
+                                                                          0.02),
+                                                                  Text(
+                                                                    "Heart Rate",
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                        width *
+                                                                            0.04),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              SizedBox(height: 5),
+                                                              Row(
+                                                                children: [
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        data.first.metrics['heart_rate'].toString(),
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                            width * 0.07,
+                                                                            fontWeight:
+                                                                            FontWeight
+                                                                                .bold),
+                                                                      ),
+                                                                      Text(
+                                                                        " bpm",
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                            width * 0.03,
+                                                                            fontWeight:
+                                                                            FontWeight
+                                                                                .bold),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(width: 5,),
+                                                                  Image.asset(
+                                                                    "assets/heartrate.png",
+                                                                    width: data.first.metrics['heart_rate']!='--' && int.parse(data.first.metrics['heart_rate'])>100 ? width * 0.17 : width * 0.2,
+                                                                  )
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      )),
+                                                  Expanded(
+                                                      flex: 3,
+                                                      child: Card(
+                                                        color: const Color.fromRGBO(
+                                                            50, 255, 50, 0.2),
+                                                        shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                20)),
+                                                        elevation: 4,
+                                                        child: Padding(
+                                                          padding:
+                                                          const EdgeInsets.all(
+                                                              16.0),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                      Icons
+                                                                          .water_drop,
+                                                                      size: 30),
+                                                                  SizedBox(
+                                                                      width: width *
+                                                                          0.02),
+                                                                  Text(
+                                                                    "SPo2",
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                        width *
+                                                                            0.05),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              SizedBox(height: 8),
+                                                              Stack(
+                                                                alignment: Alignment.center,
+                                                                children: [
+                                                                  Padding(
+                                                                    padding: EdgeInsets.only(top: 15),
+                                                                    child: Text(
+                                                                      data.first.metrics['spo2'].toString(),
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                          width * 0.07,
+                                                                          fontWeight:
+                                                                          FontWeight
+                                                                              .bold),
+                                                                    ),
+                                                                  ),
+                                                                  Image.asset(
+                                                                    "assets/spo2.png",
+                                                                    width: width * 0.475,
+                                                                  )
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      )),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
+                                      SizedBox(height: 16,),
                                       Center(
                                         child: GestureDetector(
                                           onTap: () {

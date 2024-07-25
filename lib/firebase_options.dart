@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -53,10 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDqdTRTjfHgpf-a1zwhrcHhkp8rwRFdMEg',
-    appId: '1:845557431925:android:e6579d757ed4a0f33d023c',
-    messagingSenderId: '845557431925',
-    projectId: 'smartband-9a14d',
-    storageBucket: 'smartband-9a14d.appspot.com',
+    apiKey: 'AIzaSyC7bg96ZsKDSjsZXlbBF1PPNouayPo0e_4',
+    appId: '1:451615367539:android:2958efba726158a55f6506',
+    messagingSenderId: '451615367539',
+    projectId: 'smartband1-81618',
+    storageBucket: 'smartband1-81618.appspot.com',
   );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyCYEL72_k1qXPc4Ihoh72UnafEKc_llh3s',
+    appId: '1:451615367539:ios:9e232da08cd18ee05f6506',
+    messagingSenderId: '451615367539',
+    projectId: 'smartband1-81618',
+    storageBucket: 'smartband1-81618.appspot.com',
+    iosBundleId: 'com.example.smartband',
+  );
+
 }

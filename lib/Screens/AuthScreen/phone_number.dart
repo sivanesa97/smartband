@@ -11,43 +11,7 @@ class PhoneSignIn extends StatefulWidget {
 class _PhoneSignInState extends State<PhoneSignIn> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _codeController = TextEditingController();
 
-  String _verificationId = '';
-  bool _codeSent = false;
-
-  Future<void> _verifyPhoneNumber() async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: "+${country_code}"+_phoneController.text,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-        print(
-            'Phone number automatically verified and user signed in: ${_auth.currentUser!.uid}');
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        print('Phone number verification failed: ${e.message}');
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
-          _verificationId = verificationId;
-          _codeSent = true;
-        });
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-      },
-    );
-  }
-
-  Future<void> _signInWithPhoneNumber() async {
-    final PhoneAuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: _verificationId,
-      smsCode: _codeController.text,
-    );
-
-    await _auth.signInWithCredential(credential);
-    print('Successfully signed in UID: ${_auth.currentUser!.uid}');
-  }
   String country_code = "";
 
   @override
@@ -81,7 +45,7 @@ class _PhoneSignInState extends State<PhoneSignIn> {
                   );
                 },
                 child: Text(
-                  "LIFELONGCARE",
+                  "LONGLIFECARE",
                   style: style.copyWith(color: Colors.white),
                 ),
               ),
@@ -106,7 +70,7 @@ class _PhoneSignInState extends State<PhoneSignIn> {
                     borderSide: BorderSide()
                   ),
                 ),
-                initialCountryCode: 'IN', // Default country code
+                initialCountryCode: 'IN',
                 onChanged: (phone) {
                   print(phone.completeNumber);
                   setState(() {
@@ -133,7 +97,10 @@ class _PhoneSignInState extends State<PhoneSignIn> {
                     child: TextButton(
                       onPressed: ()
                       {
-                        Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) =>  OtpVerificationScreen(phoneNumber: '${country_code}${_phoneController.text}',)));
+                        if (_phoneController.text.length >= 10)
+                          {
+                            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) =>  OtpVerificationScreen(phoneNumber: '${country_code}${_phoneController.text}',)));
+                          }
                       },
                       child: Text(
                         'Get OTP Code',

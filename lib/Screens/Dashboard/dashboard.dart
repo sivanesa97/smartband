@@ -184,20 +184,29 @@ class _EmergencyCardState extends State<EmergencyCard> {
 
     // Check if sosClicked value has changed
     if (widget.sosClicked != oldWidget.sosClicked && widget.sosClicked) {
-      _handleSOSClick();
+      _handleSOSClick(true);
     }
   }
 
-  Future<void> _handleSOSClick() async {
-    // Update location and fetch relation details
+  Future<void> _handleSOSClick(bool sosClicked) async {
     Position location = await updateLocation();
-    //await _fetchRelationDetails(widget.relations, widget.user);
 
-    SendNotification send = SendNotification();
-    for(String i in widget.relations)
+
+    try
     {
-      // String? email = await FirebaseAuth.instance.currentUser!.email;
-      send.sendNotification(i, "Emergency!!", "User has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+      final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: FirebaseAuth.instance.currentUser!.email).get();
+      SendNotification send = SendNotification();
+      for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
+      {
+        print("Email : ${i.data()['email']}");
+        // String? email = await FirebaseAuth.instance.currentUser!.email;
+        send.sendNotification(i.data()['email'], "Emergency!!", "User has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+        print("Message sent");
+      }
+    }
+    catch(e)
+    {
+      print("Exception ${e}");
     }
 
     // Notify user
@@ -266,20 +275,14 @@ class _EmergencyCardState extends State<EmergencyCard> {
           children: [
             Row(
               children: [
-                Icon(Icons.error, size: 25),
+                Icon(Icons.warning, size: 25),
                 SizedBox(width: width * 0.01),
                 Text('Emergency', style: TextStyle(fontSize: 20)),
               ],
             ),
             InkWell(
               onTap: () async {
-                // Toggle SOS click status and trigger notifications
-                setState(() {
-                  widget.sosClicked = !widget.sosClicked;
-                });
-                if (widget.sosClicked) {
-                  _handleSOSClick();
-                }
+                _handleSOSClick(widget.sosClicked);
               },
               child: Stack(
                 alignment: Alignment.center,

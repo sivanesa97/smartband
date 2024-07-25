@@ -37,10 +37,11 @@ class SendNotification {
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission');
       final data = await FirebaseFirestore.instance.collection("users").where('email',isEqualTo: email).get();
+      print(data.docs.first.data());
       final targetToken = data.docs.first.data()['fcmKey'];
       final token = await getAccessToken();
 
-      final url = Uri.parse('https://fcm.googleapis.com/v1/projects/smartband-9a14d/messages:send');
+      final url = Uri.parse('https://fcm.googleapis.com/v1/projects/smartband1-81618/messages:send');
       final headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

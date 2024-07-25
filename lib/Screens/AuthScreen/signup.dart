@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -5,11 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import '../Models/twilio_service.dart';
-import '../Widgets/appBar.dart';
+import 'package:http/http.dart' as http;
 import 'dart:math';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  String phNo;
+  String role;
+
+  SignupScreen({super.key, required this.phNo, required this.role});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -25,6 +30,22 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _weight = TextEditingController();
   final TextEditingController _emailConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
+
+  DateTime? _selectedDate;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _dateOfBirth.text = "${picked.year}-${picked.month.toString().padLeft(2,'0')}-${picked.day.toString().padLeft(2,'0')}";
+      });
+    }
+  }
 
   bool _isValid = false;
   String? _selectedGender;
@@ -51,18 +72,22 @@ class _SignupScreenState extends State<SignupScreen> {
     return GeoPoint(location.latitude, location.longitude);
   }
 
-  Future<void> signUpWithCredentials(int otp_num) async {
+  Future<void> signUpWithCredentials() async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailId.text,
-        password: _password.text,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Creating account... Please wait")));
-      if (_selectedRole == "watch wearer") {
+      try {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailId.text,
+          password: "admin123",
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Creating account... Please wait")));
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Fetching Location... Please wait")));
         final locationData = await getLocation();
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailId.text,
+          password: "admin123",
+        );
         await FirebaseFirestore.instance
             .collection('users')
             .doc(FirebaseAuth.instance.currentUser?.uid)
@@ -77,8 +102,8 @@ class _SignupScreenState extends State<SignupScreen> {
           'relations': [],
           'isSOSClicked': false,
           'location': locationData,
-          'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-          'role': _selectedRole,
+          'metrics': {'heart_rate': 0, 'spo2': 0, 'fall_axis': "-- -- --"},
+          'role': widget.role,
           "emergency": {
             "name": "",
             "blood_group": "",
@@ -88,62 +113,41 @@ class _SignupScreenState extends State<SignupScreen> {
             "organ_donor": false,
             "contact": 0,
           },
-          'device_id' : "",
+          'device_id': "",
           'steps_goal': 0,
           'fcmKey': await FirebaseMessaging.instance.getToken()
         });
+
+        final response = await http.post(
+          Uri.parse("https://snvisualworks.com/public/api/auth/register"),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, dynamic>{
+            'name': _username.text,
+            'mobile_number': _phone_number.text,
+            'email': _emailId.text,
+            'date_of_birth': _dateOfBirth.text,
+            'gender': _selectedGender?.toLowerCase(),
+            'height': int.parse(_height.text),
+            'weight': int.parse(_weight.text),
+          }),
+        );
+        print(response.statusCode);
+
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Account created successfully")));
         Navigator.of(context, rootNavigator: true).pushReplacement(
             MaterialPageRoute(
-                maintainState: true, builder: (context) => HomepageScreen(hasDeviceId: false,)));
+                maintainState: true,
+                builder: (context) => HomepageScreen(hasDeviceId: false,)));
       }
-      else {
-        if ( _otpConn.text!="" && _otpConn.text == otp_num.toString()) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text("Fetching Location... Please wait")));
-          final locationData = await getLocation();
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(FirebaseAuth.instance.currentUser?.uid)
-              .set({
-            'name': _username.text,
-            'dob': _dateOfBirth.text,
-            'height': double.parse(_height.text),
-            'weight': double.parse(_weight.text),
-            'email': _emailId.text,
-            'gender': _selectedGender,
-            'phone_number': int.parse(_phone_number.text),
-            'relations': FieldValue.arrayUnion([_emailConn.text]),
-            'location': locationData,
-            'metrics': {'heart_rate': 0, 'steps': 0, 'fall_axis': 0},
-            'role': "supervisor",
-            'isSOSClicked': false,
-            "emergency": {
-              "name": "",
-              "blood_group": "",
-              "medical_notes": "",
-              "address": "",
-              "medications": "",
-              "organ_donor": false,
-              "contact": 0,
-            },
-            "device_id" : "",
-            'steps_goal': 0,
-            'fcmKey': await FirebaseMessaging.instance.getToken()
-          });
-          print("User created");
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Account created successfully")));
-          Navigator.of(context, rootNavigator: true).push(
-            MaterialPageRoute(
-                maintainState: true, builder: (context) => HomepageScreen(hasDeviceId: false,)),
-          );
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
-        }
-      }
+      catch (exception)
+    {
+      User? user = FirebaseAuth.instance.currentUser;
+      user?.delete();
+      print("Account deleted");
+    }
     } on FirebaseAuthException catch (e) {
       User? user = FirebaseAuth.instance.currentUser;
       user?.delete();
@@ -155,8 +159,11 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("The account already exists for that email.")));
       }
-    } catch (e) {
-      print(e);
+      else
+        {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Error : ${e.message}")));
+        }
     }
   }
 
@@ -166,7 +173,8 @@ class _SignupScreenState extends State<SignupScreen> {
     fromNumber: '+17628009114',
   );
 
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(String email, int otp_num) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(String email,
+      int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
@@ -205,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return DropdownMenuItem<String>(
                           value: value,
                           child:
-                              Text(value[0].toUpperCase() + value.substring(1)),
+                          Text(value[0].toUpperCase() + value.substring(1)),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -217,29 +225,29 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                            controller: _emailConn,
-                            decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Email',
-                                suffixIcon: IconButton(
-                                    onPressed: () {
-                                      sent = true;
-                                      _otpConn.text="";
-                                      _fetchRelationDetails(
-                                          _emailConn.text, otp_num);
-                                    },
-                                    icon: Icon(sent ? Icons.check : Icons.send))),
-                          )
+                      controller: _emailConn,
+                      decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Email',
+                          suffixIcon: IconButton(
+                              onPressed: () {
+                                sent = true;
+                                _otpConn.text = "";
+                                _fetchRelationDetails(
+                                    _emailConn.text, otp_num);
+                              },
+                              icon: Icon(sent ? Icons.check : Icons.send))),
+                    )
                         : const SizedBox.shrink(),
                     SizedBox(height: 16,),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                            controller: _otpConn,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: 'OTP',
-                            ),
-                          )
+                      controller: _otpConn,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'OTP',
+                      ),
+                    )
                         : const SizedBox.shrink(),
                   ],
                 ),
@@ -254,11 +262,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextButton(
                   child: const Text('OK'),
                   onPressed: () {
-                    if (_selectedRole=='supervisor' && _emailConn.text!="" || _selectedRole=='watch wearer')
-                      {
-                        signUpWithCredentials(otp_num);
-                        Navigator.of(context, rootNavigator: true).pop();
-                      }
+                    if (_selectedRole == 'supervisor' &&
+                        _emailConn.text != "" ||
+                        _selectedRole == 'watch wearer') {
+                      signUpWithCredentials();
+                      Navigator.of(context, rootNavigator: true).pop();
+                    }
                   },
                 ),
               ],
@@ -270,203 +279,198 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _phone_number.text = widget.phNo.substring(3,widget.phNo.length);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery
+        .of(context)
+        .size
+        .height;
+    final width = MediaQuery
+        .of(context)
+        .size
+        .width;
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const AppBarWidget(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Sign up",
-                style: TextStyle(
-                  fontSize: 35,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: height * 0.02,),
+                SizedBox(
+                  height: height * 0.075,
                 ),
-              ),
-              SizedBox(
-                height: height * 0.09,
-              ),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _username,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Name',
-                      suffixIcon: _isValid
-                          ? const Icon(Icons.check, color: Colors.green)
-                          : null,
-                    ),
-                    onChanged: _validateUsername,
+                Text(
+                  "Personal Information",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: width * 0.08,
                   ),
                 ),
-              ),
-              SizedBox(height: height * 0.015),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _emailId,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Email',
+                SizedBox(
+                  height: height * 0.01,
+                ),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _username,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: 'Full Name',
+                        suffixIcon: _isValid
+                            ? const Icon(Icons.check, color: Colors.green)
+                            : null,
+                      ),
+                      onChanged: _validateUsername,
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: height * 0.015,
-              ),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _password,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Password',
+                SizedBox(height: height * 0.015),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _emailId,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Email',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                height: height * 0.015,
-              ),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _phone_number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Phone Number',
+                SizedBox(
+                  height: height * 0.015,
+                ),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _phone_number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Phone Number',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: height * 0.015),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _dateOfBirth,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'D.o.B',
+                SizedBox(height: height * 0.015),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _dateOfBirth,
+                      decoration: InputDecoration(
+                        labelText: 'Select Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () => _selectDate(context),
+                        ),
+                      ),
+                      readOnly: true,
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: height * 0.015),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Select your gender',
+                SizedBox(height: height * 0.015),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Select your gender',
+                      ),
+                      value: _selectedGender,
+                      items: ['Male', 'Female', 'Other'].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedGender = newValue;
+                        });
+                      },
                     ),
-                    value: _selectedGender,
-                    items: ['Male', 'Female', 'Other'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedGender = newValue;
-                      });
+                  ),
+                ),
+                SizedBox(
+                  height: height * 0.015,
+                ),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _height,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Height',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: height * 0.015),
+                Center(
+                  child: SizedBox(
+                    width: width * 0.9,
+                    child: TextFormField(
+                      controller: _weight,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Weight',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: height * 0.015),
+                SizedBox(
+                  height: height * 0.015,
+                ),
+                SizedBox(
+                  height: 50,
+                  child: InkWell(
+                    onTap: () {
+                      if (_username.text != "" && _emailId.text != "" &&
+                          _phone_number.text != "" && _dateOfBirth.text != "" &&
+                          _height.text != "" && _weight.text != "" && _selectedGender!="")
+                        {
+                          signUpWithCredentials();
+                        }
                     },
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: height * 0.015,
-              ),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _height,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Height',
+                    child : Container(
+                      width: width * 0.9,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [
+                            Colors.redAccent,
+                            Colors.orangeAccent.withOpacity(0.9),
+                            Colors.redAccent,
+                          ]),
+                          borderRadius: BorderRadius.circular(30)
+                      ),
+                      child: Text(
+                        "Continue",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: width * 0.05),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: height * 0.015),
-              Center(
-                child: SizedBox(
-                  width: width * 0.9,
-                  child: TextFormField(
-                    controller: _weight,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Weight',
-                    ),
-                  ),
+                SizedBox(
+                  height: height * 0.03,
                 ),
-              ),
-              SizedBox(height: height * 0.015),
-              Align(
-                alignment: Alignment.centerRight,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "Already have an account?",
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        WidgetSpan(
-                          child: Icon(
-                            Icons.arrow_right_alt,
-                            size: 16,
-                            weight: 700,
-                            color: Colors.redAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: height * 0.015,
-              ),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showRoleDialog();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(width * 0.9, 50),
-                    backgroundColor: Colors.black26,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    "SIGN UP",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: height * 0.03,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -28,7 +28,7 @@ class _SignInState extends State<SignIn> {
         password: _password.text,
       );
       User? user = await FirebaseAuth.instance.currentUser;
-      FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+      await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
         'fcmKey' : await FirebaseMessaging.instance.getToken()
       });
       final data = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
@@ -232,7 +232,7 @@ class _SignInState extends State<SignIn> {
                         Navigator.of(context, rootNavigator: true)
                             .push(MaterialPageRoute(
                           maintainState: true,
-                          builder: (context) => const SignupScreen(),
+                          builder: (context) => SignupScreen(phNo: "",role: "",),
                         ));
                       },
                       child: const Text(

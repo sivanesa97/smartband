@@ -39,11 +39,9 @@ class BluetoothDeviceManager {
 
   void _initialize() {
     FlutterBluePlus.adapterState.listen((state) async {
-      if (state == BluetoothAdapterState.on) {
-        scanForDevices();
-      } else {
+      if (state != BluetoothAdapterState.on) {
         scanResults.clear();
-        connectedDevicesController.add(connectedDevices); // Clear connected devices when Bluetooth is off
+        connectedDevicesController.add(connectedDevices);
         print("Bluetooth is off");
       }
     }, onError: (error) {
@@ -67,7 +65,7 @@ class BluetoothDeviceManager {
     }
   }
 
-  void scanForDevices() {
+  void scanForDevices() async {
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
     print("Scan started");
 
@@ -89,79 +87,73 @@ class BluetoothDeviceManager {
 
   Future<void> connectToDevice(BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
-      final data = await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).get();
-      String device_name = data.data()!['device_id'];
-      print(device_name);
-      if( device_name == device.platformName)
-        {
-          await device.connect();
-          connectedDevices.add(device);
-          connectedDevicesController.add(connectedDevices); // Update connected devices list
+      final data = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get();
+      String deviceName = data.data()?['device_id'] ?? '';
 
-          final bsSubscription = device.bondState.listen((value) {
-            print("Bond State: $value");
-          });
-          device.cancelWhenDisconnected(bsSubscription);
-          await device.createBond();
+      if (deviceName.isEmpty || deviceName == device.platformName) {
+        await device.connect();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => InstructionsScreen(
+              onNext: () {
+                return;
+              },
+            ),
+          ),
+        );
+        connectedDevices.add(device);
+        connectedDevicesController.add(connectedDevices); // Update connected devices list
 
-          device.connectionState.listen((state) {
-            if (state == BluetoothConnectionState.disconnected) {
-              print("Not connected to device: ${device.platformName}");
-              connectedDevices.remove(device);
-              connectedDevicesController.add(connectedDevices); // Update list on disconnection
-            } else {
-              print("Connected to device: ${device.platformName}");
-              connectedDevicesController.add(connectedDevices);
+        final bsSubscription = device.bondState.listen((value) {
+          print("Bond State: $value");
+        });
+        device.cancelWhenDisconnected(bsSubscription);
+        await device.createBond();
+
+        device.connectionState.listen((state) async {
+          if (state == BluetoothConnectionState.disconnected) {
+            print("Not connected to device: ${device.platformName}");
+            connectedDevices.remove(device);
+            connectedDevicesController.add(connectedDevices);
+          } else {
+            print("Connected to device: ${device.platformName}");
+            if (deviceName.isEmpty) {
+              await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).update({
+                "device_id": device.platformName
+              });
             }
-          });
-
-          if (connectedDevices.isNotEmpty) {
             isComplete = true;
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => InstructionsScreen(
-                  onNext: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => DashboardScreen(
-                          device: device,
-                          device_name: device.platformName,
-                          mac_address: device.remoteId.toString(),
-                        ),
-                      ),
-                    );
+            connectedDevicesController.add(connectedDevices);
+          }
+        });
+      } else {
+        print("Device ID doesn't match");
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Error'),
+              content: Text('Device ID are not matching. Please check'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
                   },
                 ),
-              ),
+              ],
             );
-          }
-        }
-      else
-        {
-          print("Device ID don't match");
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('Error'),
-                content: Text('Device ID are not matching. Please check'),
-                actions: <Widget>[
-                  TextButton(
-                    child: Text('OK'),
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Close the dialog
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        }
-
+          },
+        );
+      }
     } catch (e) {
       print('Error connecting to device: $e');
     }
   }
+
 
   Future<void> discoverServicesAndCharacteristics(BluetoothDevice device) async {
     try {
@@ -207,8 +199,9 @@ class BluetoothDeviceManager {
     if (connectedDevices.isNotEmpty) {
       try {
         print("Disconnecting from device: ${connectedDevices.first}");
+        await connectedDevices.first.removeBond();
         await connectedDevices.first.disconnect();
-        connectedDevices.removeAt(0); // Remove the first device
+        connectedDevices.removeAt(0);
         connectedDevicesController.add(connectedDevices); // Update the list after disconnection
         print("Disconnected from device");
       } catch (e) {

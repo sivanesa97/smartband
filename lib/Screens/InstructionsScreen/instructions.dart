@@ -57,11 +57,7 @@ class _InstructionsScreenState extends State<InstructionsScreen> {
                   description: 'Open Vigour: Open little finger & thumb',
                   isLastPage: true,
                   onNext: () {
-                    Navigator.of(context, rootNavigator: true)
-                        .pushReplacement(MaterialPageRoute(
-                            builder: (context) => HomepageScreen(
-                                  hasDeviceId: true,
-                                )));
+                    Navigator.of(context).pop();
                   },
                 ),
               ],
