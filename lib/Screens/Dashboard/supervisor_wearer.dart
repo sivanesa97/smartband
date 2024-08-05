@@ -4,10 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../Models/twilio_service.dart';
 import '../Models/usermodel.dart';
 import '../Widgets/appBarProfile.dart';
 import '../Widgets/drawer.dart';
@@ -15,7 +15,8 @@ import 'dashboard.dart';
 import 'dart:math';
 
 class SupervisorWearer extends ConsumerStatefulWidget {
-  const SupervisorWearer({super.key});
+  String phno;
+  SupervisorWearer({super.key, required this.phno});
 
   @override
   ConsumerState<SupervisorWearer> createState() => _WearerDashboardState();
@@ -26,23 +27,23 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
 
   // Function to show supervisor dialog and handle OTP verification
   void _showSupervisorDialog(int otp_num) async {
-    if (_emailConn.text != FirebaseAuth.instance.currentUser!.email &&
-        _otpConn.text == otp_num.toString()) {
-      String emailToCheck = _emailConn.text;
+    if (_phoneConn.text != widget.phno){
+        // _otpConn.text == otp_num.toString()) {
+      String phonetoCheck = _phoneConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var querySnapshot =
-      await usersCollection.where('email', isEqualTo: emailToCheck).get();
+      await usersCollection.where('phone_number', isEqualTo: int.parse(phonetoCheck)).get();
       if (querySnapshot.docs.isNotEmpty) {
         await usersCollection
             .doc(FirebaseAuth.instance.currentUser!.uid)
             .update({
-          "relations": FieldValue.arrayUnion([emailToCheck])
+          "relations": FieldValue.arrayUnion([phonetoCheck])
         });
 
         Navigator.of(context, rootNavigator: true).pop();
       } else {
         // Handle email not existing case
-        print("Email does not exist in the collection.");
+        print("Phone number does not exist in the collection.");
       }
     } else {
       ScaffoldMessenger.of(context)
@@ -51,14 +52,14 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
   }
 
   // Function to fetch relation details where current user email is in relations array
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> email) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> phone_number) async {
     List<Map<String, dynamic>> relationDetails = [];
-    for(String i in email)
+    for(String i in phone_number)
       {
         var userDoc = await FirebaseFirestore.instance
             .collection('users')
-            .where('email',
-            isEqualTo: i)
+            .where('phone_number',
+            isEqualTo: int.parse(i))
             .get();
 
         if (userDoc.docs.isNotEmpty) {
@@ -68,23 +69,18 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
     return relationDetails;
   }
 
-  final TwilioService twilioService = TwilioService(
-    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
-    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
-    fromNumber: '+17628009114',
-  );
-
   Future<List<Map<String, dynamic>>> _fetchPhoneDetails(
-      String email, int otp_num) async {
+      String phone_number, int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where('email', isEqualTo: email)
+        .where('phone_number', isEqualTo: phone_number)
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
-      await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
+      print(otp_num);
+      // await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
     }
     return relationDetails;
   }
@@ -100,8 +96,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
     }
   }
 
-  String? _selectedRole = "watch wearer";
-  final TextEditingController _emailConn = TextEditingController();
+  String? _selectedRole = "supervisor";
+  final TextEditingController _phoneConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
 
   void _showRoleDialog() {
@@ -140,15 +136,15 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _emailConn,
+                      controller: _phoneConn,
                       decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          labelText: 'Email',
+                          labelText: 'Phone Number',
                           suffixIcon: IconButton(
                               onPressed: () {
                                 sent = true;
                                 _fetchPhoneDetails(
-                                    _emailConn.text, otp_num);
+                                    _phoneConn.text, otp_num);
                               },
                               icon:
                               Icon(sent ? Icons.check : Icons.send))),
@@ -196,7 +192,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const AppBarProfileWidget(),
-      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first, phNo: widget.phno,),
       body: SafeArea(
         child: user_data.when(
           data: (user) {
@@ -212,7 +208,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   List<Map<String, dynamic>> relationDetails = snapshot.data!;
                   if (dropdownValue == 'No Users') {
-                    dropdownValue = relationDetails.first['email'];
+                    dropdownValue = relationDetails.first['phone_number'].toString();
                     relation = relationDetails.first;
                   }
 
@@ -237,13 +233,13 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                             items: relationDetails.map<DropdownMenuItem<String>>(
                                     (Map<String, dynamic> relation) {
                                   return DropdownMenuItem<String>(
-                                    value: relation['email'],
+                                    value: relation['phone_number'].toString(),
                                     child: Padding(
                                       padding: EdgeInsets.all(5),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(10),
-                                          color: Colors.grey.withOpacity(0.5),
+                                          color: Color.fromRGBO(0, 83, 188, 1).withOpacity(0.5),
                                         ),
                                         child: Padding(
                                           padding: const EdgeInsets.all(10),
@@ -293,7 +289,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                             return supervisorModel.when(
                               data: (data) {
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 0.0),
                                   child: SingleChildScrollView(
                                     child: Column(
                                       crossAxisAlignment:
@@ -359,7 +355,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                         height: 5,
                                                       ),
                                                       Text(
-                                                        "Current Location ID :\n${data!.first.latitude}°N ${data!.first.longitude}°E",
+                                                        "Current Location ID :\n${data!.first.latitude}°N ${data.first.longitude}°E",
                                                         style: TextStyle(
                                                             fontSize: width * 0.04,
                                                             color: Colors.white),
@@ -401,17 +397,16 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8.0),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             mainAxisAlignment:
                                             MainAxisAlignment.center,
                                             children: [
                                               Container(
                                                 width: width * 0.45,
-                                                height: height * 0.3,
+                                                height: height * 0.45,
                                                 child: Column(
                                                   children: [
                                                     Expanded(
-                                                        flex: 3,
+                                                        flex: 2,
                                                         child: Card(
                                                           color: Color.fromRGBO(
                                                               255, 255, 200, 0.8),
@@ -452,22 +447,75 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                 ),
                                                                 Center(
                                                                   child: Image.asset(
-                                                                    "assets/fallaxis.png",
-                                                                    width:
-                                                                    width * 0.4,
+                                                                    data.first.metrics['fall_axis']=='1' ? "assets/fallaxis.png" : "assets/fallaxis0.png",
+                                                                    height: height * 0.15,
                                                                   ),
                                                                 ),
-                                                                Center(
-                                                                  child: Image.asset(
-                                                                    "assets/fallaxis1.png",
-                                                                    height:
-                                                                    height * 0.02,
-                                                                  ),
-                                                                )
                                                               ],
                                                             ),
                                                           ),
                                                         )),
+                                                    Expanded(
+                                                        flex: 2,
+                                                        child: Card(
+                                                          color: Color.fromRGBO(255, 234, 234, 1),
+                                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                                          elevation: 4,
+                                                          child: Padding(
+                                                            padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                                                            child: Column(
+                                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                              children: [
+                                                                Row(
+                                                                  children: [
+                                                                    Icon(Icons.warning, size: 25),
+                                                                    SizedBox(width: width * 0.01),
+                                                                    Text('Emergency', style: TextStyle(fontSize: width * 0.05)),
+                                                                  ],
+                                                                ),
+                                                                Stack(
+                                                                  alignment: Alignment.center,
+                                                                  children: [
+                                                                    Container(
+                                                                      width: width * 0.25,
+                                                                      height: width * 0.25,
+                                                                      decoration: BoxDecoration(
+                                                                        borderRadius: BorderRadius.circular(width * 0.5),
+                                                                        color:  Colors.white,
+                                                                        boxShadow: const [
+                                                                          BoxShadow(
+                                                                            color: Colors.redAccent,
+                                                                            blurRadius: 5.0,
+                                                                          ),
+                                                                        ],
+                                                                        border: Border.all(color: Colors.redAccent, width: 10.0),
+                                                                      ),
+                                                                    ),
+                                                                    Container(
+                                                                      width: width * 0.15,
+                                                                      height: width * 0.15,
+                                                                      decoration: BoxDecoration(
+                                                                        borderRadius: BorderRadius.circular(width * 0.5),
+                                                                        color: Colors.black26,
+                                                                        boxShadow: const [
+                                                                          BoxShadow(
+                                                                            color: Colors.redAccent,
+                                                                            blurRadius: 5.0,
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                    Text(
+                                                                      "SOS",
+                                                                      style: TextStyle(color: Colors.white, fontSize: 20),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        )
+                                                    ),
                                                   ],
                                                 ),
                                               ),
@@ -480,8 +528,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                         flex: 2,
                                                         child: Card(
                                                           color: const Color.fromRGBO(
-                                                              111, 211, 255,
-                                                              0.4),
+                                                              228, 240, 254, 1),
                                                           shape:
                                                           RoundedRectangleBorder(
                                                               borderRadius:
@@ -511,14 +558,21 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                       style: TextStyle(
                                                                           fontSize:
                                                                           width *
-                                                                              0.04),
+                                                                              0.045),
                                                                     ),
                                                                   ],
                                                                 ),
-                                                                SizedBox(height: 5),
-                                                                Row(
+                                                                SizedBox(height: 8),
+                                                                Column(
                                                                   children: [
+                                                                    Image.asset(
+                                                                      "assets/heartrate.png",
+                                                                      width:
+                                                                      width * 0.3,
+                                                                    ),
+                                                                    SizedBox(height: 10,),
                                                                     Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
                                                                       children: [
                                                                         Text(
                                                                           data.first.metrics['heart_rate'].toString(),
@@ -527,7 +581,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                               width * 0.07,
                                                                               fontWeight:
                                                                               FontWeight
-                                                                                  .bold),
+                                                                                  .bold,
+                                                                              color: Color.fromRGBO(0, 83, 188, 1)
+                                                                          ),
                                                                         ),
                                                                         Text(
                                                                           " bpm",
@@ -536,15 +592,12 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                               width * 0.03,
                                                                               fontWeight:
                                                                               FontWeight
-                                                                                  .bold),
+                                                                                  .bold,
+                                                                              color: Color.fromRGBO(0, 83, 188, 1)
+                                                                          ),
                                                                         ),
                                                                       ],
                                                                     ),
-                                                                    SizedBox(width: 5,),
-                                                                    Image.asset(
-                                                                      "assets/heartrate.png",
-                                                                      width: data.first.metrics['heart_rate']!='--' && int.parse(data.first.metrics['heart_rate'])>100 ? width * 0.17 : width * 0.2,
-                                                                    )
                                                                   ],
                                                                 ),
                                                               ],
@@ -552,7 +605,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                           ),
                                                         )),
                                                     Expanded(
-                                                        flex: 3,
+                                                        flex: 2,
                                                         child: Card(
                                                           color: const Color.fromRGBO(
                                                               50, 255, 50, 0.2),
@@ -582,7 +635,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                         width: width *
                                                                             0.02),
                                                                     Text(
-                                                                      "SPo2",
+                                                                      "SpO₂",
                                                                       style: TextStyle(
                                                                           fontSize:
                                                                           width *
@@ -594,22 +647,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                 Stack(
                                                                   alignment: Alignment.center,
                                                                   children: [
-                                                                    Padding(
-                                                                      padding: EdgeInsets.only(top: 15),
-                                                                      child: Text(
-                                                                        data.first.metrics['spo2'].toString(),
-                                                                        style: TextStyle(
-                                                                            fontSize:
-                                                                            width * 0.07,
-                                                                            fontWeight:
-                                                                            FontWeight
-                                                                                .bold),
-                                                                      ),
-                                                                    ),
-                                                                    Image.asset(
-                                                                      "assets/spo2.png",
-                                                                      width: width * 0.475,
-                                                                    )
+                                                                    Center(child: SpO2Gauge(percentage: data.first.metrics['spo2']!=null ? int.parse(data.first.metrics['spo2'].toString()) : 25))
                                                                   ],
                                                                 ),
                                                               ],
@@ -622,23 +660,6 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                             ],
                                           ),
                                         ),
-                                        SizedBox(height: 16,),
-                                        Center(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _showRoleDialog();
-                                              print("Adding users");
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 10.0),
-                                              child: const Text(
-                                                "Add users",
-                                                style: TextStyle(fontSize: 18),
-                                              ),
-                                            ),
-                                          ),
-                                        )
                                       ],
                                     ),
                                   ),

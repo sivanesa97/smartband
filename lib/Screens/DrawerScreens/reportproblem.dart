@@ -4,7 +4,8 @@ import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
 class Reportproblem extends StatefulWidget {
-  const Reportproblem({super.key});
+  final String phNo;
+  Reportproblem({super.key, required this.phNo});
 
   @override
   State<Reportproblem> createState() => _ReportproblemState();
@@ -15,7 +16,6 @@ class _ReportproblemState extends State<Reportproblem> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
       appBar: const AppBarWidget(),
       body: SafeArea(
         child: Padding(

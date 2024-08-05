@@ -21,7 +21,7 @@ class SendNotification {
     return accessToken.data;
   }
 
-  Future<void> sendNotification(String email, String title, String body) async {
+  Future<void> sendNotification(String phone_number, String title, String body) async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
     NotificationSettings settings = await messaging.requestPermission(
@@ -33,10 +33,11 @@ class SendNotification {
       provisional: false,
       sound: true,
     );
+    print(phone_number);
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission');
-      final data = await FirebaseFirestore.instance.collection("users").where('email',isEqualTo: email).get();
+      final data = await FirebaseFirestore.instance.collection("users").where('phone_number',isEqualTo: int.parse(phone_number)).get();
       print(data.docs.first.data());
       final targetToken = data.docs.first.data()['fcmKey'];
       final token = await getAccessToken();

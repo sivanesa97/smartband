@@ -4,7 +4,8 @@ import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
 class Helpandsupport extends StatefulWidget {
-  const Helpandsupport({super.key});
+  final String phNo;
+  Helpandsupport({super.key, required this.phNo});
 
   @override
   State<Helpandsupport> createState() => _HelpandsupportState();
@@ -15,7 +16,7 @@ class _HelpandsupportState extends State<Helpandsupport> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
+      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first, phNo: widget.phNo,),
       appBar: const AppBarWidget(),
       body: SafeArea(
         child: Padding(

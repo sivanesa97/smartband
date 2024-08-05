@@ -16,162 +16,208 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-  late List<Widget> _children;
-
-  @override
-  void initState() {
-    super.initState();
-    _children = [
-      MainScreen(phNo: widget.phNo),
-      Aboutus(),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _children[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Info',
-          ),
-        ],
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        selectedItemColor: Colors.orange,
-        showUnselectedLabels: false,
-      ),
+      body: MainScreen(phNo: widget.phNo,),
     );
   }
 }
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   String phNo;
   MainScreen({super.key, required this.phNo});
 
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
   Future<GeoPoint> getLocation() async {
     Position location = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
     return GeoPoint(location.latitude, location.longitude);
   }
 
+  String selected_role = 'watch wearer';
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'LONGLIFECARE',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: height * 0.07),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Column(
-                children: [
-                  Text(
-                    'Welcome to Longlifecare!',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 15),
-                  Text(
-                    'Our app ensures the safety and well-being of your elderly loved ones. Together, let\'s create a safer future.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: height * 0.07),
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => SignupScreen(phNo: phNo, role: "watch wearer",)));
-              },
-              child: Container(
-                width: width * 0.9,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(width: 1, color: Colors.blueGrey),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "assets/logo.jpg",
+                  height: 100,
+                  width: 100,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                Text(
+                  'LONGLIFECARE',
+                  style: TextStyle(
+                    fontSize: width * 0.04,
+                  ),
+                ),
+                SizedBox(height: height * 0.05),
+                Text(
+                  'Select one to continue',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: width * 0.05,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                SizedBox(height: height * 0.07),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.watch, color: Colors.white, size: width * 0.15),
-                    SizedBox(width: width * 0.1),
-                    Text(
-                      'Device Owner',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: width * 0.055,
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selected_role = 'watch wearer';
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(15.0),
+                            child: Image.network(
+                              "https://img.freepik.com/free-photo/close-up-senior-person-while-learning_23-2149072430.jpg?w=360&t=st=1722356681~exp=1722357281~hmac=394f6420821dd3d25555d49bd8f4931f3907a92092a88075987a74c3a9f90235",
+                              width: width * 0.42,
+                              height: height * 0.3,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          SizedBox(height: height * 0.02),
+                          Text(
+                            'Device Owner',
+                            style: TextStyle(
+                              color: selected_role=='watch wearer' ? Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              fontSize: width * 0.045,
+                            ),
+                          ),
+                          SizedBox(height: height * 0.02),
+                          if (selected_role=='watch wearer')
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.lightGreen
+                              ),
+                              child: Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: width * 0.05),
+                    GestureDetector(
+                      onTap: () async {
+                        setState(() {
+                          selected_role = "supervisor";
+                        });
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(15.0),
+                            child: Image.network(
+                              "https://img.freepik.com/premium-photo/front-view-people-studying-classroom_23-2150312847.jpg?w=996",
+                              fit: BoxFit.cover,
+                              height: height * 0.3,
+                              width: width * 0.42,
+                            ),
+                          ),
+                          SizedBox(height: height * 0.02),
+                          Text(
+                            'Monitoring Person',
+                            style: TextStyle(
+                              color: selected_role=="supervisor" ? Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              fontSize: width * 0.045,
+                            ),
+                          ),
+                          SizedBox(height: height * 0.02,),
+                          if (selected_role=='supervisor')
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.lightGreen
+                              ),
+                              child: Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white
+                              ),
+                              child: Icon(
+                                  Icons.check,
+                                color: Colors.white,
+                              ),
+                            )
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            SizedBox(height: height * 0.07),
-            GestureDetector(
-              onTap: () async {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => SignupScreen(phNo: phNo, role: "supervisor",)));
-              },
-              child: Container(
-                width: width * 0.9,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(width: 1, color: Colors.blueGrey),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.account_circle_outlined, color: Colors.white, size: width * 0.15),
-                    SizedBox(width: width * 0.1),
-                    Text(
-                      'Monitoring Person',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: width * 0.055,
+                SizedBox(height: height * 0.15,),
+                Center(
+                    child: Container(
+                      width: width * 0.9,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Color.fromRGBO(0, 83, 188, 1),
                       ),
-                    ),
-                  ],
+                      child: TextButton(
+                        onPressed: ()
+                        {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => SignupScreen(phNo: widget.phNo, role: selected_role,)));
+                        },
+                        child: Text(
+                          'Continue',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: width * 0.05
+                          ),
+                        ),
+                      ),
+                    )
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

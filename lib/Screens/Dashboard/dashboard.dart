@@ -8,10 +8,14 @@ import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_wearer.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
+import 'package:smartband/Screens/HomeScreen/heart_rate.dart';
+import 'package:smartband/Screens/HomeScreen/history_screen.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
+import 'package:smartband/Screens/HomeScreen/spo2.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
+import 'package:smartband/Screens/Widgets/coming_soon.dart';
 import 'package:smartband/pushnotifications.dart';
-import '../Models/twilio_service.dart';
+
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String device_name;
@@ -38,11 +42,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = 0;
+  }
+
   String? user;
 
   @override
   Widget build(BuildContext context) {
     final userData = ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+    int index = 0;
 
     return userData.when(
       data: (data) {
@@ -50,10 +61,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           user = data?.role;
         });
         List<Widget> _widgetOptions = <Widget>[
-          WearerDashboard(device: widget.device),
-          const SupervisorWearer(),
-          const Emergencycard(),
-          Settingscreen(device_name: widget.device_name, mac_address: widget.mac_address),
+          WearerDashboard(device: widget.device, phNo: data!.phone_number.toString(),),
+          HeartrateScreen(device: widget.device, phNo: data.phone_number.toString(),),
+          Spo2Screen(device: widget.device, phNo: data.phone_number.toString(),),
+          HistoryScreen(device: widget.device, phNo: data.phone_number.toString(),),
         ];
 
         List<BottomNavigationBarItem> _bottomNavigationBarItems = <BottomNavigationBarItem>[
@@ -62,20 +73,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             label: 'Home',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.add_box_outlined),
-            label: 'Health',
+            icon: Icon(Icons.favorite_outline),
+            label: 'Heartrate',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.highlight),
-            label: 'Emergency',
+            icon: Icon(Icons.water_drop),
+            label: 'SpO2',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
         ];
 
-        print(user);
 
         return user == "watch wearer"
             ? Scaffold(
@@ -92,8 +102,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             type: BottomNavigationBarType.fixed,
           ),
         )
-            : const Scaffold(
-          body: SupervisorDashboard(),
+            : Scaffold(
+          body: SupervisorDashboard(phNo: data!.phone_number.toString(),),
         );
       },
       error: (error, StackTrace) => SizedBox(),
@@ -102,69 +112,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-class InfoCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final String subtitle;
-
-  InfoCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    return Card(
-      color: Colors.white54.withOpacity(0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 30),
-                SizedBox(width: width * 0.02),
-                Text(
-                  title,
-                  style: TextStyle(fontSize: width * 0.05),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: width * 0.02),
-                Text(subtitle),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class EmergencyCard extends StatefulWidget {
   final List<String> relations;
-  final String user;
+  final UserModel user;
   bool sosClicked = false;
+  List<String> values;
 
   EmergencyCard({
     super.key,
     required this.relations,
     required this.user,
     required this.sosClicked,
+    required this.values
   });
 
   @override
@@ -172,12 +131,6 @@ class EmergencyCard extends StatefulWidget {
 }
 
 class _EmergencyCardState extends State<EmergencyCard> {
-  final TwilioService twilioService = TwilioService(
-    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
-    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
-    fromNumber: '+17628009114',
-  );
-
   @override
   void didUpdateWidget(covariant EmergencyCard oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -190,17 +143,30 @@ class _EmergencyCardState extends State<EmergencyCard> {
 
   Future<void> _handleSOSClick(bool sosClicked) async {
     Position location = await updateLocation();
-
-
     try
     {
-      final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: FirebaseAuth.instance.currentUser!.email).get();
+      if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .update({
+          "metrics": {
+            "spo2": widget.values[1],
+            "heart_rate": widget.values[0],
+            "fall_axis":
+            "-- -- --"
+          }
+        });
+      }
+      final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: widget.user.phone_number.toString()).get();
       SendNotification send = SendNotification();
       for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
       {
+        print("Sending");
+        // await Future.delayed(Duration(seconds: 5), (){});
         print("Email : ${i.data()['email']}");
         // String? email = await FirebaseAuth.instance.currentUser!.email;
-        send.sendNotification(i.data()['email'], "Emergency!!", "User has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+        send.sendNotification(i.data()['phone_number'].toString(), "Emergency!!", "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
         print("Message sent");
       }
     }
@@ -229,47 +195,17 @@ class _EmergencyCardState extends State<EmergencyCard> {
     return location;
   }
 
-  Future<void> _fetchRelationDetails(List<String> relations, String user_email) async {
-    bool madeCall = false;
-    for (String email in relations) {
-      var userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-
-      if (userDoc.docs.isNotEmpty) {
-        print(userDoc.docs.first.data());
-
-        final data = userDoc.docs.first.data()['phone_number'];
-        Position current = await updateLocation();
-
-        await twilioService.sendSms(
-          '+91$data',
-          'SOS Button Clicked by $user_email from ${current.latitude}°N ${current.longitude}°E',
-        );
-
-        if (!madeCall) {
-          await twilioService.makeCall(
-            '+91$data',
-            "<Response><Say>$user_email has clicked the SOS button. Please check out.</Say></Response>",
-          );
-          madeCall = true;
-        }
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
 
     return Card(
-      color: Color.fromRGBO(255, 100, 100, 0.5),
+        color: Color.fromRGBO(255, 234, 234, 1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+        padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -277,7 +213,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
               children: [
                 Icon(Icons.warning, size: 25),
                 SizedBox(width: width * 0.01),
-                Text('Emergency', style: TextStyle(fontSize: 20)),
+                Text('Emergency', style: TextStyle(fontSize: width * 0.05)),
               ],
             ),
             InkWell(
@@ -324,28 +260,6 @@ class _EmergencyCardState extends State<EmergencyCard> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class FactCard extends StatelessWidget {
-  final String fact;
-
-  FactCard({required this.fact});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white54.withOpacity(0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          fact,
-          textAlign: TextAlign.left,
         ),
       ),
     );

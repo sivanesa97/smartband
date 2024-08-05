@@ -3,14 +3,19 @@ import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 
-class Aboutus extends StatelessWidget {
-  const Aboutus({super.key});
+class Aboutus extends StatefulWidget {
+  final String? phNo;
+  Aboutus({super.key, required this.phNo});
 
   @override
+  State<Aboutus> createState() => _AboutusState();
+}
+
+class _AboutusState extends State<Aboutus> {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.white,
-      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first),
       appBar: const AppBarWidget(),
       body: const SafeArea(
         child: Padding(

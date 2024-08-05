@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
+import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../Models/twilio_service.dart';
+import '../DrawerScreens/profilepage.dart';
 import '../Models/usermodel.dart';
 import '../Widgets/appBarProfile.dart';
 import '../Widgets/drawer.dart';
@@ -16,7 +18,8 @@ import 'dart:math';
 import 'dashboard.dart';
 
 class SupervisorDashboard extends ConsumerStatefulWidget {
-  const SupervisorDashboard({super.key});
+  String phNo;
+  SupervisorDashboard({super.key, required this.phNo});
 
   @override
   ConsumerState<SupervisorDashboard> createState() => _WearerDashboardState();
@@ -27,23 +30,26 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
   // Function to show supervisor dialog and handle OTP verification
   void _showSupervisorDialog(int otp_num) async {
-    if (_emailConn.text != FirebaseAuth.instance.currentUser!.email &&
-        _otpConn.text == otp_num.toString()) {
-      String emailToCheck = _emailConn.text;
+    if (_phNoConn.text != widget.phNo){
+        // _otpConn.text == otp_num.toString()) {
+      String phonetoCheck = _phNoConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var querySnapshot =
-          await usersCollection.where('email', isEqualTo: emailToCheck).get();
-      if (querySnapshot.docs.isNotEmpty) {
+          await usersCollection.where('phone_number', isEqualTo: int.parse(widget.phNo)).get();
+
+      final docs1 = await FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: int.parse(phonetoCheck)).get();
+      if (docs1.docs.isEmpty){
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Phone Number does not exist in the collection.")));
+      }
+      else if (querySnapshot.docs.isNotEmpty) {
         await usersCollection
             .doc(FirebaseAuth.instance.currentUser!.uid)
             .update({
-          "relations": FieldValue.arrayUnion([emailToCheck])
+          "relations": FieldValue.arrayUnion([phonetoCheck])
         });
 
         Navigator.of(context, rootNavigator: true).pop();
-      } else {
-        // Handle email not existing case
-        print("Email does not exist in the collection.");
       }
     } else {
       ScaffoldMessenger.of(context)
@@ -52,14 +58,13 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   }
 
   // Function to fetch relation details where current user email is in relations array
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> email) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> phoneNumber) async {
     List<Map<String, dynamic>> relationDetails = [];
-    print(email);
-    for(String i in email)
+    for(String i in phoneNumber)
       {
         var userDoc = await FirebaseFirestore.instance
             .collection('users')
-            .where('email', isEqualTo: i)
+            .where('phone_number', isEqualTo: int.parse(i))
             .get();
         if (userDoc.docs.isNotEmpty) {
           relationDetails.add(userDoc.docs.first.data());
@@ -68,23 +73,17 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     return relationDetails;
   }
 
-  final TwilioService twilioService = TwilioService(
-    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
-    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
-    fromNumber: '+17628009114',
-  );
-
   Future<List<Map<String, dynamic>>> _fetchPhoneDetails(
-      String email, int otp_num) async {
+      String phNo, int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where('email', isEqualTo: email)
+        .where('phone_number', isEqualTo: int.parse(phNo))
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
-      await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
+      // await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
     }
     return relationDetails;
   }
@@ -101,7 +100,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   }
 
   String? _selectedRole = "supervisor";
-  final TextEditingController _emailConn = TextEditingController();
+  final TextEditingController _phNoConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
 
   void _showRoleDialog() {
@@ -113,42 +112,22 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: const Text('Select Role'),
+              title: const Text('Supervise an account'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Role',
-                      ),
-                      value: _selectedRole,
-                      items: ['watch wearer', 'supervisor'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child:
-                              Text(value[0].toUpperCase() + value.substring(1)),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedRole = newValue;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                            controller: _emailConn,
+                            controller: _phNoConn,
                             decoration: InputDecoration(
                                 border: OutlineInputBorder(),
-                                labelText: 'Email',
+                                labelText: 'Phone Number',
                                 suffixIcon: IconButton(
                                     onPressed: () {
                                       sent = true;
                                       _fetchPhoneDetails(
-                                          _emailConn.text, otp_num);
+                                          _phNoConn.text, otp_num);
                                     },
                                     icon:
                                         Icon(sent ? Icons.check : Icons.send))),
@@ -195,15 +174,39 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const AppBarProfileWidget(),
-      drawer: DrawerScreen(device: bluetoothDeviceManager.connectedDevices.first,),
+      appBar: AppBar(
+        surfaceTintColor: Colors.white,
+        backgroundColor: Colors.white,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 5),
+          child: Builder(
+            builder: (context) => GestureDetector(
+              onTap: () {
+                Scaffold.of(context).openDrawer();
+              },
+              child: const Icon(Icons.menu, size: 30),
+            ),
+          ),
+        ),
+      actions: [
+          GestureDetector(
+            onTap: () async {
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => const Profilepage()));
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(right: 10),
+              child: const Icon(Icons.account_circle_outlined, size: 30,),
+            ),
+          ),
+        ],
+      ),
+      drawer: DrawerSupervisorScreen(device: null, phNo: widget.phNo),
       body: user_data.when(
         data: (user) {
           Map<String, dynamic> relation = {};
           return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _fetchRelationDetails(user!.relations),
+            future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
-              print(snapshot.data);
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
                     child: CircularProgressIndicator(color: Colors.blueAccent));
@@ -212,7 +215,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
                 if (dropdownValue == 'No Users') {
-                  dropdownValue = relationDetails.first['email'];
+                  dropdownValue = relationDetails.first['phone_number'].toString();
                   relation = relationDetails.first;
                 }
                 print("DropDown : ${dropdownValue}");
@@ -238,13 +241,13 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                           items: relationDetails.map<DropdownMenuItem<String>>(
                                   (Map<String, dynamic> relation) {
                                 return DropdownMenuItem<String>(
-                                  value: relation['email'],
+                                  value: relation['phone_number'].toString(),
                                   child: Padding(
                                     padding: EdgeInsets.all(5),
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
-                                        gradient: LinearGradient(colors: [Colors.redAccent, Colors.blueAccent])
+                                        color: Color.fromRGBO(0, 83, 188, 1).withOpacity(0.5),
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(10),
@@ -294,7 +297,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                           return supervisorModel.when(
                             data: (data) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 0),
                                 child: SingleChildScrollView(
                                   child: Column(
                                     crossAxisAlignment:
@@ -305,11 +308,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           child: Stack(
                                             children: [
                                               Container(
-                                                width: width * 0.92,
-                                                height: height * 0.2,
+                                                width: width * 0.9,
+                                                height: height * 0.17,
                                                 child: ClipRRect(
-                                                  borderRadius:
-                                                  BorderRadius.circular(30),
+                                                  borderRadius: BorderRadius.circular(30),
                                                   // Rounded corners
                                                   child: Image.network(
                                                     "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
@@ -319,21 +321,17 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                 ),
                                               ),
                                               Container(
-                                                width:
-                                                MediaQuery.of(context).size.width *
-                                                    0.92,
+                                                width: MediaQuery.of(context).size.width * 0.9,
                                                 height:
-                                                MediaQuery.of(context).size.height *
-                                                    0.2,
+                                                MediaQuery.of(context).size.height * 0.17,
                                                 decoration: BoxDecoration(
-                                                  borderRadius:
-                                                  BorderRadius.circular(30),
+                                                  borderRadius: BorderRadius.circular(30),
                                                   // Rounded corners
                                                   gradient: const LinearGradient(
                                                     colors: [
-                                                      Color.fromRGBO(72, 151, 217, 0.8),
-                                                      Color.fromRGBO(0, 0, 0, 0.2),
-                                                      Color.fromRGBO(72, 151, 217, 0.8),
+                                                      Color.fromRGBO(0, 83, 188, 0.8),
+                                                      Color.fromRGBO(0, 0, 0, 0.15),
+                                                      Color.fromRGBO(0, 83, 188, 0.8),
                                                     ], // Gradient colors
                                                     begin: Alignment.center,
                                                     end: Alignment.centerRight,
@@ -353,7 +351,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                     Text(
                                                       "Location",
                                                       style: TextStyle(
-                                                          fontSize: width * 0.07,
+                                                          fontSize: width * 0.06,
                                                           color: Colors.white),
                                                     ),
                                                     const SizedBox(
@@ -362,7 +360,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                     Text(
                                                       "Current Location ID :\n${data!.first.latitude}°N ${data!.first.longitude}°E",
                                                       style: TextStyle(
-                                                          fontSize: width * 0.04,
+                                                          fontSize: width * 0.035,
                                                           color: Colors.white),
                                                     ),
                                                     const SizedBox(
@@ -384,7 +382,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                         child: Text(
                                                           "Open in Maps",
                                                           style: TextStyle(
-                                                            fontSize: width * 0.04,
+                                                            fontSize: width * 0.035,
                                                             color: const Color.fromRGBO(
                                                                 88, 106, 222, 0.9),
                                                           ),
@@ -402,20 +400,18 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8.0),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           mainAxisAlignment:
                                           MainAxisAlignment.center,
                                           children: [
                                             Container(
-                                              width: width * 0.45,
-                                              height: height * 0.5,
+                                              width: width * 0.475,
+                                              height: height * 0.45,
                                               child: Column(
                                                 children: [
                                                   Expanded(
-                                                      flex: 3,
+                                                      flex: 2,
                                                       child: Card(
-                                                        color: Color.fromRGBO(
-                                                            255, 255, 200, 0.8),
+                                                        color: Color.fromRGBO(255, 245, 227, 1),
                                                         shape:
                                                         RoundedRectangleBorder(
                                                             borderRadius:
@@ -435,10 +431,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                             children: [
                                                               Row(
                                                                 children: [
-                                                                  Icon(
-                                                                      Icons
-                                                                          .monitor_heart_outlined,
-                                                                      size: 30),
+                                                                  Image.asset(
+                                                                    "assets/fall_axis_icon.png",
+                                                                    width: 30,
+                                                                  ),
                                                                   SizedBox(
                                                                       width: width *
                                                                           0.02),
@@ -447,37 +443,28 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                     style: TextStyle(
                                                                         fontSize:
                                                                         width *
-                                                                            0.045),
+                                                                            0.04),
                                                                   ),
                                                                 ],
                                                               ),
                                                               Center(
                                                                 child: Image.asset(
-                                                                  "assets/fallaxis.png",
-                                                                  width:
-                                                                  width * 0.4,
+                                                                  data.first.metrics['fall_axis']=='1' ? "assets/fallaxis.png" : "assets/fallaxis0.png",
+                                                                  height: height * 0.15,
                                                                 ),
                                                               ),
-                                                              Center(
-                                                                child: Image.asset(
-                                                                  "assets/fallaxis1.png",
-                                                                  height:
-                                                                  height * 0.02,
-                                                                ),
-                                                              )
                                                             ],
                                                           ),
                                                         ),
-                                                      )
-                                                  ),
+                                                      )),
                                                   Expanded(
                                                     flex: 2,
                                                     child: Card(
-                                                      color: Color.fromRGBO(255, 100, 100, 0.5),
+                                                      color: Color.fromRGBO(255, 234, 234, 1),
                                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                                                       elevation: 4,
                                                       child: Padding(
-                                                        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                                                        padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
                                                         child: Column(
                                                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                                                           children: [
@@ -485,7 +472,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                               children: [
                                                                 Icon(Icons.warning, size: 25),
                                                                 SizedBox(width: width * 0.01),
-                                                                Text('Emergency', style: TextStyle(fontSize: 20)),
+                                                                Text('Emergency', style: TextStyle(fontSize: width * 0.04)),
                                                               ],
                                                             ),
                                                             Stack(
@@ -496,10 +483,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                   height: width * 0.25,
                                                                   decoration: BoxDecoration(
                                                                     borderRadius: BorderRadius.circular(width * 0.5),
-                                                                    color: Colors.redAccent,
+                                                                    color:  Colors.white,
                                                                     boxShadow: const [
                                                                       BoxShadow(
-                                                                        color: Colors.white,
+                                                                        color: Colors.redAccent,
                                                                         blurRadius: 5.0,
                                                                       ),
                                                                     ],
@@ -535,16 +522,15 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                               ),
                                             ),
                                             Container(
-                                              height: height * 0.5,
-                                              width: width * 0.45,
+                                              height: height * 0.45,
+                                              width: width * 0.475,
                                               child: Column(
                                                 children: [
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
                                                         color: const Color.fromRGBO(
-                                                            111, 211, 255,
-                                                            0.4),
+                                                            228, 240, 254, 1),
                                                         shape:
                                                         RoundedRectangleBorder(
                                                             borderRadius:
@@ -562,10 +548,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                             children: [
                                                               Row(
                                                                 children: [
-                                                                  const Icon(
-                                                                      Icons
-                                                                          .favorite_outlined,
-                                                                      size: 30),
+                                                                  Image.asset(
+                                                                    "assets/heart_rate_icon.png",
+                                                                    width: 30,
+                                                                  ),
                                                                   SizedBox(
                                                                       width: width *
                                                                           0.02),
@@ -574,17 +560,24 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                     style: TextStyle(
                                                                         fontSize:
                                                                         width *
-                                                                            0.04),
+                                                                            0.045),
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(height: 5),
-                                                              Row(
+                                                              SizedBox(height: 8),
+                                                              Column(
                                                                 children: [
+                                                                  Image.asset(
+                                                                    "assets/heartrate.png",
+                                                                    width:
+                                                                    width * 0.3,
+                                                                  ),
+                                                                  SizedBox(height: 10,),
                                                                   Row(
+                                                                    mainAxisAlignment: MainAxisAlignment.center,
                                                                     children: [
                                                                       Text(
-                                                                        data.first.metrics['heart_rate'].toString(),
+                                                                        data.first.metrics['heart_rate'],
                                                                         style: TextStyle(
                                                                             fontSize:
                                                                             width * 0.07,
@@ -603,11 +596,6 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                       ),
                                                                     ],
                                                                   ),
-                                                                  SizedBox(width: 5,),
-                                                                  Image.asset(
-                                                                    "assets/heartrate.png",
-                                                                    width: data.first.metrics['heart_rate']!='--' && int.parse(data.first.metrics['heart_rate'])>100 ? width * 0.17 : width * 0.2,
-                                                                  )
                                                                 ],
                                                               ),
                                                             ],
@@ -615,10 +603,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                         ),
                                                       )),
                                                   Expanded(
-                                                      flex: 3,
+                                                      flex: 2,
                                                       child: Card(
                                                         color: const Color.fromRGBO(
-                                                            50, 255, 50, 0.2),
+                                                            237, 255, 228, 1),
                                                         shape:
                                                         RoundedRectangleBorder(
                                                             borderRadius:
@@ -637,19 +625,18 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                             children: [
                                                               Row(
                                                                 children: [
-                                                                  Icon(
-                                                                      Icons
-                                                                          .water_drop,
-                                                                      size: 30),
+                                                                  Image.asset(
+                                                                    "assets/spo2_icon.png"
+                                                                  ),
                                                                   SizedBox(
                                                                       width: width *
                                                                           0.02),
                                                                   Text(
-                                                                    "SPo2",
+                                                                    "SpO₂",
                                                                     style: TextStyle(
                                                                         fontSize:
                                                                         width *
-                                                                            0.05),
+                                                                            0.04),
                                                                   ),
                                                                 ],
                                                               ),
@@ -657,22 +644,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                               Stack(
                                                                 alignment: Alignment.center,
                                                                 children: [
-                                                                  Padding(
-                                                                    padding: EdgeInsets.only(top: 15),
-                                                                    child: Text(
-                                                                      data.first.metrics['spo2'].toString(),
-                                                                      style: TextStyle(
-                                                                          fontSize:
-                                                                          width * 0.07,
-                                                                          fontWeight:
-                                                                          FontWeight
-                                                                              .bold),
-                                                                    ),
-                                                                  ),
-                                                                  Image.asset(
-                                                                    "assets/spo2.png",
-                                                                    width: width * 0.475,
-                                                                  )
+                                                                  Center(child: SpO2Gauge(percentage: data.first.metrics['spo2']!="--" ? int.parse(data.first.metrics['spo2'].toString()) : 1))
                                                                 ],
                                                               ),
                                                             ],
@@ -686,22 +658,22 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                         ),
                                       ),
                                       SizedBox(height: 16,),
-                                      Center(
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _showRoleDialog();
-                                            print("Adding users");
-                                          },
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 10.0),
-                                            child: const Text(
-                                              "Add users",
-                                              style: TextStyle(fontSize: 18),
-                                            ),
-                                          ),
-                                        ),
-                                      )
+                                      // Center(
+                                      //   child: GestureDetector(
+                                      //     onTap: () {
+                                      //       _showRoleDialog();
+                                      //       print("Adding users");
+                                      //     },
+                                      //     child: Padding(
+                                      //       padding: EdgeInsets.symmetric(
+                                      //           vertical: 10.0),
+                                      //       child: const Text(
+                                      //         "Add users",
+                                      //         style: TextStyle(fontSize: 18),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // )
                                     ],
                                   ),
                                 ),

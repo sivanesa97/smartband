@@ -28,12 +28,6 @@ class _AppBarProfileWidgetState extends State<AppBarProfileWidget> {
           child: const Icon(Icons.menu, size: 30,),
         ),
       ),
-      // title: Center(
-      //   child: Image.asset(
-      //     "assets/logo.jpg",
-      //     height: 60,
-      //   ),
-      // ),
       actions: [
         GestureDetector(
           onTap: () async {

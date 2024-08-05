@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/bluetooth.dart';
+import 'package:smartband/pushnotifications.dart';
 
 import '../Dashboard/dashboard.dart';
 import '../Dashboard/notConnected.dart';
@@ -20,15 +21,14 @@ class HomepageScreen extends StatefulWidget {
 }
 
 class _HomepageScreenState extends State<HomepageScreen> {
-  String role1 = "";
+  String role1 = "watch wearer";
+  String phNo = "";
   final BluetoothDeviceManager bluetoothDeviceManager = BluetoothDeviceManager();
 
-  void _initializeBluetooth() {
+  Future<void> _initializeBluetooth() async {
     print(widget.hasDeviceId);
     FlutterBluePlus.adapterState.listen((state) async {
       if (state == BluetoothAdapterState.on) {
-        await getPermissions();
-
         // Retrieve the list of connected devices
         List<BluetoothDevice> devices = await FlutterBluePlus.connectedDevices;
         bluetoothDeviceManager.connectedDevicesController.add(devices);
@@ -42,16 +42,6 @@ class _HomepageScreenState extends State<HomepageScreen> {
     });
   }
 
-  Future<void> getPermissions() async {
-    await [
-      Permission.bluetooth,
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.locationWhenInUse,
-      Permission.notification
-    ].request();
-  }
-
   Future<Position> updateLocation() async {
     Position location = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
@@ -62,33 +52,48 @@ class _HomepageScreenState extends State<HomepageScreen> {
         .collection("users")
         .doc(user!.uid)
         .update({"location": GeoPoint(location.latitude, location.longitude)});
-    return location;
-  }
 
-  Future<void> getRole() async {
-    final role = await FirebaseFirestore.instance
+    final data = await FirebaseFirestore.instance
         .collection("users")
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get();
+        .doc(user.uid).get();
+    final curr_location = data.data()!['home_location'] as GeoPoint;
+    final role = data.data()?['role'];
+    final phone = data.data()?['phone_number'];
     setState(() {
-      role1 = role.data()?['role'] ?? "";
+      role1 = role;
+      phNo = phone.toString();
     });
+    final distance = Geolocator.distanceBetween(location.latitude, location.longitude, curr_location.latitude, curr_location.longitude);
+    print(distance%1000);
+    if (distance%1000 > 10)
+      {
+        final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: FirebaseAuth.instance.currentUser!.email).get();
+        SendNotification send = SendNotification();
+        print("Sending");
+        for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
+        {
+          await Future.delayed(Duration(seconds: 5), (){});
+          print("Email : ${i.data()['email']}");
+          // send.sendNotification(i.data()['email'], "Emergency!!", "User has moved out to ${curr_location.latitude}°N ${curr_location.longitude}°E. Please check");
+          print("Message sent");
+        }
+
+      }
+
+    return location;
   }
 
   @override
   void initState() {
     super.initState();
     updateLocation();
-    getRole();
-    getPermissions().then((_) async {
-      _initializeBluetooth();
-    });
+    _initializeBluetooth();
   }
 
   @override
   Widget build(BuildContext context) {
     return role1 == 'supervisor'
-        ? SupervisorDashboard()
+        ? SupervisorDashboard(phNo: phNo,)
         : StreamBuilder<List<BluetoothDevice>>(
       stream: bluetoothDeviceManager.connectedDevicesStream,
       builder: (context, snapshot) {

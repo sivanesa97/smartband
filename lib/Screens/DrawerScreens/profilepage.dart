@@ -19,12 +19,15 @@ class Profilepage extends ConsumerStatefulWidget {
 
 class _ProfilepageState extends ConsumerState<Profilepage> {
   bool isEdit = false;
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _mailController = TextEditingController();
   TextEditingController _contactController = TextEditingController();
-  TextEditingController _genderController = TextEditingController();
   TextEditingController _birthdayController = TextEditingController();
   TextEditingController _heightController = TextEditingController();
   TextEditingController _weightController = TextEditingController();
   TextEditingController _stepsgoalController = TextEditingController();
+  String _selectedGender = "";
+  DateTime? _selectedDate;
 
   Future<String> getLocation() async {
     Position location = await Geolocator.getCurrentPosition(
@@ -40,6 +43,20 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
     return place.locality ?? 'Unknown location';
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _birthdayController.text = "${picked.year}-${picked.month.toString().padLeft(2,'0')}-${picked.day.toString().padLeft(2,'0')}";
+      });
+    }
+  }
+
   Future<void> getData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -53,8 +70,10 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
           var data1 = data.data();
           print(data1!['phone_number']);
           setState(() {
+            _nameController.text= data1['name'] ?? "";
+            _mailController.text= data1['email'] ?? "";
             _contactController.text = data1['phone_number'].toString() ?? '';
-            _genderController.text = data1['gender'] ?? '';
+            _selectedGender = data1['gender'] ?? "Male";
             _birthdayController.text = data1['dob'] ?? '';
             _heightController.text = data1['height'].toString() ?? '';
             _weightController.text = data1['weight'].toString() ?? '';
@@ -80,11 +99,27 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     final user_data =
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const AppBarWidget(),
+      appBar: AppBar(
+        surfaceTintColor: Colors.white,
+        backgroundColor: Colors.white,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 0),
+          child: GestureDetector(
+            onTap: () async {
+              Navigator.of(context, rootNavigator: true).pop();
+            },
+            child: const Icon(Icons.arrow_back),
+          ),
+        ),
+        title: Text("Edit Profile"),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         child: SafeArea(
           child: user_data.when(
@@ -93,373 +128,333 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
               if (data != null) {
                 relations = data.relations;
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        height: MediaQuery.of(context).size.height * 0.3,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                              bottomRight: Radius.circular(20)),
-                          color: Colors.grey.withOpacity(0.6),
+              return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 15.0),
+                  child: Container(
+                    height: height,
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Icon(
+                            Icons.account_circle,
+                            color: Color.fromRGBO(0, 83, 188, 1),
+                            size: width * 0.35,
+                          ),
                         ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
+
+                        SizedBox(height: 5,),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.account_circle_outlined,
-                              size: 70.0,
-                            ),
-                            SizedBox(
-                              height: 20,
-                            ),
                             Text(
                               "Name",
-                              style: TextStyle(fontSize: 20),
-                            )
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Email Address",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                ),
-                              ),
-                              SizedBox(
-                                width: 160,
-                                child: Text(
-                                  data!.email,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.orangeAccent),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 30,
-                              ),
-                              Text(
-                                "Contact",
-                                style: TextStyle(
-                                  fontSize: 20,
-                                ),
-                              ),
-                              isEdit
-                                  ? SizedBox(
-                                width: 100,
-                                height: 40,
-                                child: TextFormField(
-                                  controller: _contactController,
-                                  decoration: InputDecoration(
-                                    hintText: data.phone_number.toString(),
-                                  ),
+                              style:
+                              TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                            ),
+                            SizedBox(
+                              width: width,
+                              height: isEdit ? 50 : 40,
+                              child: isEdit
+                                  ? TextFormField(
+                                controller: _nameController,
+                                decoration: InputDecoration(
+                                  hintText: data!.name,
                                 ),
                               )
                                   : Text(
-                                data!.phone_number.toString(),
-                                style: TextStyle(fontSize: 16, color: Colors.orangeAccent),
+                                data!.name,
+                                textAlign: TextAlign.left,
+                                style: TextStyle(fontSize: width * 0.05),
                               ),
-                              SizedBox(
-                                height: 30,
-                              ),
-                              Text(
-                                "Location",
+                            )
+                          ],
+                        ),
+
+                        SizedBox(height: 5,),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Email Address",
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                            ),
+                            SizedBox(
+                              width: width,
+                              height: isEdit ? 50 : 40,
+                              child: isEdit ?
+                              TextFormField(
+                                controller: _mailController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  hintText: data.email,
+                                ),
+                              )
+                              : Text(
+                                data.email,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 20,
+                                    fontSize: width * 0.05, color: Colors.black),
+                              ),
+                            )
+                          ],
+                        ),
+
+                        SizedBox(height: 5,),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Phone Number",
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                            ),
+                            SizedBox(
+                              width: width,
+                              height: isEdit ? 50 : 40,
+                              child: isEdit ?
+                              TextFormField(
+                                controller: _contactController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  hintText: data.phone_number.toString(),
                                 ),
+                              ) : Text(
+                                data.phone_number.toString(),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                    fontSize: width * 0.05, color: Colors.black),
+                              ),
+                            )
+                          ],
+                        ),
+
+                        if (data.role=='supervisor')
+                          SizedBox.shrink()
+                        else if (data.role=='watch wearer') ...[
+                          SizedBox(height: 5,),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Gender",
+                                style:
+                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
                               ),
                               SizedBox(
-                                width: 150,
-                                child: FutureBuilder<String>(
-                                  future: getLocation(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return Text(
-                                        'Loading...',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.orangeAccent),
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return Text(
-                                        'Error: ${snapshot.error}',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.orangeAccent),
-                                      );
-                                    } else if (snapshot.hasData) {
-                                      return Text(
-                                        snapshot.data ??
-                                            'Unknown location',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.orangeAccent),
-                                      );
-                                    } else {
-                                      return Text(
-                                        'Unknown location',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.orangeAccent),
-                                      );
-                                    }
-                                  },
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? Center(
+                                  child: SizedBox(
+                                    width: width * 0.9,
+                                    child: DropdownButtonFormField<String>(
+                                      value: _selectedGender,
+                                      items: ['Male', 'Female', 'Other']
+                                          .map((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value),
+                                        );
+                                      }).toList(),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          _selectedGender = newValue!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                )
+                                    : Text(
+                                  data.gender,
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(fontSize: width * 0.05),
                                 ),
-                              ),
+                              )
                             ],
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    color: Colors.grey.withOpacity(0.4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Text(
-                            "Emergency Contact",
-                            style: TextStyle(fontSize: 20),
-                          ),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: 125,
-                          child: ListView.builder(
-                            itemCount: data!.relations.length,
-                            itemBuilder: (context, index) {
-                              final relation = data!.relations[index];
-                              return Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 20.0, vertical: 10.0),
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 5.0),
-                                decoration: BoxDecoration(
-                                    color: Colors.grey.withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(10.0)),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      relation,
-                                      style: TextStyle(
-                                          color: Colors.black, fontSize: 18),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () {
-                                        relations.remove(relation);
-                                        FirebaseFirestore.instance
-                                            .collection('users')
-                                            .doc(FirebaseAuth
-                                                .instance.currentUser!.uid)
-                                            .update({'relations': relations});
-                                      },
-                                      child: Icon(Icons.delete),
-                                    )
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 15.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Other Details",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  isEdit = !isEdit;
-                                });
-                                if (!isEdit) {
-                                  FirebaseFirestore.instance
-                                      .collection("users")
-                                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                                      .update({
-                                      "phone_number": int.parse(_contactController.text),
-                                      "gender": _genderController.text.toTitleCase(),
-                                      "dob": _birthdayController.text,
-                                      "height": double.parse(_heightController.text),
-                                      "weight": double.parse(_weightController.text),
-                                  });
-                                  getData();
-                                }
-                              },
-                              child: Icon(
-                                isEdit ? Icons.check : Icons.edit,
+
+                          SizedBox(height: 5,),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Birthday",
+                                style:
+                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
                               ),
-                            )
-                          ],
-                        ),
-                        SizedBox(
-                          height: 25,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Gender",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _genderController,
-                                      decoration: InputDecoration(
-                                        hintText: data!.gender,
-                                      ),
-                                    )
-                                  : Text(
-                                      data!.gender,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(fontSize: 16),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                  controller: _birthdayController,
+                                  decoration: InputDecoration(
+                                    suffixIcon: IconButton(
+                                      icon: Icon(Icons.calendar_today),
+                                      onPressed: () => _selectDate(context),
                                     ),
-                            )
-                          ],
-                        ),
-                        Divider(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Birthday",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _birthdayController,
-                                      decoration: InputDecoration(
-                                        hintText: data!.dob,
-                                      ),
-                                    )
-                                  : Text(
-                                      data!.dob,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            )
-                          ],
-                        ),
-                        Divider(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Height",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _heightController,
-                                      decoration: InputDecoration(
-                                        hintText: data!.height.toString(),
-                                      ),
-                                    )
-                                  : Text(
-                                      data!.height.toString(),
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            )
-                          ],
-                        ),
-                        Divider(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Weight",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 18),
-                            ),
-                            SizedBox(
-                              width: 100,
-                              height: 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _weightController,
-                                      decoration: InputDecoration(
-                                        hintText: data!.weight.toString(),
-                                      ),
-                                    )
-                                  : Text(
-                                      data!.weight.toString(),
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                            )
-                          ],
-                        ),
-                        Divider(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
+                                  ),
+                                  readOnly: true,
+                                )
+                                    : Text(
+                                  data.dob,
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(fontSize: width * 0.05),
+                                ),
+                              )
+                            ],
+                          ),
+
+                          SizedBox(height: 5,),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Height",
+                                style:
+                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                  controller: _heightController,
+                                  decoration: InputDecoration(
+                                    hintText: data.height.toString(),
+                                  ),
+                                )
+                                    : Text(
+                                  data.height.toString(),
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(fontSize: width * 0.05),
+                                ),
+                              )
+                            ],
+                          ),
+
+                          SizedBox(height: 5,),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Weight",
+                                style:
+                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                  controller: _weightController,
+                                  decoration: InputDecoration(
+                                    hintText: data.weight.toString(),
+                                  ),
+                                )
+                                    : Text(
+                                  data.weight.toString(),
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(fontSize: width * 0.05),
+                                ),
+                              )
+                            ],
+                          ),
+                        ],
+
+                        SizedBox(height: 5,),
+                        Center(
+                            child: Container(
+                          width: width * 0.9,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Color.fromRGBO(0, 83, 188, 1),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                isEdit = !isEdit;
+                              });
+                              if (!RegExp(
+                                      r'^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$')
+                                  .hasMatch(_birthdayController.text)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            "Please enter valid date of birth")));
+                              }
+                              if (_heightController.text.isNotEmpty &&
+                                  _weightController.text.isNotEmpty) {
+                                try {
+                                  double val =
+                                      double.parse(_heightController.text);
+                                  if (val < 100 && val > 250) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                "Please enter a valid height")));
+                                  }
+                                } catch (Exception) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              "Please enter a valid height")));
+                                }
+                                try {
+                                  double val1 =
+                                      double.parse(_weightController.text);
+                                } catch (Exception) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              "Please enter a valid weight")));
+                                }
+                              }
+                              if (!isEdit) {
+                                FirebaseFirestore.instance
+                                    .collection("users")
+                                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                                    .update({
+                                  "phone_number":
+                                      int.parse(_contactController.text),
+                                  "gender":
+                                      _selectedGender,
+                                  "dob": _birthdayController.text,
+                                  "height":
+                                      double.parse(_heightController.text),
+                                  "weight":
+                                      double.parse(_weightController.text),
+                                });
+                                getData();
+                              }
+                            },
+                            child: !isEdit
+                                ? Text(
+                                    'Edit',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: width * 0.05),
+                                  )
+                                : Text(
+                                    'Save details',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: width * 0.05),
+                                  ),
+                          ),
+                        )),
                       ],
                     ),
-                  )
-                ],
-              );
+                  ));
             },
             error: (error, StackTrace) {
               return Text("Error");

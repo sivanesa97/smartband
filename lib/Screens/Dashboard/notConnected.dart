@@ -8,6 +8,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
+import '../DrawerScreens/profilepage.dart';
 import '../InstructionsScreen/instructions.dart';
 import '../Widgets/appBar.dart';
 import '../Widgets/appBarProfile.dart';
@@ -15,6 +16,7 @@ import 'dashboard.dart';
 
 class NotConnectedPage extends StatefulWidget {
   bool hasDeviceId;
+
   NotConnectedPage({super.key, required this.hasDeviceId});
 
   @override
@@ -32,6 +34,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
   @override
   void initState() {
     super.initState();
+    addDeviceBtn = false;
     var subscription =
         FlutterBluePlus.adapterState.listen((BluetoothAdapterState state) {
       print(state);
@@ -40,21 +43,23 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
       FlutterBluePlus.turnOn();
     }
     subscription.cancel();
+    scanForDevices(context);
   }
 
   void connectToDevice(
       BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
-      await bluetoothDeviceManager.connectToDevice(device, context, widget.hasDeviceId);
+      await bluetoothDeviceManager.connectToDevice(
+          device, context, widget.hasDeviceId);
     } catch (e) {
       print('Error connecting to device: $e');
     }
   }
 
-  void scanForDevices() {
+  void scanForDevices(BuildContext context) {
     if (mounted) {
       try {
-        bluetoothDeviceManager.scanForDevices();
+        bluetoothDeviceManager.scanForDevices(context);
         setState(() {
           search_text = "Scanning for devices";
         });
@@ -89,6 +94,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: addDeviceBtn
@@ -105,25 +111,49 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   },
                   child: const Icon(Icons.chevron_left),
                 ),
-              ),)
-          : const AppBarProfileWidget(),
+              ),
+            )
+          : AppBar(
+              surfaceTintColor: Colors.white,
+              backgroundColor: Colors.white,
+              actions: [
+                GestureDetector(
+                  onTap: () async {
+                    Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                            builder: (context) => const Profilepage()));
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: const Icon(
+                      Icons.account_circle_outlined,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ],
+            ),
       body: !addDeviceBtn
           ? Column(
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
                   child: Text(
                     "You have not linked a device",
-                    style: TextStyle(fontSize: 36),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: height * 0.035),
                   ),
                 ),
+                SizedBox(
+                  height: height * 0.1,
+                ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 15.0),
+                  padding: EdgeInsets.only(right: 15.0),
                   child: InkWell(
                     onTap: () {
                       setState(() {
                         addDeviceBtn = true;
-                        scanForDevices();
+                        scanForDevices(context);
                       });
                     },
                     child: Align(
@@ -131,8 +161,19 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                       child: Container(
                         width: width * 0.5,
                         decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(10)),
+                          color: Colors.white,
+
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color.fromRGBO(0, 83, 188, 1),
+                              spreadRadius: 2,
+                              blurRadius: 10,
+                              offset:
+                                  Offset(0, 0), // changes position of shadow
+                            ),
+                          ],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         padding: const EdgeInsets.all(10),
                         child: const Center(
                           child: Row(
@@ -141,14 +182,16 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                               Text(
                                 "Add a Device",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Color.fromRGBO(0, 83, 188, 1),
                                 ),
                               ),
-                              Icon(Icons.add, color: Colors.white,),
+                              Icon(
+                                Icons.add,
+                                color: Color.fromRGBO(0, 83, 188, 1),
+                              ),
                             ],
                           ),
                         ),
-
                       ),
                     ),
                   ),
@@ -158,25 +201,26 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
+                Padding(
                   padding:
                       EdgeInsets.symmetric(horizontal: 25.0, vertical: 25.0),
                   child: Text(
                     "Add device",
-                    style: TextStyle(fontSize: 30),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: height * 0.03),
                   ),
                 ),
-                const Center(
+                Center(
                   child: Text(
                     "Please select your smartwatch in the list",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 17),
+                    style: TextStyle(fontSize: height * 0.025),
                   ),
                 ),
                 Center(
                   child: InkWell(
                     onTap: () {
-                      scanForDevices();
+                      scanForDevices(context);
                     },
                     child: Text(
                       search_text,
@@ -193,12 +237,21 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                       if (device.device.platformName.isNotEmpty) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 8.0),
+                              horizontal: 15.0, vertical: 10.0),
                           child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15.0),
-                              color: Colors.grey,
+                              color: Colors.white,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color.fromRGBO(0, 83, 188, 1),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: Offset(
+                                      0, 0), // changes position of shadow
+                                ),
+                              ],
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -231,13 +284,25 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                       const SizedBox(height: 10),
                                       SizedBox(
                                         width: width * 0.3,
-                                        child: ElevatedButton(
+                                        child: TextButton(
                                           onPressed: () {
                                             connectToDevice(device.device,
                                                 context, widget.hasDeviceId);
                                             // Navigator.of(context).push(MaterialPageRoute(builder: (context) => DashboardScreen(device_name: "device_name", mac_address: "mac_address")));
                                           },
-                                          child: const Text("Connect"),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(20),
+                                              color: Colors.grey.withOpacity(0.1)
+                                            ),
+                                            child: const Text(
+                                              "Connect",
+                                              style: TextStyle(
+                                                color: Color.fromRGBO(0, 83, 188, 1),
+                                              ),
+                                            ),
+                                          )
                                         ),
                                       ),
                                     ],

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
-import '../Models/twilio_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 
@@ -37,8 +36,8 @@ class _SignupScreenState extends State<SignupScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -55,7 +54,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() {
       _isValid = value.isNotEmpty &&
           value.length >= 3 &&
-          RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value);
+          RegExp(r"^[a-zA-Z]+(([' -][a-zA-Z ])?[a-zA-Z]*)*$").hasMatch(value);
     });
   }
 
@@ -75,72 +74,88 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> signUpWithCredentials() async {
     try {
       try {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailId.text,
-          password: "admin123",
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Creating account... Please wait")));
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Fetching Location... Please wait")));
-        final locationData = await getLocation();
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailId.text,
-          password: "admin123",
-        );
-        await FirebaseFirestore.instance
+        final datas = await FirebaseFirestore.instance
             .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid)
-            .set({
-          'name': _username.text,
-          'dob': _dateOfBirth.text,
-          'height': double.parse(_height.text),
-          'weight': double.parse(_weight.text),
-          'email': _emailId.text,
-          'gender': _selectedGender,
-          'phone_number': int.parse(_phone_number.text),
-          'relations': [],
-          'isSOSClicked': false,
-          'location': locationData,
-          'metrics': {'heart_rate': 0, 'spo2': 0, 'fall_axis': "-- -- --"},
-          'role': widget.role,
-          "emergency": {
-            "name": "",
-            "blood_group": "",
-            "medical_notes": "",
-            "address": "",
-            "medications": "",
-            "organ_donor": false,
-            "contact": 0,
-          },
-          'device_id': "",
-          'steps_goal': 0,
-          'fcmKey': await FirebaseMessaging.instance.getToken()
-        });
+            .where("email", isEqualTo: _emailId.text)
+            .get();
+        if (datas.docs.isEmpty)
+          {
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+              email: _emailId.text,
+              password: "admin123",
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Creating account... Please wait")));
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Fetching Location... Please wait")));
+            final locationData = await getLocation();
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+              email: _emailId.text,
+              password: "admin123",
+            );
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .set({
+              'name': _username.text,
+              'dob': _dateOfBirth.text,
+              'height': double.parse(_height.text),
+              'weight': double.parse(_weight.text),
+              'email': _emailId.text,
+              'gender': _selectedGender,
+              'phone_number': int.parse(_phone_number.text),
+              'relations': [],
+              'isSOSClicked': false,
+              'location': locationData,
+              'home_location': locationData,
+              'metrics': {'heart_rate': '0', 'spo2': '0', 'fall_axis': "-- -- --"},
+              'role': widget.role,
+              "emergency": {
+                "name": "",
+                "blood_group": "",
+                "medical_notes": "",
+                "address": "",
+                "medications": "",
+                "organ_donor": false,
+                "contact": 0,
+              },
+              'device_id': "",
+              'steps_goal': 0,
+              'fcmKey': await FirebaseMessaging.instance.getToken()
+            });
 
-        final response = await http.post(
-          Uri.parse("https://snvisualworks.com/public/api/auth/register"),
-          headers: <String, String>{
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-          body: jsonEncode(<String, dynamic>{
-            'name': _username.text,
-            'mobile_number': _phone_number.text,
-            'email': _emailId.text,
-            'date_of_birth': _dateOfBirth.text,
-            'gender': _selectedGender?.toLowerCase(),
-            'height': int.parse(_height.text),
-            'weight': int.parse(_weight.text),
-          }),
-        );
-        print(response.statusCode);
+            if (widget.role == "watch wearer")
+              {
+                final response = await http.post(
+                  Uri.parse("https://snvisualworks.com/public/api/auth/register"),
+                  headers: <String, String>{
+                    'Content-Type': 'application/json; charset=UTF-8',
+                  },
+                  body: jsonEncode(<String, dynamic>{
+                    'name': _username.text,
+                    'mobile_number': _phone_number.text,
+                    'email': _emailId.text,
+                    'date_of_birth': _dateOfBirth.text,
+                    'gender': _selectedGender?.toLowerCase(),
+                    'height': double.parse(_height.text).toInt(),
+                    'weight': double.parse(_weight.text).toInt(),
+                  }),
+                );
+                print(response.statusCode);
+              }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Account created successfully")));
-        Navigator.of(context, rootNavigator: true).pushReplacement(
-            MaterialPageRoute(
-                maintainState: true,
-                builder: (context) => HomepageScreen(hasDeviceId: false,)));
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Account created successfully")));
+            Navigator.of(context, rootNavigator: true).pushReplacement(
+                MaterialPageRoute(
+                    maintainState: true,
+                    builder: (context) => HomepageScreen(hasDeviceId: false,)));
+          }
+        else
+          {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Account already exists with this mail ID ")));
+          }
       }
       catch (exception)
     {
@@ -167,12 +182,6 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  final TwilioService twilioService = TwilioService(
-    accountSid: 'ACf1f0c0870c825a03dc6db124b365cf6a',
-    authToken: 'fa856967b5f8bc971b3b783197c3ce33',
-    fromNumber: '+17628009114',
-  );
-
   Future<List<Map<String, dynamic>>> _fetchRelationDetails(String email,
       int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
@@ -183,8 +192,7 @@ class _SignupScreenState extends State<SignupScreen> {
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
-      print(data);
-      await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
+      // await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
     }
     return relationDetails;
   }
@@ -340,11 +348,15 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _emailId,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: 'Email',
+                        suffixIcon: RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailId.text)
+                            ? const Icon(Icons.check, color: Colors.green)
+                            : null,
                       ),
                     ),
+
                   ),
                 ),
                 SizedBox(
@@ -355,21 +367,24 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _phone_number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        suffixIcon: RegExp(r'^(?!([0-9])\1{9,})(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?[\d\s-]{7,10}$').hasMatch(_phone_number.text) ? Icon(Icons.check, color: Colors.green,) : Icon(Icons.close, color: Colors.red,),
+                        border: const OutlineInputBorder(),
                         labelText: 'Phone Number',
                       ),
+
                     ),
                   ),
                 ),
                 SizedBox(height: height * 0.015),
-                Center(
+                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
                   child: SizedBox(
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _dateOfBirth,
                       decoration: InputDecoration(
-                        labelText: 'Select Date',
+                        labelText: 'Select Birth Date',
                         border: OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.calendar_today),
@@ -381,7 +396,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 SizedBox(height: height * 0.015),
-                Center(
+                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
                   child: SizedBox(
                     width: width * 0.9,
                     child: DropdownButtonFormField<String>(
@@ -393,7 +408,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       items: ['Male', 'Female', 'Other'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value),
+                          child: Text(value, style: TextStyle(fontWeight: FontWeight.w400),),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -407,27 +422,27 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(
                   height: height * 0.015,
                 ),
-                Center(
+                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
                   child: SizedBox(
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _height,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        labelText: 'Height',
+                        labelText: 'Height (in cm)',
                       ),
                     ),
                   ),
                 ),
                 SizedBox(height: height * 0.015),
-                Center(
+                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
                   child: SizedBox(
                     width: width * 0.9,
                     child: TextFormField(
                       controller: _weight,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        labelText: 'Weight',
+                        labelText: 'Weight (in Kg)',
                       ),
                     ),
                   ),
@@ -440,22 +455,58 @@ class _SignupScreenState extends State<SignupScreen> {
                   height: 50,
                   child: InkWell(
                     onTap: () {
+                      if (widget.role=='supervisor')
+                      {
+                        _selectedGender = "Male";
+                        _dateOfBirth.text = '2024-01-01';
+                        _height.text = "0.0";
+                        _weight.text = "0.0";
+                      }
+                      else if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailId.text))
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter valid email id")));
+                        }
+                      else if (!RegExp(r'^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$').hasMatch(_dateOfBirth.text))
+                      {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter valid date of birth")));
+                      }
+                      else if (_height.text.isNotEmpty && _weight.text.isNotEmpty)
+                      {
+                        try
+                        {
+                          double val = double.parse(_height.text);
+                          if (val<100.0 || val>250.0)
+                            {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid height")));
+                            }
+                        }
+                        catch(Exception){
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid height")));
+                        }
+                        try
+                        {
+                          double val1 = double.parse(_weight.text);
+                        }
+                        catch(Exception){
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid weight")));
+                        }
+                      }
                       if (_username.text != "" && _emailId.text != "" &&
                           _phone_number.text != "" && _dateOfBirth.text != "" &&
-                          _height.text != "" && _weight.text != "" && _selectedGender!="")
+                          _height.text != "" && _weight.text != "" && _selectedGender!="" )
                         {
                           signUpWithCredentials();
+                        }
+                      else
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter all fields")));
                         }
                     },
                     child : Container(
                       width: width * 0.9,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [
-                            Colors.redAccent,
-                            Colors.orangeAccent.withOpacity(0.9),
-                            Colors.redAccent,
-                          ]),
+                          color: Color.fromRGBO(0, 83, 188, 1),
                           borderRadius: BorderRadius.circular(30)
                       ),
                       child: Text(

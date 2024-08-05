@@ -111,7 +111,7 @@ final userModelProvider = StreamProvider.family<UserModel?, String>((ref, userId
 });
 
 final supervisorModelProvider = StreamProviderFamily<List<UserModel>?, String>((ref, userId) {
-  return FirebaseFirestore.instance.collection('users').where('email', isEqualTo: userId)
+  return FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: int.parse(userId))
       .snapshots()
       .map((snapshot) => snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
 });

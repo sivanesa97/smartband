@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartband/Screens/Dashboard/connected.dart';
 
 import 'Screens/Dashboard/dashboard.dart';
 import 'Screens/InstructionsScreen/instructions.dart';
@@ -65,19 +66,31 @@ class BluetoothDeviceManager {
     }
   }
 
-  void scanForDevices() async {
+  void scanForDevices(BuildContext context) async {
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
     print("Scan started");
 
-    FlutterBluePlus.scanResults.listen((results) {
+    FlutterBluePlus.scanResults.listen((results) async {
       scanResults = [];
       for (var result in results) {
         print('Device found: ${result.device.platformName} (${result.device.remoteId})');
         if (result.device.platformName.isNotEmpty) {
           scanResults.add(result);
+          // if (result.device.platformName.startsWith("Noise"))
+          //   {
+          //     try {
+          //       connectToDevice(result.device, context, true);
+          //     }
+          //     catch (Exception){
+          //       print(Exception);
+          //     }
+          //   }
         }
       }
     });
+    connectedDevices = FlutterBluePlus.connectedDevices;
+    connectedDevicesController.add(connectedDevices);
+    print("Connected devices : ${connectedDevices}");
 
     Future.delayed(const Duration(seconds: 15), () {
       FlutterBluePlus.stopScan();
@@ -95,15 +108,9 @@ class BluetoothDeviceManager {
 
       if (deviceName.isEmpty || deviceName == device.platformName) {
         await device.connect();
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => InstructionsScreen(
-              onNext: () {
-                return;
-              },
-            ),
-          ),
-        );
+        // Navigator.of(context).push(
+        //   MaterialPageRoute(builder: (context) => DashboardScreen(device_name: device.platformName, mac_address: device.remoteId.toString(), device: device))
+        // );
         connectedDevices.add(device);
         connectedDevicesController.add(connectedDevices); // Update connected devices list
 
@@ -129,6 +136,7 @@ class BluetoothDeviceManager {
             connectedDevicesController.add(connectedDevices);
           }
         });
+        Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => Connected()));
       } else {
         print("Device ID doesn't match");
         showDialog(
