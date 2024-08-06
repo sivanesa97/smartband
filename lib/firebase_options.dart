@@ -49,37 +49,37 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // static const FirebaseOptions android = FirebaseOptions(
-  //   apiKey: 'AIzaSyC7bg96ZsKDSjsZXlbBF1PPNouayPo0e_4',
-  //   appId: '1:451615367539:android:2958efba726158a55f6506',
-  //   messagingSenderId: '451615367539',
-  //   projectId: 'smartband1-81618',
-  //   storageBucket: 'smartband1-81618.appspot.com',
-  // );
-
-  // static const FirebaseOptions ios = FirebaseOptions(
-  //   apiKey: 'AIzaSyCYEL72_k1qXPc4Ihoh72UnafEKc_llh3s',
-  //   appId: '1:451615367539:ios:9e232da08cd18ee05f6506',
-  //   messagingSenderId: '451615367539',
-  //   projectId: 'smartband1-81618',
-  //   storageBucket: 'smartband1-81618.appspot.com',
-  //   iosBundleId: 'com.example.smartband',
-  // );
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
-    appId: '1:675871348125:android:8eeda7aded082c36d7cb74',
-    messagingSenderId: '675871348125',
-    projectId: 'smartband-41df9',
-    storageBucket: 'smartband-41df9.appspot.com',
+    apiKey: 'AIzaSyC7bg96ZsKDSjsZXlbBF1PPNouayPo0e_4',
+    appId: '1:451615367539:android:2958efba726158a55f6506',
+    messagingSenderId: '451615367539',
+    projectId: 'smartband1-81618',
+    storageBucket: 'smartband1-81618.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
-    appId: '1:675871348125:ios:ae14d06e3eb8a68bd7cb74',
-    messagingSenderId: '675871348125',
-    projectId: 'smartband-41df9',
-    storageBucket: 'smartband-41df9.appspot.com',
-    iosBundleId: 'com.smartband.longlifecare',
+    apiKey: 'AIzaSyCYEL72_k1qXPc4Ihoh72UnafEKc_llh3s',
+    appId: '1:451615367539:ios:9e232da08cd18ee05f6506',
+    messagingSenderId: '451615367539',
+    projectId: 'smartband1-81618',
+    storageBucket: 'smartband1-81618.appspot.com',
+    iosBundleId: 'com.example.smartband',
   );
+  // static const FirebaseOptions android = FirebaseOptions(
+  //   apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
+  //   appId: '1:675871348125:android:8eeda7aded082c36d7cb74',
+  //   messagingSenderId: '675871348125',
+  //   projectId: 'smartband-41df9',
+  //   storageBucket: 'smartband-41df9.appspot.com',
+  // );
+
+  // static const FirebaseOptions ios = FirebaseOptions(
+  //   apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
+  //   appId: '1:675871348125:ios:ae14d06e3eb8a68bd7cb74',
+  //   messagingSenderId: '675871348125',
+  //   projectId: 'smartband-41df9',
+  //   storageBucket: 'smartband-41df9.appspot.com',
+  //   iosBundleId: 'com.smartband.longlifecare',
+  // );
 
 }
