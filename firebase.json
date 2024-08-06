@@ -1,1 +1,22 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"smartband1-81618","appId":"1:451615367539:android:2958efba726158a55f6506","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"smartband1-81618","configurations":{"android":"1:451615367539:android:2958efba726158a55f6506","ios":"1:451615367539:ios:9e232da08cd18ee05f6506"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "smartband-keydraft",
+          "appId": "1:72807940787:android:463ace5e8df3e539e566c6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "smartband-keydraft",
+          "configurations": {
+            "android": "1:72807940787:android:463ace5e8df3e539e566c6",
+            "ios": "1:72807940787:ios:463ace5e8df3e539e566c6"
+          }
+        }
+      }
+    }
+  }
+}
