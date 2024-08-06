@@ -81,8 +81,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   builder: (context) => HomepageScreen(
                         hasDeviceId: false,
                       )));
-        }
-        else {
+        } else {
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => HomePage(
                     phNo: widget.phoneNumber,
