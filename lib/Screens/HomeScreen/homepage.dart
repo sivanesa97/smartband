@@ -21,9 +21,10 @@ class HomepageScreen extends StatefulWidget {
 }
 
 class _HomepageScreenState extends State<HomepageScreen> {
-  String role1 = "watch wearer";
+  String role1 = "";
   String phNo = "";
-  final BluetoothDeviceManager bluetoothDeviceManager = BluetoothDeviceManager();
+  final BluetoothDeviceManager bluetoothDeviceManager =
+      BluetoothDeviceManager();
 
   Future<void> _initializeBluetooth() async {
     print(widget.hasDeviceId);
@@ -55,30 +56,34 @@ class _HomepageScreenState extends State<HomepageScreen> {
 
     final data = await FirebaseFirestore.instance
         .collection("users")
-        .doc(user.uid).get();
+        .doc(user.uid)
+        .get();
     final curr_location = data.data()!['home_location'] as GeoPoint;
     final role = data.data()?['role'];
     final phone = data.data()?['phone_number'];
+    print("role = " + role.toString());
     setState(() {
       role1 = role;
       phNo = phone.toString();
     });
-    final distance = Geolocator.distanceBetween(location.latitude, location.longitude, curr_location.latitude, curr_location.longitude);
-    print(distance%1000);
-    if (distance%1000 > 10)
-      {
-        final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: FirebaseAuth.instance.currentUser!.email).get();
-        SendNotification send = SendNotification();
-        print("Sending");
-        for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
-        {
-          await Future.delayed(Duration(seconds: 5), (){});
-          print("Email : ${i.data()['email']}");
-          // send.sendNotification(i.data()['email'], "Emergency!!", "User has moved out to ${curr_location.latitude}°N ${curr_location.longitude}°E. Please check");
-          print("Message sent");
-        }
-
+    final distance = Geolocator.distanceBetween(location.latitude,
+        location.longitude, curr_location.latitude, curr_location.longitude);
+    print(distance % 1000);
+    if (distance % 1000 > 10) {
+      final data = await FirebaseFirestore.instance
+          .collection("users")
+          .where('relations',
+              arrayContains: FirebaseAuth.instance.currentUser!.email)
+          .get();
+      SendNotification send = SendNotification();
+      print("Sending");
+      for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
+        await Future.delayed(Duration(seconds: 5), () {});
+        print("Email : ${i.data()['email']}");
+        // send.sendNotification(i.data()['email'], "Emergency!!", "User has moved out to ${curr_location.latitude}°N ${curr_location.longitude}°E. Please check");
+        print("Message sent");
       }
+    }
 
     return location;
   }
@@ -93,37 +98,47 @@ class _HomepageScreenState extends State<HomepageScreen> {
   @override
   Widget build(BuildContext context) {
     return role1 == 'supervisor'
-        ? SupervisorDashboard(phNo: phNo,)
+        ? SupervisorDashboard(
+            phNo: phNo,
+          )
         : StreamBuilder<List<BluetoothDevice>>(
-      stream: bluetoothDeviceManager.connectedDevicesStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          print(snapshot.data);
-          return Center(
-            child: CircularProgressIndicator(),
+            stream: bluetoothDeviceManager.connectedDevicesStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                print(snapshot.data);
+                return Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              } else if (snapshot.hasData &&
+                  snapshot.data != null &&
+                  snapshot.data!.isNotEmpty) {
+                // Navigate to DashboardScreen if devices are connected
+                String deviceName = snapshot.data!.first.platformName;
+                bluetoothDeviceManager
+                    .discoverServicesAndCharacteristics(snapshot.data!.first);
+                return DashboardScreen(
+                  device: snapshot.data!.first,
+                  device_name: deviceName,
+                  mac_address: snapshot.data!.first.remoteId.toString(),
+                );
+              } else {
+                return role1 == ""
+                    ? Scaffold(
+                        body: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : NotConnectedPage(
+                        hasDeviceId: widget.hasDeviceId,
+                      );
+              }
+            },
           );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
-        } else if (snapshot.hasData &&
-            snapshot.data != null &&
-            snapshot.data!.isNotEmpty) {
-          // Navigate to DashboardScreen if devices are connected
-          String deviceName = snapshot.data!.first.platformName;
-          bluetoothDeviceManager
-              .discoverServicesAndCharacteristics(snapshot.data!.first);
-          return DashboardScreen(
-            device: snapshot.data!.first,
-            device_name: deviceName,
-            mac_address: snapshot.data!.first.remoteId.toString(),
-          );
-        } else {
-          return NotConnectedPage(
-            hasDeviceId: widget.hasDeviceId,
-          );
-        }
-      },
-    );
   }
 }

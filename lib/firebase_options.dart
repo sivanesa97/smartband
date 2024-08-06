@@ -65,21 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'smartband1-81618.appspot.com',
     iosBundleId: 'com.example.smartband',
   );
-  // static const FirebaseOptions android = FirebaseOptions(
-  //   apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
-  //   appId: '1:675871348125:android:8eeda7aded082c36d7cb74',
-  //   messagingSenderId: '675871348125',
-  //   projectId: 'smartband-41df9',
-  //   storageBucket: 'smartband-41df9.appspot.com',
-  // );
-
-  // static const FirebaseOptions ios = FirebaseOptions(
-  //   apiKey: 'AIzaSyCl-NR37kO3DPb6FSnX1RtCbf9t8jLMhQs',
-  //   appId: '1:675871348125:ios:ae14d06e3eb8a68bd7cb74',
-  //   messagingSenderId: '675871348125',
-  //   projectId: 'smartband-41df9',
-  //   storageBucket: 'smartband-41df9.appspot.com',
-  //   iosBundleId: 'com.smartband.longlifecare',
-  // );
 
 }
