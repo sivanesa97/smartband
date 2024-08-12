@@ -99,7 +99,7 @@ void main() async {
     SOSPage sosPage = new SOSPage();
     sosPage.createState().startSOS();
     sendNotification.showNotification(message.notification?.title ?? "",
-        message.notification?.bodyLocArgs.first ?? "", message.notification?.bodyLocArgs.last ?? "", navigatorKey);
+        message.notification?.body ?? "", navigatorKey);
   });
 
   SystemChrome.setPreferredOrientations([
@@ -120,11 +120,11 @@ void main() async {
   )));
 }
 
-@pragma("vm:entry-point")
-void overlayMain() {
-  runApp(MaterialApp(
-      debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
-}
+// @pragma("vm:entry-point")
+// void overlayMain() {
+//   runApp(MaterialApp(
+//       debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
+// }
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

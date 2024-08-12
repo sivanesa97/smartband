@@ -114,7 +114,7 @@ class SendNotification {
   }
 
   Future<void> showNotification(
-      String title, String msg, String uid, GlobalKey<NavigatorState> globalKey) async {
+      String title, String msg, GlobalKey<NavigatorState> globalKey) async {
     VolumeController().setVolume(1, showSystemUI: false);
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails("default_channel_id", 'channel.name',
