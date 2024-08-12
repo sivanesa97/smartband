@@ -51,19 +51,18 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBJJX8JHKR0R1cC2F2OdfFP53DxJybwZ6E',
-    appId: '1:72807940787:android:463ace5e8df3e539e566c6',
+    appId: '1:72807940787:android:1b109f58b865a34ce566c6',
     messagingSenderId: '72807940787',
     projectId: 'smartband-keydraft',
     storageBucket: 'smartband-keydraft.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBJJX8JHKR0R1cC2F2OdfFP53DxJybwZ6E',
+    apiKey: 'AIzaSyAhkRSKkphjmStELtVV8ySqXm7ZHgOASYU',
     appId: '1:72807940787:ios:847f3192e8f2dcb8e566c6',
     messagingSenderId: '72807940787',
     projectId: 'smartband-keydraft',
     storageBucket: 'smartband-keydraft.appspot.com',
     iosBundleId: 'com.keydraft.smartband',
   );
-
 }

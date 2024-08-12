@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:audio_session/audio_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,7 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
@@ -134,6 +135,7 @@ class _MyAppState extends State<MyApp> {
       title: 'LifeLongCare',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),

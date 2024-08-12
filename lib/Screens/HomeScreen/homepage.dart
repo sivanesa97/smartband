@@ -1,9 +1,9 @@
+// ignore_for_file: avoid_print
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:smartband/pushnotifications.dart';
@@ -14,13 +14,13 @@ import '../Dashboard/notConnected.dart';
 class HomepageScreen extends StatefulWidget {
   final bool hasDeviceId;
 
-  HomepageScreen({Key? key, required this.hasDeviceId}) : super(key: key);
+  const HomepageScreen({super.key, required this.hasDeviceId});
 
   @override
-  _HomepageScreenState createState() => _HomepageScreenState();
+  HomepageScreenState createState() => HomepageScreenState();
 }
 
-class _HomepageScreenState extends State<HomepageScreen> {
+class HomepageScreenState extends State<HomepageScreen> {
   String role1 = "";
   String phNo = "";
   final BluetoothDeviceManager bluetoothDeviceManager =
@@ -61,7 +61,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
     final curr_location = data.data()!['home_location'] as GeoPoint;
     final role = data.data()?['role'];
     final phone = data.data()?['phone_number'];
-    print("role = " + role.toString());
+    print("role = $role");
     setState(() {
       role1 = role;
       phNo = phone.toString();
@@ -78,7 +78,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
       SendNotification send = SendNotification();
       print("Sending");
       for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
-        await Future.delayed(Duration(seconds: 5), () {});
+        await Future.delayed(const Duration(seconds: 5), () {});
         print("Email : ${i.data()['email']}");
         // send.sendNotification(i.data()['email'], "Emergency!!", "User has moved out to ${curr_location.latitude}°N ${curr_location.longitude}°E. Please check");
         print("Message sent");
@@ -106,7 +106,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 print(snapshot.data);
-                return Scaffold(
+                return const Scaffold(
                   body: Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -122,14 +122,18 @@ class _HomepageScreenState extends State<HomepageScreen> {
                 String deviceName = snapshot.data!.first.platformName;
                 bluetoothDeviceManager
                     .discoverServicesAndCharacteristics(snapshot.data!.first);
-                return DashboardScreen(
-                  device: snapshot.data!.first,
-                  device_name: deviceName,
-                  mac_address: snapshot.data!.first.remoteId.toString(),
-                );
+                return DashboardScreen(phNo,
+                    device_name: deviceName,
+                    mac_address: snapshot.data!.first.remoteId.toString(),
+                    device: snapshot.data!.first);
+                // DashboardScreen(
+                //   device: snapshot.data!.first,
+                //   device_name: deviceName,
+                //   mac_address: snapshot.data!.first.remoteId.toString(),
+                // );
               } else {
                 return role1 == ""
-                    ? Scaffold(
+                    ? const Scaffold(
                         body: Center(
                           child: CircularProgressIndicator(),
                         ),

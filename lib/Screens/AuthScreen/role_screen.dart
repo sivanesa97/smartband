@@ -1,12 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
-import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
-import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
-import 'package:smartband/Screens/HomeScreen/homepage.dart';
 
 class HomePage extends StatefulWidget {
   String phNo;
@@ -103,31 +98,31 @@ class _MainScreenState extends State<MainScreen> {
                           Text(
                             'Device Owner',
                             style: TextStyle(
-                              color: selected_role=='watch wearer' ? Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              color: selected_role=='watch wearer' ? const Color.fromRGBO(0, 83, 188, 1) : Colors.black,
                               fontSize: width * 0.045,
                             ),
                           ),
                           SizedBox(height: height * 0.02),
                           if (selected_role=='watch wearer')
                             Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.lightGreen
                               ),
-                              child: Icon(
+                              child: const Icon(
                                   Icons.check,
                                   color: Colors.white,
                               ),
                             )
                           else
                             Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.white
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.check,
                                 color: Colors.white,
                               ),
@@ -158,31 +153,31 @@ class _MainScreenState extends State<MainScreen> {
                           Text(
                             'Monitoring Person',
                             style: TextStyle(
-                              color: selected_role=="supervisor" ? Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              color: selected_role=="supervisor" ? const Color.fromRGBO(0, 83, 188, 1) : Colors.black,
                               fontSize: width * 0.045,
                             ),
                           ),
                           SizedBox(height: height * 0.02,),
                           if (selected_role=='supervisor')
                             Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.lightGreen
                               ),
-                              child: Icon(
+                              child: const Icon(
                                   Icons.check,
                                   color: Colors.white,
                               ),
                             )
                           else
                             Container(
-                              padding: EdgeInsets.all(5),
-                              decoration: BoxDecoration(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.white
                               ),
-                              child: Icon(
+                              child: const Icon(
                                   Icons.check,
                                 color: Colors.white,
                               ),
@@ -198,7 +193,7 @@ class _MainScreenState extends State<MainScreen> {
                       width: width * 0.9,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: Color.fromRGBO(0, 83, 188, 1),
+                        color: const Color.fromRGBO(0, 83, 188, 1),
                       ),
                       child: TextButton(
                         onPressed: ()
