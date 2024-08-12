@@ -1,33 +1,35 @@
+// ignore_for_file: avoid_print
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
-import 'package:smartband/Screens/Dashboard/supervisor_wearer.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
-import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/HomeScreen/heart_rate.dart';
 import 'package:smartband/Screens/HomeScreen/history_screen.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/HomeScreen/spo2.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
-import 'package:smartband/Screens/Widgets/coming_soon.dart';
+import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/pushnotifications.dart';
-
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String device_name;
   final String mac_address;
   final BluetoothDevice device;
+  final String phNo;
 
-  DashboardScreen({
-    Key? key,
+  const DashboardScreen(
+    this.phNo, {
+    super.key,
     required this.device_name,
     required this.mac_address,
     required this.device,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -52,7 +54,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userData = ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+    final userData =
+        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     int index = 0;
 
     return userData.when(
@@ -61,13 +64,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           user = data?.role;
         });
         List<Widget> _widgetOptions = <Widget>[
-          WearerDashboard(device: widget.device, phNo: data!.phone_number.toString(),),
-          HeartrateScreen(device: widget.device, phNo: data.phone_number.toString(),),
-          Spo2Screen(device: widget.device, phNo: data.phone_number.toString(),),
-          HistoryScreen(device: widget.device, phNo: data.phone_number.toString(),),
+          WearerDashboard(
+            device: widget.device,
+            phNo: data!.phone_number.toString(),
+          ),
+          HeartrateScreen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
+          Spo2Screen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
+          HistoryScreen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
         ];
 
-        List<BottomNavigationBarItem> _bottomNavigationBarItems = <BottomNavigationBarItem>[
+        List<BottomNavigationBarItem> _bottomNavigationBarItems =
+            <BottomNavigationBarItem>[
           const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
@@ -86,28 +102,143 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ];
 
-
         return user == "watch wearer"
             ? Scaffold(
-          body: Center(
-            child: _widgetOptions.elementAt(_selectedIndex),
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: Colors.white,
-            items: _bottomNavigationBarItems,
-            currentIndex: _selectedIndex,
-            selectedItemColor: Colors.black,
-            showUnselectedLabels: false,
-            onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
-          ),
-        )
+                drawer: DrawerScreen(
+                  device: bluetoothDeviceManager.connectedDevices.first,
+                  phNo: widget.phNo,
+                ),
+                appBar: AppBar(
+                  backgroundColor: Colors.white,
+                  leading: GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.all(10.0),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(
+                          FirebaseAuth.instance.currentUser!.photoURL ??
+                              "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
+                        ),
+                      ),
+                    ),
+                  ),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    // Adjust this to fit content
+                    children: [
+                      // Profile Picture
+                      // GestureDetector(
+                      //   onTap: () {
+                      //     Scaffold.of(context).openDrawer();
+                      //   },
+                      //   child: Container(
+                      //     margin: EdgeInsets.all(10.0),
+                      //     child: CircleAvatar(
+                      //       radius: 20,
+                      //       backgroundImage: NetworkImage(
+                      //         FirebaseAuth.instance.currentUser!.photoURL ??
+                      //             "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      // SizedBox(width: 3),
+                      // Spacing between profile picture and text
+                      // Greeting Message
+                      Expanded(
+                        // Use Expanded to take up remaining space
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  "Hello ${FirebaseAuth.instance.currentUser?.displayName?.split(' ')[0] ?? 'User'}",
+                                  style: TextStyle(
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                            0.055,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const Icon(Icons.keyboard_arrow_down)
+                              ],
+                            ),
+                            Text(
+                              DateTime.now().hour > 12
+                                  ? DateTime.now().hour > 16
+                                      ? "Good Evening ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                            2,
+                                          )}"
+                                      : "Good Afternoon ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                            2,
+                                          )}"
+                                  : "Good Morning ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                        2,
+                                      )}",
+                              style: TextStyle(
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.04,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            child: Image.asset(
+                              "assets/profile_icon.png",
+                              width: 25,
+                              height: 25,
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      HomePage(phNo: widget.phNo)));
+                            },
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Icon(
+                            Icons.notifications,
+                            size: 25,
+                          )
+                        ],
+                      ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.01,
+                      )
+                    ],
+                  ),
+                ),
+                body: Center(
+                  child: _widgetOptions.elementAt(_selectedIndex),
+                ),
+                bottomNavigationBar: BottomNavigationBar(
+                  backgroundColor: Colors.white,
+                  items: _bottomNavigationBarItems,
+                  currentIndex: _selectedIndex,
+                  selectedItemColor: Colors.black,
+                  showUnselectedLabels: false,
+                  onTap: _onItemTapped,
+                  type: BottomNavigationBarType.fixed,
+                ),
+              )
             : Scaffold(
-          body: SupervisorDashboard(phNo: data!.phone_number.toString(),),
-        );
+                body: SupervisorDashboard(
+                  phNo: data!.phone_number.toString(),
+                ),
+              );
       },
-      error: (error, StackTrace) => SizedBox(),
-      loading: () => SizedBox(),
+      error: (error, StackTrace) => const SizedBox(),
+      loading: () => const SizedBox(),
     );
   }
 }
@@ -118,13 +249,12 @@ class EmergencyCard extends StatefulWidget {
   bool sosClicked = false;
   List<String> values;
 
-  EmergencyCard({
-    super.key,
-    required this.relations,
-    required this.user,
-    required this.sosClicked,
-    required this.values
-  });
+  EmergencyCard(
+      {super.key,
+      required this.relations,
+      required this.user,
+      required this.sosClicked,
+      required this.values});
 
   @override
   State<EmergencyCard> createState() => _EmergencyCardState();
@@ -143,8 +273,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
 
   Future<void> _handleSOSClick(bool sosClicked) async {
     Position location = await updateLocation();
-    try
-    {
+    try {
       if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection("users")
@@ -153,31 +282,34 @@ class _EmergencyCardState extends State<EmergencyCard> {
           "metrics": {
             "spo2": widget.values[1],
             "heart_rate": widget.values[0],
-            "fall_axis":
-            "-- -- --"
+            "fall_axis": "-- -- --"
           }
         });
       }
-      final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: widget.user.phone_number.toString()).get();
+      final data = await FirebaseFirestore.instance
+          .collection("users")
+          .where('relations',
+              arrayContains: widget.user.phone_number.toString())
+          .get();
       SendNotification send = SendNotification();
-      for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
-      {
+      for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
         print("Sending");
         // await Future.delayed(Duration(seconds: 5), (){});
         print("Email : ${i.data()['email']}");
         // String? email = await FirebaseAuth.instance.currentUser!.email;
-        send.sendNotification(i.data()['phone_number'].toString(), "Emergency!!", "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+        send.sendNotification(
+            i.data()['phone_number'].toString(),
+            "Emergency!!",
+            "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
         print("Message sent");
       }
-    }
-    catch(e)
-    {
+    } catch (e) {
       print("Exception ${e}");
     }
 
     // Notify user
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("SOS alert sent to supervisors")),
+      const SnackBar(content: Text("SOS alert sent to supervisors")),
     );
   }
 
@@ -201,7 +333,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
     final width = MediaQuery.of(context).size.width;
 
     return Card(
-        color: Color.fromRGBO(255, 234, 234, 1),
+      color: const Color.fromRGBO(255, 234, 234, 1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 4,
       child: Padding(
@@ -211,7 +343,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
           children: [
             Row(
               children: [
-                Icon(Icons.warning, size: 25),
+                const Icon(Icons.warning, size: 25),
                 SizedBox(width: width * 0.01),
                 Text('Emergency', style: TextStyle(fontSize: width * 0.05)),
               ],
@@ -228,7 +360,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
                     height: width * 0.25,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(width * 0.5),
-                      color: widget.sosClicked ? Colors.redAccent : Colors.white,
+                      color:
+                          widget.sosClicked ? Colors.redAccent : Colors.white,
                       boxShadow: const [
                         BoxShadow(
                           color: Colors.redAccent,
@@ -252,7 +385,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
                       ],
                     ),
                   ),
-                  Text(
+                  const Text(
                     "SOS",
                     style: TextStyle(color: Colors.white, fontSize: 20),
                   ),

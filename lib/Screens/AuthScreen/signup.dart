@@ -78,8 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
             .collection('users')
             .where("email", isEqualTo: _emailId.text)
             .get();
-        if (datas.docs.isEmpty)
-          {
+        if (datas.docs.isEmpty) {
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
               email: _emailId.text,
               password: "admin123",
@@ -93,6 +92,7 @@ class _SignupScreenState extends State<SignupScreen> {
               email: _emailId.text,
               password: "admin123",
             );
+            print("first one");
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(FirebaseAuth.instance.currentUser?.uid)
@@ -124,8 +124,8 @@ class _SignupScreenState extends State<SignupScreen> {
               'fcmKey': await FirebaseMessaging.instance.getToken()
             });
 
-            if (widget.role == "watch wearer")
-              {
+            print("second one");
+            if (widget.role == "watch wearer") {
                 final response = await http.post(
                   Uri.parse("https://snvisualworks.com/public/api/auth/register"),
                   headers: <String, String>{
@@ -143,6 +143,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 );
                 print(response.statusCode);
               }
+            print("third one");
 
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Account created successfully")));
@@ -150,20 +151,16 @@ class _SignupScreenState extends State<SignupScreen> {
                 MaterialPageRoute(
                     maintainState: true,
                     builder: (context) => HomepageScreen(hasDeviceId: false,)));
-          }
-        else
-          {
+          } else {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Account already exists with this mail ID ")));
           }
+      } catch (exception) {
+        User? user = FirebaseAuth.instance.currentUser;
+        user?.delete();
+        print("Account deleted");
       }
-      catch (exception)
-    {
-      User? user = FirebaseAuth.instance.currentUser;
-      user?.delete();
-      print("Account deleted");
-    }
-    } on FirebaseAuthException catch (e) {
+      } on FirebaseAuthException catch (e) {
       User? user = FirebaseAuth.instance.currentUser;
       user?.delete();
       print("Account deleted");

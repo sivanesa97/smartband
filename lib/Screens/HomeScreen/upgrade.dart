@@ -9,24 +9,24 @@ class Upgradescreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBarWidget(),
+      appBar: const AppBarWidget(),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(15.0),
+          padding: const EdgeInsets.all(15.0),
           child: Column(
             children: [
               Container(
                 width: MediaQuery.of(context).size.width * 0.9,
-                child: Padding(
+                decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10.0)),
+                child: const Padding(
                   padding: EdgeInsets.all(20.0),
                   child: Text(
                     "Upgrade",
                     style: TextStyle(fontSize: 20),
                   ),
                 ),
-                decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10.0)),
               ),
               const Expanded(
                   child: Column(

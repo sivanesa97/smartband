@@ -60,6 +60,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (true)
       // if (int.parse(otp) == generated_otp)
       {
+        print(phNo);
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number",
@@ -81,8 +82,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   builder: (context) => HomepageScreen(
                         hasDeviceId: false,
                       )));
-        }
-        else {
+        } else {
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => HomePage(
                     phNo: widget.phoneNumber,

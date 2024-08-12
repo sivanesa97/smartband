@@ -1,3 +1,6 @@
+// ignore_for_file: avoid_print
+
+import 'package:audio_session/audio_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,25 +25,63 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling a background message: ${message.messageId}");
 }
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('logo');
+
+  Future<void> _initializeAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      androidAudioAttributes: const AndroidAudioAttributes(
+        usage: AndroidAudioUsage.alarm,
+        contentType: AndroidAudioContentType.sonification,
+        flags: AndroidAudioFlags.audibilityEnforced,
+      ),
+    ));
+  }
+
+  await _initializeAudioSession();
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('logo');
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
   );
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse res) => {
+            navigatorKey.currentState
+                ?.push(MaterialPageRoute(builder: (_) => EmergencyScreen()))
+          });
 
   final fcmToken = await FirebaseMessaging.instance.getToken();
+
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'default_channel_id', // id
+    'channel.name', // name
+    description: 'description', // description
+    importance: Importance.max,
+    sound: RawResourceAndroidNotificationSound('ringtone'),
+    playSound: true,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     SendNotification sendNotification = SendNotification();
-    sendNotification.showNotification(message.notification?.title ?? "", message.notification?.body ?? "");
+
+    sendNotification.showNotification(
+        message.notification?.title ?? "", message.notification?.body ?? "");
   });
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -50,7 +92,9 @@ void main() async {
       statusBarBrightness: Brightness.dark,
       systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.dark));
-  runApp(ProviderScope(child: MaterialApp(home: SplashScreen(), debugShowCheckedModeBanner: false)));
+  runApp(ProviderScope(
+      child: MaterialApp(
+          home: SplashScreen(), debugShowCheckedModeBanner: false)));
 }
 
 class MyApp extends StatefulWidget {
@@ -74,7 +118,10 @@ class _MyAppState extends State<MyApp> {
     if (user == null) {
       initialScreen = const SignIn();
     } else {
-      final data = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final data = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       bool hasDeviceId = data.data()?['device_id'] != "" ? true : false;
       initialScreen = HomepageScreen(hasDeviceId: hasDeviceId);
     }
@@ -88,6 +135,7 @@ class _MyAppState extends State<MyApp> {
       title: 'LifeLongCare',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
@@ -114,7 +162,8 @@ class SplashScreen extends StatefulWidget {
   _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _progressAnimation;
 
@@ -151,13 +200,32 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     if (notificationStatus.isDenied) {
       print('Notification permission denied');
     }
+    await Permission.ignoreBatteryOptimizations.request();
+    await Permission.backgroundRefresh.request();
+    await Permission.systemAlertWindow.request();
+
     print('Notification permission granted');
+  }
+
+  Future<void> _initBackgroundService() async {
+    final hasPermissions = await FlutterBackground.hasPermissions;
+    if (!hasPermissions) {
+      await FlutterBackground.initialize(
+        androidConfig: const FlutterBackgroundAndroidConfig(
+          notificationTitle: "Background Service",
+          notificationText: "Playing sound in the background",
+          notificationImportance: AndroidNotificationImportance.Default,
+          enableWifiLock: true,
+        ),
+      );
+    }
   }
 
   @override
   void initState() {
     super.initState();
     requestPermissions();
+    _initBackgroundService();
 
     _controller = AnimationController(
       vsync: this,
@@ -176,6 +244,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void dispose() {
     _controller.dispose();
+
     super.dispose();
   }
 
@@ -204,7 +273,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   SizedBox(height: 16),
                   Text(
                     "LONG LIFE CARE",
-                    style: TextStyle(fontSize: width * 0.05, color: Colors.white),
+                    style:
+                        TextStyle(fontSize: width * 0.05, color: Colors.white),
                   ),
                 ],
               ),
@@ -223,7 +293,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (mounted) {
         User? user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          final data = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+          final data = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
           bool hasDeviceId = data.data()?['device_id'] != "" ? true : false;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -258,12 +331,23 @@ class RadialGradientPainter extends CustomPainter {
           Colors.white,
         ],
         stops: [0.0, 1.0],
-      ).createShader(Rect.fromCircle(center: size.center(Offset.zero), radius: size.height));
+      ).createShader(Rect.fromCircle(
+          center: size.center(Offset.zero), radius: size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
+  }
+}
+
+class EmergencyScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Emergency')),
+      body: Center(child: Text('Emergency details here...')),
+    );
   }
 }

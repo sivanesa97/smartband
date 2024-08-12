@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "451615367539",
-    "project_id": "smartband1-81618",
-    "storage_bucket": "smartband1-81618.appspot.com"
+    "project_number": "72807940787",
+    "project_id": "smartband-keydraft",
+    "storage_bucket": "smartband-keydraft.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:451615367539:android:2958efba726158a55f6506",
+        "mobilesdk_app_id": "1:72807940787:android:463ace5e8df3e539e566c6",
         "android_client_info": {
-          "package_name": "com.example.smartband"
+          "package_name": "com.keydraft.smartband"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC7bg96ZsKDSjsZXlbBF1PPNouayPo0e_4"
+          "current_key": "AIzaSyBJJX8JHKR0R1cC2F2OdfFP53DxJybwZ6E"
         }
       ],
       "services": {
