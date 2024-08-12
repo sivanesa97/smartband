@@ -5,9 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
+import 'package:smartband/pushnotifications.dart';
 import '../DrawerScreens/profilepage.dart';
 import '../InstructionsScreen/instructions.dart';
 import '../Widgets/appBar.dart';
@@ -150,11 +152,90 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                 Padding(
                   padding: EdgeInsets.only(right: 15.0),
                   child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        addDeviceBtn = true;
-                        scanForDevices(context);
-                      });
+                    onTap: () async {
+                      Future<void> _handleSOSClick(bool sosClicked) async {
+                        // Position location = await updateLocation();
+                        try {
+                          if (FirebaseAuth
+                              .instance.currentUser!.uid.isNotEmpty) {
+                            await FirebaseFirestore.instance
+                                .collection("users")
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .update({
+                              "metrics": {
+                                "spo2": "168",
+                                "heart_rate": "200",
+                                "fall_axis": "-- -- --"
+                              }
+                            });
+                          }
+                          final data = await FirebaseFirestore.instance
+                              .collection("users")
+                              .where('relations', arrayContains: "965538193")
+                              .get();
+                          SendNotification send = SendNotification();
+                          for (QueryDocumentSnapshot<Map<String, dynamic>> i
+                              in data.docs) {
+                            print("Sending");
+                            // await Future.delayed(Duration(seconds: 5), (){});
+                            print("Email : ${i.data()['email']}");
+                            await FirebaseFirestore.instance
+                                .collection("emergency_alerts")
+                                .doc(i.id)
+                                .set({
+                              "isEmergency": true,
+                              "responseStatus": false,
+                              "response": "",
+                              "userUid": FirebaseAuth.instance.currentUser?.uid,
+                              "heartbeatRate": 150,
+                              "location": "",
+                              "sfo2": 100,
+                              "fallDetection": false,
+                              "isManual": true
+                            }, SetOptions(merge: true));
+
+                            if (FirebaseAuth.instance.currentUser != null) {
+                              await FirebaseFirestore.instance
+                                  .collection("emergency_alerts")
+                                  .doc(i.id)
+                                  .collection(
+                                      FirebaseAuth.instance.currentUser?.uid ??
+                                          "public")
+                                  .add({
+                                "isEmergency": true,
+                                "responseStatus": false,
+                                "response": "",
+                                "heartbeatRate": 150,
+                                "location": "°N °E",
+                                "sfo2": 100,
+                                "fallDetection": false,
+                                "isManual": true,
+                                "timestamp": FieldValue.serverTimestamp()
+                              });
+                            }
+                            // String? email = await FirebaseAuth.instance.currentUser!.email;
+                            send.sendNotification(
+                                i.data()['phone_number'].toString(),
+                                "Emergency!!",
+                                "SIVA has clicked SOS Button from °N °E. Please respond");
+                            print("Message sent");
+                          }
+                        } catch (e) {
+                          print("Exception ${e}");
+                        }
+
+                        // Notify user
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text("SOS alert sent to supervisors")),
+                        );
+                      }
+
+                      await _handleSOSClick(true);
+                      // setState(() {
+                      //   addDeviceBtn = true;
+                      //   scanForDevices(context);
+                      // });
                     },
                     child: Align(
                       alignment: Alignment.center,
@@ -162,7 +243,6 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         width: width * 0.5,
                         decoration: BoxDecoration(
                           color: Colors.white,
-
                           boxShadow: const [
                             BoxShadow(
                               color: Color.fromRGBO(0, 83, 188, 1),
@@ -285,25 +365,28 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                       SizedBox(
                                         width: width * 0.3,
                                         child: TextButton(
-                                          onPressed: () {
-                                            connectToDevice(device.device,
-                                                context, widget.hasDeviceId);
-                                            // Navigator.of(context).push(MaterialPageRoute(builder: (context) => DashboardScreen(device_name: "device_name", mac_address: "mac_address")));
-                                          },
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(20),
-                                              color: Colors.grey.withOpacity(0.1)
-                                            ),
-                                            child: const Text(
-                                              "Connect",
-                                              style: TextStyle(
-                                                color: Color.fromRGBO(0, 83, 188, 1),
+                                            onPressed: () {
+                                              connectToDevice(device.device,
+                                                  context, widget.hasDeviceId);
+                                              // Navigator.of(context).push(MaterialPageRoute(builder: (context) => DashboardScreen(device_name: "device_name", mac_address: "mac_address")));
+                                            },
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 10.0,
+                                                  horizontal: 15.0),
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                  color: Colors.grey
+                                                      .withOpacity(0.1)),
+                                              child: const Text(
+                                                "Connect",
+                                                style: TextStyle(
+                                                  color: Color.fromRGBO(
+                                                      0, 83, 188, 1),
+                                                ),
                                               ),
-                                            ),
-                                          )
-                                        ),
+                                            )),
                                       ),
                                     ],
                                   ),

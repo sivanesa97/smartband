@@ -11,7 +11,8 @@ import 'Screens/Dashboard/dashboard.dart';
 import 'Screens/InstructionsScreen/instructions.dart';
 
 class BluetoothDeviceManager {
-  static final BluetoothDeviceManager _instance = BluetoothDeviceManager._internal();
+  static final BluetoothDeviceManager _instance =
+      BluetoothDeviceManager._internal();
 
   factory BluetoothDeviceManager() {
     return _instance;
@@ -28,15 +29,17 @@ class BluetoothDeviceManager {
   Map<String, String> characteristicValues = {};
 
   final StreamController<List<BluetoothDevice>> connectedDevicesController =
-  StreamController<List<BluetoothDevice>>.broadcast();
+      StreamController<List<BluetoothDevice>>.broadcast();
 
   // Public getter for connectedDevicesStream
-  Stream<List<BluetoothDevice>> get connectedDevicesStream => connectedDevicesController.stream;
+  Stream<List<BluetoothDevice>> get connectedDevicesStream =>
+      connectedDevicesController.stream;
 
   final StreamController<Map<String, String>> characteristicValuesController =
-  StreamController<Map<String, String>>.broadcast();
+      StreamController<Map<String, String>>.broadcast();
 
-  Stream<Map<String, String>> get characteristicValuesStream => characteristicValuesController.stream;
+  Stream<Map<String, String>> get characteristicValuesStream =>
+      characteristicValuesController.stream;
 
   void _initialize() {
     FlutterBluePlus.adapterState.listen((state) async {
@@ -67,13 +70,15 @@ class BluetoothDeviceManager {
   }
 
   void scanForDevices(BuildContext context) async {
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 30));
     print("Scan started");
 
     FlutterBluePlus.scanResults.listen((results) async {
       scanResults = [];
       for (var result in results) {
-        print('Device found: ${result.device.platformName} (${result.device.remoteId})');
+        print(
+            'Device found: ${result.device.platformName} (${result.device.remoteId})');
+        // print(result);
         if (result.device.platformName.isNotEmpty) {
           scanResults.add(result);
           // if (result.device.platformName.startsWith("Noise"))
@@ -98,7 +103,8 @@ class BluetoothDeviceManager {
     });
   }
 
-  Future<void> connectToDevice(BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
+  Future<void> connectToDevice(
+      BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
       final data = await FirebaseFirestore.instance
           .collection('users')
@@ -106,13 +112,15 @@ class BluetoothDeviceManager {
           .get();
       String deviceName = data.data()?['device_id'] ?? '';
 
-      if (deviceName.isEmpty || deviceName == device.platformName) {
+      // if (deviceName.isEmpty || deviceName == device.platformName) {
+      if (true) {
         await device.connect();
         // Navigator.of(context).push(
         //   MaterialPageRoute(builder: (context) => DashboardScreen(device_name: device.platformName, mac_address: device.remoteId.toString(), device: device))
         // );
         connectedDevices.add(device);
-        connectedDevicesController.add(connectedDevices); // Update connected devices list
+        connectedDevicesController
+            .add(connectedDevices); // Update connected devices list
 
         final bsSubscription = device.bondState.listen((value) {
           print("Bond State: $value");
@@ -128,15 +136,17 @@ class BluetoothDeviceManager {
           } else {
             print("Connected to device: ${device.platformName}");
             if (deviceName.isEmpty) {
-              await FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).update({
-                "device_id": device.platformName
-              });
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .update({"device_id": device.platformName});
             }
             isComplete = true;
             connectedDevicesController.add(connectedDevices);
           }
         });
-        Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => Connected()));
+        Navigator.of(context, rootNavigator: true)
+            .push(MaterialPageRoute(builder: (context) => Connected()));
       } else {
         print("Device ID doesn't match");
         showDialog(
@@ -162,19 +172,21 @@ class BluetoothDeviceManager {
     }
   }
 
-
-  Future<void> discoverServicesAndCharacteristics(BluetoothDevice device) async {
+  Future<void> discoverServicesAndCharacteristics(
+      BluetoothDevice device) async {
     try {
       List<BluetoothService> services = await device.discoverServices();
       for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic in service.characteristics) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
           if (characteristic.properties.read) {
             // Periodically read the characteristic value
             Timer.periodic(Duration(seconds: 3), (timer) async {
               try {
                 List<int> value = await characteristic.read();
                 String decodedValue = utf8.decode(value).toString();
-                characteristicValues[characteristic.uuid.toString()] = decodedValue;
+                characteristicValues[characteristic.uuid.toString()] =
+                    decodedValue;
                 characteristicValuesController.add(characteristicValues);
               } catch (e) {
                 print('Error reading characteristic: $e');
@@ -188,7 +200,8 @@ class BluetoothDeviceManager {
               await characteristic.setNotifyValue(true);
               characteristic.lastValueStream.listen((value) {
                 String decodedValue = utf8.decode(value).toString();
-                characteristicValues[characteristic.uuid.toString()] = decodedValue;
+                characteristicValues[characteristic.uuid.toString()] =
+                    decodedValue;
                 characteristicValuesController.add(characteristicValues);
               });
             } catch (e) {
@@ -202,7 +215,6 @@ class BluetoothDeviceManager {
     }
   }
 
-
   void disconnectFromDevice() async {
     if (connectedDevices.isNotEmpty) {
       try {
@@ -210,7 +222,8 @@ class BluetoothDeviceManager {
         await connectedDevices.first.removeBond();
         await connectedDevices.first.disconnect();
         connectedDevices.removeAt(0);
-        connectedDevicesController.add(connectedDevices); // Update the list after disconnection
+        connectedDevicesController
+            .add(connectedDevices); // Update the list after disconnection
         print("Disconnected from device");
       } catch (e) {
         print('Error disconnecting from device: $e');
@@ -219,6 +232,7 @@ class BluetoothDeviceManager {
       print("No device to disconnect from");
     }
   }
+
   void dispose() {
     connectedDevicesController.close();
     characteristicValuesController.close();

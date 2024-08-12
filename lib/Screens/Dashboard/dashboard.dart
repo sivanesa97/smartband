@@ -16,7 +16,6 @@ import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/coming_soon.dart';
 import 'package:smartband/pushnotifications.dart';
 
-
 class DashboardScreen extends ConsumerStatefulWidget {
   final String device_name;
   final String mac_address;
@@ -52,7 +51,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userData = ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+    final userData =
+        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     int index = 0;
 
     return userData.when(
@@ -61,13 +61,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           user = data?.role;
         });
         List<Widget> _widgetOptions = <Widget>[
-          WearerDashboard(device: widget.device, phNo: data!.phone_number.toString(),),
-          HeartrateScreen(device: widget.device, phNo: data.phone_number.toString(),),
-          Spo2Screen(device: widget.device, phNo: data.phone_number.toString(),),
-          HistoryScreen(device: widget.device, phNo: data.phone_number.toString(),),
+          WearerDashboard(
+            device: widget.device,
+            phNo: data!.phone_number.toString(),
+          ),
+          HeartrateScreen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
+          Spo2Screen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
+          HistoryScreen(
+            device: widget.device,
+            phNo: data.phone_number.toString(),
+          ),
         ];
 
-        List<BottomNavigationBarItem> _bottomNavigationBarItems = <BottomNavigationBarItem>[
+        List<BottomNavigationBarItem> _bottomNavigationBarItems =
+            <BottomNavigationBarItem>[
           const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
@@ -86,25 +99,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ];
 
-
         return user == "watch wearer"
             ? Scaffold(
-          body: Center(
-            child: _widgetOptions.elementAt(_selectedIndex),
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: Colors.white,
-            items: _bottomNavigationBarItems,
-            currentIndex: _selectedIndex,
-            selectedItemColor: Colors.black,
-            showUnselectedLabels: false,
-            onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
-          ),
-        )
+                body: Center(
+                  child: _widgetOptions.elementAt(_selectedIndex),
+                ),
+                bottomNavigationBar: BottomNavigationBar(
+                  backgroundColor: Colors.white,
+                  items: _bottomNavigationBarItems,
+                  currentIndex: _selectedIndex,
+                  selectedItemColor: Colors.black,
+                  showUnselectedLabels: false,
+                  onTap: _onItemTapped,
+                  type: BottomNavigationBarType.fixed,
+                ),
+              )
             : Scaffold(
-          body: SupervisorDashboard(phNo: data!.phone_number.toString(),),
-        );
+                body: SupervisorDashboard(
+                  phNo: data!.phone_number.toString(),
+                ),
+              );
       },
       error: (error, StackTrace) => SizedBox(),
       loading: () => SizedBox(),
@@ -118,19 +132,19 @@ class EmergencyCard extends StatefulWidget {
   bool sosClicked = false;
   List<String> values;
 
-  EmergencyCard({
-    super.key,
-    required this.relations,
-    required this.user,
-    required this.sosClicked,
-    required this.values
-  });
+  EmergencyCard(
+      {super.key,
+      required this.relations,
+      required this.user,
+      required this.sosClicked,
+      required this.values});
 
   @override
   State<EmergencyCard> createState() => _EmergencyCardState();
 }
 
 class _EmergencyCardState extends State<EmergencyCard> {
+  bool _isEmergency = false;
   @override
   void didUpdateWidget(covariant EmergencyCard oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -143,9 +157,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
 
   Future<void> _handleSOSClick(bool sosClicked) async {
     Position location = await updateLocation();
-    try
-    {
-      if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
+    try {
+      if (FirebaseAuth.instance.currentUser != null) {
         await FirebaseFirestore.instance
             .collection("users")
             .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -153,32 +166,85 @@ class _EmergencyCardState extends State<EmergencyCard> {
           "metrics": {
             "spo2": widget.values[1],
             "heart_rate": widget.values[0],
-            "fall_axis":
-            "-- -- --"
+            "fall_axis": "-- -- --"
           }
         });
       }
-      final data = await FirebaseFirestore.instance.collection("users").where('relations', arrayContains: widget.user.phone_number.toString()).get();
+      final data = await FirebaseFirestore.instance
+          .collection("users")
+          .where('relations',
+              arrayContains: widget.user.phone_number.toString())
+          .get();
+      setState(() {
+        _isEmergency = true;
+      });
       SendNotification send = SendNotification();
-      for(QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs)
-      {
+      for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
+        if (!_isEmergency) {
+          return;
+        }
         print("Sending");
-        // await Future.delayed(Duration(seconds: 5), (){});
         print("Email : ${i.data()['email']}");
-        // String? email = await FirebaseAuth.instance.currentUser!.email;
-        send.sendNotification(i.data()['phone_number'].toString(), "Emergency!!", "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
-        print("Message sent");
-      }
-    }
-    catch(e)
-    {
-      print("Exception ${e}");
-    }
+        print("Inside SOS Click");
 
-    // Notify user
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("SOS alert sent to supervisors")),
-    );
+        await FirebaseFirestore.instance
+            .collection("emergency_alerts")
+            .doc(i.id)
+            .set({
+          "isEmergency": true,
+          "responseStatus": false,
+          "response": "",
+          "userUid": FirebaseAuth.instance.currentUser?.uid,
+          "heartbeatRate": widget.values[0],
+          "location": "${location.latitude}°N ${location.longitude}°E",
+          "sfo2": widget.values[1],
+          "fallDetection": false,
+          "isManual": true,
+          "timestamp": FieldValue.serverTimestamp()
+        }, SetOptions(merge: true));
+
+        await FirebaseFirestore.instance
+            .collection("emergency_alerts")
+            .doc(i.id)
+            .collection(FirebaseAuth.instance.currentUser?.uid ?? "public")
+            .add({
+          "isEmergency": true,
+          "responseStatus": false,
+          "response": "",
+          "heartbeatRate": widget.values[0],
+          "location": "${location.latitude}°N ${location.longitude}°E",
+          "sfo2": widget.values[1],
+          "fallDetection": false,
+          "isManual": true,
+          "timestamp": FieldValue.serverTimestamp()
+        });
+
+        send.sendNotification(
+            i.data()['phone_number'].toString(),
+            "Emergency!!",
+            "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+        print("Message sent");
+
+        FirebaseFirestore.instance
+            .collection("emergency_alerts")
+            .doc(i.id)
+            .snapshots()
+            .listen((DocumentSnapshot doc) {
+          if (doc.exists && doc["responseStatus"] == true) {
+            setState(() {
+              _isEmergency = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("User Responded")),
+            );
+          }
+        });
+
+        await Future.delayed(Duration(seconds: 40));
+      }
+    } catch (e) {
+      print("Exception $e");
+    }
   }
 
   Future<Position> updateLocation() async {
@@ -201,7 +267,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
     final width = MediaQuery.of(context).size.width;
 
     return Card(
-        color: Color.fromRGBO(255, 234, 234, 1),
+      color: Color.fromRGBO(255, 234, 234, 1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 4,
       child: Padding(
@@ -228,7 +294,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
                     height: width * 0.25,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(width * 0.5),
-                      color: widget.sosClicked ? Colors.redAccent : Colors.white,
+                      color:
+                          widget.sosClicked ? Colors.redAccent : Colors.white,
                       boxShadow: const [
                         BoxShadow(
                           color: Colors.redAccent,

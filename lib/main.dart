@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_session/audio_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,12 +10,15 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:googleapis_auth/auth_io.dart';
+// import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
+import 'package:smartband/Screens/Widgets/SosPage.dart';
 import 'package:smartband/pushnotifications.dart';
 
 import 'firebase_options.dart';
@@ -33,10 +38,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  Future<void> _initializeAudioSession() async {
+  Future<void> initializeAudioSession() async {
     final session = await AudioSession.instance;
-    await session.configure(AudioSessionConfiguration(
-      androidAudioAttributes: const AndroidAudioAttributes(
+    await session.configure(const AudioSessionConfiguration(
+      androidAudioAttributes: AndroidAudioAttributes(
         usage: AndroidAudioUsage.alarm,
         contentType: AndroidAudioContentType.sonification,
         flags: AndroidAudioFlags.audibilityEnforced,
@@ -44,18 +49,14 @@ void main() async {
     ));
   }
 
-  await _initializeAudioSession();
+  await initializeAudioSession();
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('logo');
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
   );
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse res) => {
-            navigatorKey.currentState
-                ?.push(MaterialPageRoute(builder: (_) => EmergencyScreen()))
-          });
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   final fcmToken = await FirebaseMessaging.instance.getToken();
 
@@ -73,12 +74,32 @@ void main() async {
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    SendNotification sendNotification = SendNotification();
+  void wakeScreen() {
+    const platform = MethodChannel('com.example.app/wake_screen');
+    try {
+      platform.invokeMethod('wakeScreen');
+    } on PlatformException catch (e) {
+      print("Failed to wake screen: '${e.message}'.");
+    }
+  }
 
-    sendNotification.showNotification(
-        message.notification?.title ?? "", message.notification?.body ?? "");
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    wakeScreen();
+    SendNotification sendNotification = SendNotification();
+    bool status = await overlay.FlutterOverlayWindow.isPermissionGranted();
+    if (status) {
+      await overlay.FlutterOverlayWindow.showOverlay(
+          height: overlay.WindowSize.fullCover,
+          width: overlay.WindowSize.fullCover,
+          // alignment: overlay.OverlayAlignment.center,
+          // flag: overlay.OverlayFlag.focusPointer,
+          visibility: overlay.NotificationVisibility.visibilityPublic);
+    }
+    SOSPage sosPage = new SOSPage();
+    sosPage.createState().startSOS();
+    sendNotification.showNotification(message.notification?.title ?? "",
+        message.notification?.bodyLocArgs.first ?? "", message.notification?.bodyLocArgs.last ?? "", navigatorKey);
   });
 
   SystemChrome.setPreferredOrientations([
@@ -93,7 +114,16 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark));
   runApp(ProviderScope(
       child: MaterialApp(
-          home: SplashScreen(), debugShowCheckedModeBanner: false)));
+    home: SplashScreen(),
+    debugShowCheckedModeBanner: false,
+    navigatorKey: navigatorKey,
+  )));
+}
+
+@pragma("vm:entry-point")
+void overlayMain() {
+  runApp(MaterialApp(
+      debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
 }
 
 class MyApp extends StatefulWidget {
@@ -201,6 +231,11 @@ class _SplashScreenState extends State<SplashScreen>
     await Permission.ignoreBatteryOptimizations.request();
     await Permission.backgroundRefresh.request();
     await Permission.systemAlertWindow.request();
+    await Permission.microphone.request();
+    if (!(await overlay.FlutterOverlayWindow.isPermissionGranted())) {
+      await overlay.FlutterOverlayWindow.requestPermission();
+    }
+    // await Permission.phone.request();
 
     print('Notification permission granted');
   }
@@ -219,11 +254,24 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  Future<String> getAccessToken() async {
+    final jsonString =
+        await rootBundle.loadString('assets/service_account.json');
+    final serviceAccount = ServiceAccountCredentials.fromJson(jsonString);
+
+    final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+    final client = await clientViaServiceAccount(serviceAccount, scopes);
+    final accessToken = client.credentials.accessToken;
+    print(accessToken.data);
+    return accessToken.data;
+  }
+
   @override
   void initState() {
     super.initState();
     requestPermissions();
     _initBackgroundService();
+    getAccessToken();
 
     _controller = AnimationController(
       vsync: this,
@@ -268,7 +316,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     "LONG LIFE CARE",
                     style:
@@ -324,11 +372,11 @@ class RadialGradientPainter extends CustomPainter {
       ..shader = RadialGradient(
         center: Alignment.center,
         radius: progress,
-        colors: [
+        colors: const [
           Color.fromRGBO(255, 127, 23, 1),
           Colors.white,
         ],
-        stops: [0.0, 1.0],
+        stops: const [0.0, 1.0],
       ).createShader(Rect.fromCircle(
           center: size.center(Offset.zero), radius: size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
@@ -337,15 +385,5 @@ class RadialGradientPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
-  }
-}
-
-class EmergencyScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Emergency')),
-      body: Center(child: Text('Emergency details here...')),
-    );
   }
 }

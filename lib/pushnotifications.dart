@@ -3,14 +3,47 @@ import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:volume_controller/volume_controller.dart';
 
 import 'main.dart';
+
+// void showIncomingCall() async {
+//   CallKitParams params = const CallKitParams(
+//     id: 'unique_id',
+//     nameCaller: 'Caller Name',
+//     appName: 'Your App Name',
+//     avatar: 'https://example.com/avatar.png',
+//     handle: '0123456789',
+//     type: 0, // 0: audio, 1: video
+//     duration: 30000,
+//     textAccept: 'Accept',
+//     textDecline: 'Decline',
+//     // missedCallNotification: NotificationParams(0, true, 'Test', 'Test', true),
+//     extra: <String, dynamic>{'userId': 'user_id'},
+//     headers: <String, dynamic>{'apiKey': 'api_key'},
+//     android: AndroidParams(
+//       isCustomNotification: true,
+//       isShowLogo: false,
+//       // isShowCallback: true,
+//       ringtonePath: 'system_ringtone_default',
+//       backgroundColor: '#0955fa',
+//       // background: 'https://example.com/background.png',
+//       actionColor: '#4CAF50'
+//     ),
+//   );
+//   await FlutterCallkitIncoming.showCallkitIncoming(params);
+// }
 
 class SendNotification {
   Future<String> getAccessToken() async {
@@ -48,7 +81,6 @@ class SendNotification {
       // print(data.docs.first.data());
       final targetToken = data.docs.first.data()['fcmKey'];
       final token = await getAccessToken();
-
       final url = Uri.parse(
           'https://fcm.googleapis.com/v1/projects/smartband-keydraft/messages:send');
       final headers = {
@@ -61,7 +93,7 @@ class SendNotification {
           'token': targetToken,
           'notification': {
             'title': title,
-            'body': body,
+            'body': {'content':body, 'uid': FirebaseAuth.instance.currentUser?.uid},
           },
         },
       });
@@ -81,7 +113,9 @@ class SendNotification {
     }
   }
 
-  Future<void> showNotification(String title, String msg) async {
+  Future<void> showNotification(
+      String title, String msg, String uid, GlobalKey<NavigatorState> globalKey) async {
+    VolumeController().setVolume(1, showSystemUI: false);
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails("default_channel_id", 'channel.name',
             channelDescription: 'description',
@@ -91,7 +125,7 @@ class SendNotification {
             sound: RawResourceAndroidNotificationSound('ringtone'),
             enableVibration: true,
             fullScreenIntent: true,
-            category: AndroidNotificationCategory.message,
+            category: AndroidNotificationCategory.call,
             visibility: NotificationVisibility.public,
             timeoutAfter: 60000,
             color: Colors.red);
@@ -100,12 +134,14 @@ class SendNotification {
       android: androidPlatformChannelSpecifics,
     );
     if (title == "Emergency!!") {
-      AudioPlayer audioPlayer = new AudioPlayer();
-      audioPlayer.play(AssetSource("assets/sounds/security_alarm.mp3"));
-      Timer(Duration(minutes: 1), () {
-        audioPlayer.stop();
-      });
+      // showIncomingCall();
       print("Inside Emergency");
+      // final context = globalKey.currentContext;
+      // if (context != null) {
+      //   showDialog(context: context, builder: (_) => const EmergencyDialog());
+      // } else {
+      //   runApp(const EmergencyDialog());
+      // }
     }
     await flutterLocalNotificationsPlugin.show(
       0,
