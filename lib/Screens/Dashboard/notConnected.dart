@@ -153,89 +153,89 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   padding: EdgeInsets.only(right: 15.0),
                   child: InkWell(
                     onTap: () async {
-                      Future<void> _handleSOSClick(bool sosClicked) async {
-                        // Position location = await updateLocation();
-                        try {
-                          if (FirebaseAuth
-                              .instance.currentUser!.uid.isNotEmpty) {
-                            await FirebaseFirestore.instance
-                                .collection("users")
-                                .doc(FirebaseAuth.instance.currentUser!.uid)
-                                .update({
-                              "metrics": {
-                                "spo2": "168",
-                                "heart_rate": "200",
-                                "fall_axis": "-- -- --"
-                              }
-                            });
-                          }
-                          final data = await FirebaseFirestore.instance
-                              .collection("users")
-                              .where('relations', arrayContains: "965538193")
-                              .get();
-                          SendNotification send = SendNotification();
-                          for (QueryDocumentSnapshot<Map<String, dynamic>> i
-                              in data.docs) {
-                            print("Sending");
-                            // await Future.delayed(Duration(seconds: 5), (){});
-                            print("Email : ${i.data()['email']}");
-                            await FirebaseFirestore.instance
-                                .collection("emergency_alerts")
-                                .doc(i.id)
-                                .set({
-                              "isEmergency": true,
-                              "responseStatus": false,
-                              "response": "",
-                              "userUid": FirebaseAuth.instance.currentUser?.uid,
-                              "heartbeatRate": 150,
-                              "location": "",
-                              "sfo2": 100,
-                              "fallDetection": false,
-                              "isManual": true
-                            }, SetOptions(merge: true));
+                      // Future<void> _handleSOSClick(bool sosClicked) async {
+                      //   // Position location = await updateLocation();
+                      //   try {
+                      //     if (FirebaseAuth
+                      //         .instance.currentUser!.uid.isNotEmpty) {
+                      //       await FirebaseFirestore.instance
+                      //           .collection("users")
+                      //           .doc(FirebaseAuth.instance.currentUser!.uid)
+                      //           .update({
+                      //         "metrics": {
+                      //           "spo2": "168",
+                      //           "heart_rate": "200",
+                      //           "fall_axis": "-- -- --"
+                      //         }
+                      //       });
+                      //     }
+                      //     final data = await FirebaseFirestore.instance
+                      //         .collection("users")
+                      //         .where('relations', arrayContains: "965538193")
+                      //         .get();
+                      //     SendNotification send = SendNotification();
+                      //     for (QueryDocumentSnapshot<Map<String, dynamic>> i
+                      //         in data.docs) {
+                      //       print("Sending");
+                      //       // await Future.delayed(Duration(seconds: 5), (){});
+                      //       print("Email : ${i.data()['email']}");
+                      //       await FirebaseFirestore.instance
+                      //           .collection("emergency_alerts")
+                      //           .doc(i.id)
+                      //           .set({
+                      //         "isEmergency": true,
+                      //         "responseStatus": false,
+                      //         "response": "",
+                      //         "userUid": FirebaseAuth.instance.currentUser?.uid,
+                      //         "heartbeatRate": 150,
+                      //         "location": "",
+                      //         "sfo2": 100,
+                      //         "fallDetection": false,
+                      //         "isManual": true
+                      //       }, SetOptions(merge: true));
 
-                            if (FirebaseAuth.instance.currentUser != null) {
-                              await FirebaseFirestore.instance
-                                  .collection("emergency_alerts")
-                                  .doc(i.id)
-                                  .collection(
-                                      FirebaseAuth.instance.currentUser?.uid ??
-                                          "public")
-                                  .add({
-                                "isEmergency": true,
-                                "responseStatus": false,
-                                "response": "",
-                                "heartbeatRate": 150,
-                                "location": "°N °E",
-                                "sfo2": 100,
-                                "fallDetection": false,
-                                "isManual": true,
-                                "timestamp": FieldValue.serverTimestamp()
-                              });
-                            }
-                            // String? email = await FirebaseAuth.instance.currentUser!.email;
-                            send.sendNotification(
-                                i.data()['phone_number'].toString(),
-                                "Emergency!!",
-                                "SIVA has clicked SOS Button from °N °E. Please respond");
-                            print("Message sent");
-                          }
-                        } catch (e) {
-                          print("Exception ${e}");
-                        }
+                      //       if (FirebaseAuth.instance.currentUser != null) {
+                      //         await FirebaseFirestore.instance
+                      //             .collection("emergency_alerts")
+                      //             .doc(i.id)
+                      //             .collection(
+                      //                 FirebaseAuth.instance.currentUser?.uid ??
+                      //                     "public")
+                      //             .add({
+                      //           "isEmergency": true,
+                      //           "responseStatus": false,
+                      //           "response": "",
+                      //           "heartbeatRate": 150,
+                      //           "location": "°N °E",
+                      //           "sfo2": 100,
+                      //           "fallDetection": false,
+                      //           "isManual": true,
+                      //           "timestamp": FieldValue.serverTimestamp()
+                      //         });
+                      //       }
+                      //       // String? email = await FirebaseAuth.instance.currentUser!.email;
+                      //       send.sendNotification(
+                      //           i.data()['phone_number'].toString(),
+                      //           "Emergency!!",
+                      //           "SIVA has clicked SOS Button from °N °E. Please respond");
+                      //       print("Message sent");
+                      //     }
+                      //   } catch (e) {
+                      //     print("Exception ${e}");
+                      //   }
 
-                        // Notify user
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text("SOS alert sent to supervisors")),
-                        );
-                      }
+                      //   // Notify user
+                      //   ScaffoldMessenger.of(context).showSnackBar(
+                      //     SnackBar(
+                      //         content: Text("SOS alert sent to supervisors")),
+                      //   );
+                      // }
 
-                      await _handleSOSClick(true);
-                      // setState(() {
-                      //   addDeviceBtn = true;
-                      //   scanForDevices(context);
-                      // });
+                      // await _handleSOSClick(true);
+                      setState(() {
+                        addDeviceBtn = true;
+                        scanForDevices(context);
+                      });
                     },
                     child: Align(
                       alignment: Alignment.center,

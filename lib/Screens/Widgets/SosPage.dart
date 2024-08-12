@@ -1,6 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 class SOSPage extends StatefulWidget {
@@ -32,6 +31,7 @@ class _SOSPageState extends State<SOSPage> {
     Future.delayed(Duration(seconds: 30), () {
       if (isPlaying) {
         audioPlayer.stop();
+        FlutterOverlayWindow.closeOverlay();
       }
     });
   }
@@ -43,7 +43,7 @@ class _SOSPageState extends State<SOSPage> {
 
   void startSOS() {
     endTime = DateTime.now().millisecondsSinceEpoch + 1000 * 5;
-    playSound();
+    // playSound();
   }
 
   void startCountdown() {
@@ -61,114 +61,117 @@ class _SOSPageState extends State<SOSPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Background image
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                    'assets/monitoring_person_background.png'), // Replace with your image path
-                fit: BoxFit.fitHeight,
+    final screenHeight = MediaQuery.of(context).size.height;
+    return SafeArea(
+        top: true,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                        'assets/monitoring_person_background.png'), // Replace with your image path
+                    fit: BoxFit.fitHeight,
+                  ),
+                ),
               ),
-            ),
-          ),
-          // Gradient overlay
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.3),
-                ],
-              ),
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'SOS Emergency Service',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'We’re here to provide users with rapid access to essential emergency services during critical situations.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 40),
-                Text(
-                  'Calling emergency in',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Stack(
-                  alignment: Alignment.center,
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: screenHeight * 0.1),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.red.withOpacity(0.8),
-                      ),
-                    ),
-                    Text(
-                      countdown.toString(),
+                    const Text(
+                      'SOS Emergency Service',
                       style: TextStyle(
-                        fontSize: 40,
-                        color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'We’re here to provide users with rapid access to essential emergency services during critical situations.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+                    const Text(
+                      'Emergency Call',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red.withOpacity(0.8),
+                          ),
+                        ),
+                        Text(
+                          countdown.toString(),
+                          style: const TextStyle(
+                            fontSize: 40,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Spacer(),
+                    ElevatedButton(
+                      onPressed: () {
+                        print("closing overlay");
+                        FlutterOverlayWindow.closeOverlay();
+                        // stopSound();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      ),
+                      child: const Text(
+                        'Skip For Now',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
                   ],
                 ),
-                Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    print("closing overlay");
-                    FlutterOverlayWindow.closeOverlay();
-                    stopSound();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  ),
-                  child: Text(
-                    'Skip For Now',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
+              )
+              // Gradient overlay
+              // Container(
+              //   decoration: BoxDecoration(
+              //     gradient: LinearGradient(
+              //       begin: Alignment.topCenter,
+              //       end: Alignment.bottomCenter,
+              //       colors: [
+              //         Colors.black.withOpacity(0.3),
+              //         Colors.black.withOpacity(0.3),
+              //       ],
+              //     ),
+              //   ),
+              // ),
+              // Content
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 }

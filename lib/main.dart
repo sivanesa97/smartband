@@ -75,7 +75,7 @@ void main() async {
       ?.createNotificationChannel(channel);
 
   void wakeScreen() {
-    const platform = MethodChannel('com.example.app/wake_screen');
+    const platform = MethodChannel('com.keydraft.smartband/wake_screen');
     try {
       platform.invokeMethod('wakeScreen');
     } on PlatformException catch (e) {
@@ -120,11 +120,11 @@ void main() async {
   )));
 }
 
-// @pragma("vm:entry-point")
-// void overlayMain() {
-//   runApp(MaterialApp(
-//       debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
-// }
+@pragma("vm:entry-point")
+void overlayMain() {
+  runApp(MaterialApp(
+      debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

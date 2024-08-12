@@ -18,33 +18,6 @@ import 'package:volume_controller/volume_controller.dart';
 
 import 'main.dart';
 
-// void showIncomingCall() async {
-//   CallKitParams params = const CallKitParams(
-//     id: 'unique_id',
-//     nameCaller: 'Caller Name',
-//     appName: 'Your App Name',
-//     avatar: 'https://example.com/avatar.png',
-//     handle: '0123456789',
-//     type: 0, // 0: audio, 1: video
-//     duration: 30000,
-//     textAccept: 'Accept',
-//     textDecline: 'Decline',
-//     // missedCallNotification: NotificationParams(0, true, 'Test', 'Test', true),
-//     extra: <String, dynamic>{'userId': 'user_id'},
-//     headers: <String, dynamic>{'apiKey': 'api_key'},
-//     android: AndroidParams(
-//       isCustomNotification: true,
-//       isShowLogo: false,
-//       // isShowCallback: true,
-//       ringtonePath: 'system_ringtone_default',
-//       backgroundColor: '#0955fa',
-//       // background: 'https://example.com/background.png',
-//       actionColor: '#4CAF50'
-//     ),
-//   );
-//   await FlutterCallkitIncoming.showCallkitIncoming(params);
-// }
-
 class SendNotification {
   Future<String> getAccessToken() async {
     final jsonString =
