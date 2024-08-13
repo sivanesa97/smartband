@@ -99,6 +99,10 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.white,
+      drawer: DrawerScreen(
+        device: null,
+        phNo: "",
+      ),
       appBar: addDeviceBtn
           ? AppBar(
               surfaceTintColor: Colors.white,
@@ -214,11 +218,18 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                       //         });
                       //       }
                       //       // String? email = await FirebaseAuth.instance.currentUser!.email;
-                      //       send.sendNotification(
-                      //           i.data()['phone_number'].toString(),
-                      //           "Emergency!!",
-                      //           "SIVA has clicked SOS Button from °N °E. Please respond");
-                      //       print("Message sent");
+                      //       print("Sending to ");
+                      //       print(i.data()['phone_number']);
+                      //       try {
+                      //         send.sendNotification(
+                      //             i.data()['phone_number'].toString(),
+                      //             "Emergency!!",
+                      //             "SIVA has clicked SOS Button from °N °E. Please respond");
+                      //         print("Message sent");
+                      //         await Future.delayed(Duration(seconds: 30));
+                      //       } catch (e) {
+                      //         print(e);
+                      //       }
                       //     }
                       //   } catch (e) {
                       //     print("Exception ${e}");

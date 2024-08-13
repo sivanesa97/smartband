@@ -153,7 +153,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                             "beb5483e-36e1-4688-b7f5-ea07361b26a8"] ??
                         "--,--,0")
                     .split(',');
-                Timer.periodic(Duration(minutes: 30), (Timer timer) async {
+                Timer.periodic(Duration(seconds: 5), (Timer timer) async {
                   if (FirebaseAuth.instance.currentUser!.uid != null) {
                     await FirebaseFirestore.instance
                         .collection("users")

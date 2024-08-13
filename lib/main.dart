@@ -92,8 +92,8 @@ void main() async {
       await overlay.FlutterOverlayWindow.showOverlay(
           height: overlay.WindowSize.fullCover,
           width: overlay.WindowSize.fullCover,
-          // alignment: overlay.OverlayAlignment.center,
-          // flag: overlay.OverlayFlag.focusPointer,
+          alignment:
+              overlay.OverlayAlignment.bottomCenter, // Center the overlay
           visibility: overlay.NotificationVisibility.visibilityPublic);
     }
     SOSPage sosPage = new SOSPage();
@@ -123,7 +123,8 @@ void main() async {
 @pragma("vm:entry-point")
 void overlayMain() {
   runApp(MaterialApp(
-      debugShowCheckedModeBanner: false, home: Material(child: SOSPage())));
+      debugShowCheckedModeBanner: false,
+      home: SafeArea(child: Material(child: SOSPage()))));
 }
 
 class MyApp extends StatefulWidget {

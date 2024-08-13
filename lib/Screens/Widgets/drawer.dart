@@ -163,7 +163,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Profile"),
                     ),
                   ),
-                  InkWell(
+                  widget.device!=null?InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
                           MaterialPageRoute(
@@ -177,7 +177,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       ),
                       title: Text("Manage Access"),
                     ),
-                  ),
+                  ): const SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(

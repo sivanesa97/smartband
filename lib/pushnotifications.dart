@@ -66,7 +66,7 @@ class SendNotification {
           'token': targetToken,
           'notification': {
             'title': title,
-            'body': {'content':body, 'uid': FirebaseAuth.instance.currentUser?.uid},
+            'body': body,
           },
         },
       });
