@@ -1,6 +1,9 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class SOSPage extends StatefulWidget {
   const SOSPage({super.key});
@@ -16,6 +19,13 @@ class _SOSPageState extends State<SOSPage> {
   void initState() {
     super.initState();
     startCountdown();
+    _initializeFirebase();
+  }
+
+  Future<void> _initializeFirebase() async {
+    // if (!Firebase.apps.any((element) => element.name == '[DEFAULT]')) {
+    await Firebase.initializeApp();
+    // }
   }
 
   int endTime = 0;
@@ -57,6 +67,49 @@ class _SOSPageState extends State<SOSPage> {
         // Handle emergency call action here
       }
     });
+  }
+
+  void handleUpdate() async {
+    // if (!Firebase.apps.any((element) => element.name == '[DEFAULT]')) {
+    await Firebase.initializeApp();
+    // }
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot doc = await FirebaseFirestore.instance
+            .collection("emergency_alerts")
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .get();
+        if (doc.exists) {
+          await FirebaseFirestore.instance
+              .collection("emergency_alerts")
+              .doc(doc.id)
+              .update({
+            "responseStatus": true,
+            "response": "Accepted",
+            "timestamp": FieldValue.serverTimestamp()
+          });
+          await FirebaseFirestore.instance
+              .collection("emergency_alerts")
+              .doc(doc.id)
+              .collection(currentUser.uid)
+              .add({
+            "responseStatus": true,
+            "response": "Accepted",
+            "timestamp": FieldValue.serverTimestamp()
+          });
+        }
+
+        print("Emergency alerts updated successfully");
+      } catch (e) {
+        print("Error updating emergency alerts: $e");
+      }
+    } else {
+      print("No user is currently signed in");
+    }
+
+    // Close the overlay window after updating
+    // FlutterOverlayWindow.closeOverlay();
   }
 
   @override
@@ -128,6 +181,30 @@ class _SOSPageState extends State<SOSPage> {
                   ],
                 ),
                 Spacer(),
+                ElevatedButton(
+                  onPressed: () {
+                    print("closing overlay");
+                    handleUpdate();
+                    // FlutterOverlayWindow.closeOverlay();
+
+                    // stopSound();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 142, 147, 238),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 75, vertical: 15),
+                  ),
+                  child: const Text(
+                    'Accept',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     print("closing overlay");

@@ -15,6 +15,8 @@ import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:android_intent_plus/android_intent.dart';
+import 'dart:io' show Platform;
 
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
@@ -24,7 +26,8 @@ class WearerDashboard extends ConsumerStatefulWidget {
   final BluetoothDevice device;
   final String phNo;
 
-  WearerDashboard({Key? key, required this.device, required this.phNo}) : super(key: key);
+  WearerDashboard({Key? key, required this.device, required this.phNo})
+      : super(key: key);
 
   @override
   ConsumerState<WearerDashboard> createState() => _WearerDashboardState();
@@ -43,12 +46,39 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
       speed: 1.0,
       speedAccuracy: 1.0);
 
-  Future<void> openGoogleMaps(double start, double end) async {
-    final Uri uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$start,$end');
+  Future<void> openGoogleMaps(double lat, double lng) async {
+    if (Platform.isAndroid) {
+      final AndroidIntent intent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('google.navigation:q=$lat,$lng'),
+        package: 'com.google.android.apps.maps',
+      );
 
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw 'Could not launch $uri';
+      try {
+        await intent.launch();
+        return;
+      } catch (e) {
+        print('Could not open Google Maps app: $e');
+      }
+      final AndroidIntent genericIntent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('geo:$lat,$lng'),
+      );
+
+      try {
+        await genericIntent.launch();
+        return;
+      } catch (e) {
+        print('Could not open generic map intent: $e');
+      }
+    }
+    final Uri url =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      print('Could not open the map in web browser');
+      throw 'Could not open the map.';
     }
   }
 
@@ -82,8 +112,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     return DateTime(newYear, newMonth, newDay);
   }
 
-  Future<void> fetchSubscription(String phno)
-  async {
+  Future<void> fetchSubscription(String phno) async {
     final response = await http.post(
       Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
       headers: <String, String>{
@@ -99,14 +128,14 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
       intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
       setState(() {
         status = data['status'].toString();
-        subscription = data['subscription_period']==null ? "--" : "${data['subscription_period'].toString()} Months";
+        subscription = data['subscription_period'] == null
+            ? "--"
+            : "${data['subscription_period'].toString()} Months";
         print("Fetched");
       });
+    } else {
+      print(response.statusCode);
     }
-    else
-      {
-        print(response.statusCode);
-      }
   }
 
   Future<Position> updateLocation() async {
@@ -210,17 +239,21 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                         color: Colors.black,
                                       ),
                                     ),
-                                    Icon(
-                                      Icons.keyboard_arrow_down
-                                    )
+                                    Icon(Icons.keyboard_arrow_down)
                                   ],
                                 ),
                                 Text(
                                   DateTime.now().hour > 12
                                       ? DateTime.now().hour > 16
-                                          ? "Good Evening ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                                          : "Good Afternoon ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                                      : "Good Morning ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}",
+                                          ? "Good Evening ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                                2,
+                                              )}"
+                                          : "Good Afternoon ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                                2,
+                                              )}"
+                                      : "Good Morning ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                                            2,
+                                          )}",
                                   style: TextStyle(
                                     fontSize: width * 0.04,
                                     color: Colors.grey[600],
@@ -336,7 +369,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           "Open in Maps",
                                           style: TextStyle(
                                             fontSize: width * 0.035,
-                                            color: Color.fromRGBO(0, 90, 170, 0.8),
+                                            color:
+                                                Color.fromRGBO(0, 90, 170, 0.8),
                                           ),
                                         ),
                                       ),
@@ -449,7 +483,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                       Expanded(
                                           flex: 2,
                                           child: Card(
-                                            color: Color.fromRGBO(255, 245, 227, 1),
+                                            color: Color.fromRGBO(
+                                                255, 245, 227, 1),
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20)),
@@ -510,7 +545,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           flex: 2,
                                           child: Card(
                                             color: const Color.fromRGBO(
-                                              228, 240, 254, 1),
+                                                228, 240, 254, 1),
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20)),
@@ -550,32 +585,40 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                       ),
                                                       Row(
                                                         mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
+                                                            MainAxisAlignment
+                                                                .center,
                                                         children: [
                                                           Text(
                                                             values[0],
                                                             style: TextStyle(
                                                                 fontSize:
-                                                                width *
-                                                                    0.07,
+                                                                    width *
+                                                                        0.07,
                                                                 fontWeight:
-                                                                FontWeight
-                                                                    .bold,
-                                                                color: Color.fromRGBO(0, 83, 188, 1)
-                                                            ),
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
                                                           ),
                                                           Text(
                                                             " bpm",
                                                             style: TextStyle(
                                                                 fontSize:
-                                                                width *
-                                                                    0.03,
+                                                                    width *
+                                                                        0.03,
                                                                 fontWeight:
-                                                                FontWeight
-                                                                    .bold,
-                                                                color: Color.fromRGBO(0, 83, 188, 1)
-                                                            ),
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
                                                           ),
                                                         ],
                                                       ),
@@ -735,8 +778,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter tp = TextPainter(
         text: span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     tp.layout();
     tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
 
@@ -793,8 +835,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter label25Tp = TextPainter(
         text: label25Span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     label25Tp.layout();
     label25Tp.paint(canvas,
         label25Offset - Offset(label25Tp.width / 2, label25Tp.height / 2));
@@ -809,8 +850,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter label99Tp = TextPainter(
         text: label99Span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     label99Tp.layout();
     label99Tp.paint(canvas,
         label99Offset - Offset(label99Tp.width / 2, label99Tp.height / 2));

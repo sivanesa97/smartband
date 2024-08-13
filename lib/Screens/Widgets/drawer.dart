@@ -38,101 +38,102 @@ class _DrawerScreenState extends State<DrawerScreen> {
               Column(
                 children: [
                   Padding(
-                      padding:EdgeInsets.symmetric(horizontal: 10),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const ListTile(
-                          leading: Icon(
-                            Icons.arrow_back,
-                            color: Colors.black26,
-                          ),
-                        ),
-                      ),
-                  ),
-                  Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Container(
-                      decoration: BoxDecoration(
-                          color: Color.fromRGBO(0, 83, 188, 1),
-                          borderRadius: BorderRadius.circular(15.0)
-                      ),
-                      child: widget.device!=null ?  Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.device!.platformName,
-                                style: TextStyle(
-                                  fontSize: width * 0.05,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                widget.device!.remoteId.toString(),
-                                style: TextStyle(
-                                  fontSize: width * 0.04,
-                                  color: Colors.white
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                            ],
-                          ),
-                          Align(
-                            alignment: Alignment.center,
-                            child: Image.asset(
-                              "assets/watch.png",
-                              width: width * 0.3,
-                              height: height * 0.2,
-                              fit: BoxFit.fitWidth,
-                            ),
-                          ),
-                        ],
-                      ) : Text(
-                        "You have not connected a device",
-                        maxLines: 2,
-                        style: TextStyle(
-                            fontSize: width * 0.05,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white
-                        ),
-                      ),
-                    ),
-                  ),
-                  widget.device!=null ?  Padding(
-                    padding: const EdgeInsets.all(10.0),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
                     child: InkWell(
                       onTap: () {
-                        setState(() {
-                          print("Disconnect : ${bluetoothDeviceManager.connectedDevices}");
-                          bluetoothDeviceManager.disconnectFromDevice();
-                          bluetoothDeviceManager.connectedDevices = [];
-                        });
+                        Navigator.of(context).pop();
                       },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 10.0),
-                        width: width * 0.4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15.0),
-                          color: Colors.white,
-                          border: Border.all(color: Color.fromRGBO(0, 83, 188, 1), width: 3)
+                      child: const ListTile(
+                        leading: Icon(
+                          Icons.arrow_back,
+                          color: Colors.black26,
                         ),
-                        child: Text(
-                            "Remove",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color.fromRGBO(0, 83, 188, 1),
-                            ),
-                        ),
-                      )
+                      ),
                     ),
-                  ) : SizedBox.shrink(),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Color.fromRGBO(0, 83, 188, 1),
+                          borderRadius: BorderRadius.circular(15.0)),
+                      child: widget.device != null
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.device!.platformName,
+                                      style: TextStyle(
+                                          fontSize: width * 0.05,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      widget.device!.remoteId.toString(),
+                                      style: TextStyle(
+                                          fontSize: width * 0.04,
+                                          color: Colors.white),
+                                    ),
+                                    SizedBox(height: 8),
+                                  ],
+                                ),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Image.asset(
+                                    "assets/watch.png",
+                                    width: width * 0.3,
+                                    height: height * 0.2,
+                                    fit: BoxFit.fitWidth,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              "You have not connected a device",
+                              maxLines: 2,
+                              style: TextStyle(
+                                  fontSize: width * 0.05,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                    ),
+                  ),
+                  widget.device != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  print(
+                                      "Disconnect : ${bluetoothDeviceManager.connectedDevices}");
+                                  bluetoothDeviceManager.disconnectFromDevice();
+                                  bluetoothDeviceManager.connectedDevices = [];
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 10.0),
+                                width: width * 0.4,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    color: Colors.white,
+                                    border: Border.all(
+                                        color: Color.fromRGBO(0, 83, 188, 1),
+                                        width: 3)),
+                                child: Text(
+                                  "Remove",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color.fromRGBO(0, 83, 188, 1),
+                                  ),
+                                ),
+                              )),
+                        )
+                      : SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
@@ -163,21 +164,25 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Profile"),
                     ),
                   ),
-                  widget.device!=null?InkWell(
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
-                              maintainState: true,
-                              builder: (context) => ManageAccess(phNo: widget.phNo,)));
-                    },
-                    child: const ListTile(
-                      leading: Icon(
-                        Icons.supervisor_account,
-                        color: Colors.black26,
-                      ),
-                      title: Text("Manage Access"),
-                    ),
-                  ): const SizedBox.shrink(),
+                  widget.device == null
+                      ? InkWell(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true)
+                                .push(MaterialPageRoute(
+                                    maintainState: true,
+                                    builder: (context) => ManageAccess(
+                                          phNo: widget.phNo,
+                                        )));
+                          },
+                          child: const ListTile(
+                            leading: Icon(
+                              Icons.supervisor_account,
+                              color: Colors.black26,
+                            ),
+                            title: Text("Manage Access"),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
@@ -195,10 +200,12 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
+                      Navigator.of(context, rootNavigator: true)
+                          .push(MaterialPageRoute(
                               maintainState: true,
-                              builder: (context) => Aboutus(phNo: widget.phNo,)));
+                              builder: (context) => Aboutus(
+                                    phNo: widget.phNo,
+                                  )));
                     },
                     child: const ListTile(
                       leading: Icon(
@@ -211,8 +218,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   InkWell(
                     onTap: () async {
                       Navigator.of(context, rootNavigator: true)
-                          .pushAndRemoveUntil(MaterialPageRoute(
-                              builder: (context) => PhoneSignIn()), (Route<dynamic> route) => false);
+                          .pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => PhoneSignIn()),
+                              (Route<dynamic> route) => false);
                       final GoogleSignIn googleSignIn = GoogleSignIn();
                       await googleSignIn.signOut();
                       await FirebaseAuth.instance.signOut();
@@ -227,10 +236,12 @@ class _DrawerScreenState extends State<DrawerScreen> {
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
+                      Navigator.of(context, rootNavigator: true)
+                          .push(MaterialPageRoute(
                               maintainState: true,
-                              builder: (context) => Reportproblem(phNo: widget.phNo,)));
+                              builder: (context) => Reportproblem(
+                                    phNo: widget.phNo,
+                                  )));
                     },
                     child: const ListTile(
                       leading: Icon(
