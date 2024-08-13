@@ -14,6 +14,9 @@ import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:android_intent_plus/android_intent.dart';
+import 'dart:io' show Platform;
+
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
 import 'dashboard.dart';
@@ -41,12 +44,39 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
       speed: 1.0,
       speedAccuracy: 1.0);
 
-  Future<void> openGoogleMaps(double start, double end) async {
-    final Uri uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$start,$end');
+  Future<void> openGoogleMaps(double lat, double lng) async {
+    if (Platform.isAndroid) {
+      final AndroidIntent intent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('google.navigation:q=$lat,$lng'),
+        package: 'com.google.android.apps.maps',
+      );
 
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw 'Could not launch $uri';
+      try {
+        await intent.launch();
+        return;
+      } catch (e) {
+        print('Could not open Google Maps app: $e');
+      }
+      final AndroidIntent genericIntent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('geo:$lat,$lng'),
+      );
+
+      try {
+        await genericIntent.launch();
+        return;
+      } catch (e) {
+        print('Could not open generic map intent: $e');
+      }
+    }
+    final Uri url =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      print('Could not open the map in web browser');
+      throw 'Could not open the map.';
     }
   }
 

@@ -7,6 +7,8 @@ import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'dart:io' show Platform;
 
 import '../DrawerScreens/profilepage.dart';
 import '../Models/usermodel.dart';
@@ -30,19 +32,22 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
   // Function to show supervisor dialog and handle OTP verification
   void _showSupervisorDialog(int otp_num) async {
-    if (_phNoConn.text != widget.phNo){
-        // _otpConn.text == otp_num.toString()) {
+    if (_phNoConn.text != widget.phNo) {
+      // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phNoConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
-      var querySnapshot =
-          await usersCollection.where('phone_number', isEqualTo: int.parse(widget.phNo)).get();
+      var querySnapshot = await usersCollection
+          .where('phone_number', isEqualTo: int.parse(widget.phNo))
+          .get();
 
-      final docs1 = await FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: int.parse(phonetoCheck)).get();
-      if (docs1.docs.isEmpty){
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Phone Number does not exist in the collection.")));
-      }
-      else if (querySnapshot.docs.isNotEmpty) {
+      final docs1 = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone_number', isEqualTo: int.parse(phonetoCheck))
+          .get();
+      if (docs1.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Phone Number does not exist in the collection.")));
+      } else if (querySnapshot.docs.isNotEmpty) {
         await usersCollection
             .doc(FirebaseAuth.instance.currentUser!.uid)
             .update({
@@ -58,18 +63,18 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   }
 
   // Function to fetch relation details where current user email is in relations array
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(List<String> phoneNumber) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(
+      List<String> phoneNumber) async {
     List<Map<String, dynamic>> relationDetails = [];
-    for(String i in phoneNumber)
-      {
-        var userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .where('phone_number', isEqualTo: int.parse(i))
-            .get();
-        if (userDoc.docs.isNotEmpty) {
-          relationDetails.add(userDoc.docs.first.data());
-        }
+    for (String i in phoneNumber) {
+      var userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone_number', isEqualTo: int.parse(i))
+          .get();
+      if (userDoc.docs.isNotEmpty) {
+        relationDetails.add(userDoc.docs.first.data());
       }
+    }
     return relationDetails;
   }
 
@@ -88,13 +93,38 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     return relationDetails;
   }
 
-  Future<void> openGoogleMaps(double start, double end) async {
-    final String googleMapsUrl =
-        'https://www.google.com/maps/search/?api=1&query=$start,$end';
+  Future<void> openGoogleMaps(double lat, double lng) async {
+    if (Platform.isAndroid) {
+      final AndroidIntent intent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('google.navigation:q=$lat,$lng'),
+        package: 'com.google.android.apps.maps',
+      );
 
-    if (await canLaunch(googleMapsUrl)) {
-      await launch(googleMapsUrl);
+      try {
+        await intent.launch();
+        return;
+      } catch (e) {
+        print('Could not open Google Maps app: $e');
+      }
+      final AndroidIntent genericIntent = AndroidIntent(
+        action: 'action_view',
+        data: Uri.encodeFull('geo:$lat,$lng'),
+      );
+
+      try {
+        await genericIntent.launch();
+        return;
+      } catch (e) {
+        print('Could not open generic map intent: $e');
+      }
+    }
+    final Uri url =
+        Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
+      print('Could not open the map in web browser');
       throw 'Could not open the map.';
     }
   }
@@ -188,14 +218,18 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             ),
           ),
         ),
-      actions: [
+        actions: [
           GestureDetector(
             onTap: () async {
-              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) => const Profilepage()));
+              Navigator.of(context, rootNavigator: true).push(
+                  MaterialPageRoute(builder: (context) => const Profilepage()));
             },
             child: const Padding(
               padding: EdgeInsets.only(right: 10),
-              child: const Icon(Icons.account_circle_outlined, size: 30,),
+              child: const Icon(
+                Icons.account_circle_outlined,
+                size: 30,
+              ),
             ),
           ),
         ],
@@ -215,7 +249,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
                 if (dropdownValue == 'No Users') {
-                  dropdownValue = relationDetails.first['phone_number'].toString();
+                  dropdownValue =
+                      relationDetails.first['phone_number'].toString();
                   relation = relationDetails.first;
                 }
                 print("DropDown : ${dropdownValue}");
@@ -239,51 +274,55 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                             });
                           },
                           items: relationDetails.map<DropdownMenuItem<String>>(
-                                  (Map<String, dynamic> relation) {
-                                return DropdownMenuItem<String>(
-                                  value: relation['phone_number'].toString(),
+                              (Map<String, dynamic> relation) {
+                            return DropdownMenuItem<String>(
+                              value: relation['phone_number'].toString(),
+                              child: Padding(
+                                padding: EdgeInsets.all(5),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Color.fromRGBO(0, 83, 188, 1)
+                                        .withOpacity(0.5),
+                                  ),
                                   child: Padding(
-                                    padding: EdgeInsets.all(5),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: Color.fromRGBO(0, 83, 188, 1).withOpacity(0.5),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Row(
-                                          mainAxisAlignment:
+                                    padding: const EdgeInsets.all(10),
+                                    child: Row(
+                                      mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const CircleAvatar(
-                                              radius: 30.0,
-                                              backgroundColor: Colors.transparent,
-                                              child: Icon(
-                                                Icons.account_circle_outlined,
-                                                size: 35,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            Text(
-                                              relation['name'],
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: MediaQuery.of(context).size.width * 0.05,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const Icon(
-                                              Icons.stacked_line_chart,
-                                              size: 50,
-                                              color: Colors.white,
-                                            ),
-                                          ],
+                                      children: [
+                                        const CircleAvatar(
+                                          radius: 30.0,
+                                          backgroundColor: Colors.transparent,
+                                          child: Icon(
+                                            Icons.account_circle_outlined,
+                                            size: 35,
+                                            color: Colors.white,
+                                          ),
                                         ),
-                                      ),
+                                        Text(
+                                          relation['name'],
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.05,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.stacked_line_chart,
+                                          size: 50,
+                                          color: Colors.white,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ),
@@ -293,115 +332,130 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                           final height = MediaQuery.of(context).size.height;
                           final width = MediaQuery.of(context).size.width;
                           final supervisorModel =
-                          ref.watch(supervisorModelProvider(dropdownValue));
+                              ref.watch(supervisorModelProvider(dropdownValue));
                           return supervisorModel.when(
                             data: (data) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 0),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 0),
                                 child: SingleChildScrollView(
                                   child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(height: 16,),
+                                      SizedBox(
+                                        height: 16,
+                                      ),
                                       Center(
                                           child: Stack(
-                                            children: [
-                                              Container(
-                                                width: width * 0.9,
-                                                height: height * 0.17,
-                                                child: ClipRRect(
-                                                  borderRadius: BorderRadius.circular(30),
-                                                  // Rounded corners
-                                                  child: Image.network(
-                                                    "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
-                                                    fit: BoxFit
-                                                        .cover, // Ensure the image covers the container
-                                                  ),
-                                                ),
+                                        children: [
+                                          Container(
+                                            width: width * 0.9,
+                                            height: height * 0.17,
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                              // Rounded corners
+                                              child: Image.network(
+                                                "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
+                                                fit: BoxFit
+                                                    .cover, // Ensure the image covers the container
                                               ),
-                                              Container(
-                                                width: MediaQuery.of(context).size.width * 0.9,
-                                                height:
-                                                MediaQuery.of(context).size.height * 0.17,
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(30),
-                                                  // Rounded corners
-                                                  gradient: const LinearGradient(
-                                                    colors: [
-                                                      Color.fromRGBO(0, 83, 188, 0.8),
-                                                      Color.fromRGBO(0, 0, 0, 0.15),
-                                                      Color.fromRGBO(0, 83, 188, 0.8),
-                                                    ], // Gradient colors
-                                                    begin: Alignment.center,
-                                                    end: Alignment.centerRight,
-                                                  ),
-                                                ),
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.9,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.17,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                              // Rounded corners
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color.fromRGBO(
+                                                      0, 83, 188, 0.8),
+                                                  Color.fromRGBO(0, 0, 0, 0.15),
+                                                  Color.fromRGBO(
+                                                      0, 83, 188, 0.8),
+                                                ], // Gradient colors
+                                                begin: Alignment.center,
+                                                end: Alignment.centerRight,
                                               ),
-                                              Padding(
-                                                padding: EdgeInsets.only(
-                                                    left: width * 0.07,
-                                                    top: height * 0.02),
-                                                child: Column(
-                                                  mainAxisAlignment:
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: width * 0.07,
+                                                top: height * 0.02),
+                                            child: Column(
+                                              mainAxisAlignment:
                                                   MainAxisAlignment.center,
-                                                  crossAxisAlignment:
+                                              crossAxisAlignment:
                                                   CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      "Location",
-                                                      style: TextStyle(
-                                                          fontSize: width * 0.06,
-                                                          color: Colors.white),
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 5,
-                                                    ),
-                                                    Text(
-                                                      "Current Location ID :\n${data!.first.latitude}°N ${data!.first.longitude}°E",
-                                                      style: TextStyle(
-                                                          fontSize: width * 0.035,
-                                                          color: Colors.white),
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 10,
-                                                    ),
-                                                    InkWell(
-                                                      onTap: () {
-                                                        openGoogleMaps(
-                                                            data!.first.latitude,
-                                                            data!.first.longitude);
-                                                      },
-                                                      child: Container(
-                                                        padding: EdgeInsets.all(5.0),
-                                                        decoration: BoxDecoration(
-                                                            borderRadius:
-                                                            BorderRadius.circular(
-                                                                10.0),
-                                                            color: Colors.white),
-                                                        child: Text(
-                                                          "Open in Maps",
-                                                          style: TextStyle(
-                                                            fontSize: width * 0.035,
-                                                            color: const Color.fromRGBO(
-                                                                88, 106, 222, 0.9),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  ],
+                                              children: [
+                                                Text(
+                                                  "Location",
+                                                  style: TextStyle(
+                                                      fontSize: width * 0.06,
+                                                      color: Colors.white),
                                                 ),
-                                              ),
-                                            ],
-                                          )
+                                                const SizedBox(
+                                                  height: 5,
+                                                ),
+                                                Text(
+                                                  "Current Location ID :\n${data!.first.latitude}°N ${data!.first.longitude}°E",
+                                                  style: TextStyle(
+                                                      fontSize: width * 0.035,
+                                                      color: Colors.white),
+                                                ),
+                                                const SizedBox(
+                                                  height: 10,
+                                                ),
+                                                InkWell(
+                                                  onTap: () {
+                                                    openGoogleMaps(
+                                                        data!.first.latitude,
+                                                        data!.first.longitude);
+                                                  },
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.all(5.0),
+                                                    decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10.0),
+                                                        color: Colors.white),
+                                                    child: Text(
+                                                      "Open in Maps",
+                                                      style: TextStyle(
+                                                        fontSize: width * 0.035,
+                                                        color: const Color
+                                                            .fromRGBO(
+                                                            88, 106, 222, 0.9),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      )),
+                                      SizedBox(
+                                        height: 16,
                                       ),
-                                      SizedBox(height: 16,),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8.0),
                                         child: Row(
                                           mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                              MainAxisAlignment.center,
                                           children: [
                                             Container(
                                               width: width * 0.475,
@@ -411,23 +465,24 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: Color.fromRGBO(255, 245, 227, 1),
-                                                        shape:
-                                                        RoundedRectangleBorder(
+                                                        color: Color.fromRGBO(
+                                                            255, 245, 227, 1),
+                                                        shape: RoundedRectangleBorder(
                                                             borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                20)),
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        20)),
                                                         elevation: 4,
                                                         child: Padding(
                                                           padding:
-                                                          const EdgeInsets.only(
-                                                              left: 12.0,
-                                                              top: 12.0),
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  left: 12.0,
+                                                                  top: 12.0),
                                                           child: Column(
                                                             crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Row(
                                                                 children: [
@@ -442,15 +497,22 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                     "Fall Detection",
                                                                     style: TextStyle(
                                                                         fontSize:
-                                                                        width *
-                                                                            0.04),
+                                                                            width *
+                                                                                0.04),
                                                                   ),
                                                                 ],
                                                               ),
                                                               Center(
-                                                                child: Image.asset(
-                                                                  data.first.metrics['fall_axis']=='1' ? "assets/fallaxis.png" : "assets/fallaxis0.png",
-                                                                  height: height * 0.15,
+                                                                child:
+                                                                    Image.asset(
+                                                                  data.first.metrics[
+                                                                              'fall_axis'] ==
+                                                                          '1'
+                                                                      ? "assets/fallaxis.png"
+                                                                      : "assets/fallaxis0.png",
+                                                                  height:
+                                                                      height *
+                                                                          0.15,
                                                                 ),
                                                               ),
                                                             ],
@@ -458,66 +520,116 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                         ),
                                                       )),
                                                   Expanded(
-                                                    flex: 2,
-                                                    child: Card(
-                                                      color: Color.fromRGBO(255, 234, 234, 1),
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                                      elevation: 4,
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
-                                                        child: Column(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                          children: [
-                                                            Row(
-                                                              children: [
-                                                                Icon(Icons.warning, size: 25),
-                                                                SizedBox(width: width * 0.01),
-                                                                Text('Emergency', style: TextStyle(fontSize: width * 0.04)),
-                                                              ],
-                                                            ),
-                                                            Stack(
-                                                              alignment: Alignment.center,
-                                                              children: [
-                                                                Container(
-                                                                  width: width * 0.25,
-                                                                  height: width * 0.25,
-                                                                  decoration: BoxDecoration(
-                                                                    borderRadius: BorderRadius.circular(width * 0.5),
-                                                                    color:  Colors.white,
-                                                                    boxShadow: const [
-                                                                      BoxShadow(
-                                                                        color: Colors.redAccent,
-                                                                        blurRadius: 5.0,
-                                                                      ),
-                                                                    ],
-                                                                    border: Border.all(color: Colors.redAccent, width: 10.0),
+                                                      flex: 2,
+                                                      child: Card(
+                                                        color: Color.fromRGBO(
+                                                            255, 234, 234, 1),
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        18)),
+                                                        elevation: 4,
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  vertical: 5.0,
+                                                                  horizontal:
+                                                                      15.0),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceAround,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                      Icons
+                                                                          .warning,
+                                                                      size: 25),
+                                                                  SizedBox(
+                                                                      width: width *
+                                                                          0.01),
+                                                                  Text(
+                                                                      'Emergency',
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                              width * 0.04)),
+                                                                ],
+                                                              ),
+                                                              Stack(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                children: [
+                                                                  Container(
+                                                                    width:
+                                                                        width *
+                                                                            0.25,
+                                                                    height:
+                                                                        width *
+                                                                            0.25,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(width *
+                                                                              0.5),
+                                                                      color: Colors
+                                                                          .white,
+                                                                      boxShadow: const [
+                                                                        BoxShadow(
+                                                                          color:
+                                                                              Colors.redAccent,
+                                                                          blurRadius:
+                                                                              5.0,
+                                                                        ),
+                                                                      ],
+                                                                      border: Border.all(
+                                                                          color: Colors
+                                                                              .redAccent,
+                                                                          width:
+                                                                              10.0),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                                Container(
-                                                                  width: width * 0.15,
-                                                                  height: width * 0.15,
-                                                                  decoration: BoxDecoration(
-                                                                    borderRadius: BorderRadius.circular(width * 0.5),
-                                                                    color: Colors.black26,
-                                                                    boxShadow: const [
-                                                                      BoxShadow(
-                                                                        color: Colors.redAccent,
-                                                                        blurRadius: 5.0,
-                                                                      ),
-                                                                    ],
+                                                                  Container(
+                                                                    width:
+                                                                        width *
+                                                                            0.15,
+                                                                    height:
+                                                                        width *
+                                                                            0.15,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(width *
+                                                                              0.5),
+                                                                      color: Colors
+                                                                          .black26,
+                                                                      boxShadow: const [
+                                                                        BoxShadow(
+                                                                          color:
+                                                                              Colors.redAccent,
+                                                                          blurRadius:
+                                                                              5.0,
+                                                                        ),
+                                                                      ],
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                                Text(
-                                                                  "SOS",
-                                                                  style: TextStyle(color: Colors.white, fontSize: 20),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
+                                                                  Text(
+                                                                    "SOS",
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontSize:
+                                                                            20),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                    )
-                                                  ),
+                                                      )),
                                                 ],
                                               ),
                                             ),
@@ -529,22 +641,25 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: const Color.fromRGBO(
+                                                        color: const Color
+                                                            .fromRGBO(
                                                             228, 240, 254, 1),
-                                                        shape:
-                                                        RoundedRectangleBorder(
+                                                        shape: RoundedRectangleBorder(
                                                             borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                20)),
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        20)),
                                                         elevation: 4,
                                                         child: Padding(
                                                           padding:
-                                                          const EdgeInsets.only(top: 12.0, left: 12.0),
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  top: 12.0,
+                                                                  left: 12.0),
                                                           child: Column(
                                                             crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Row(
                                                                 children: [
@@ -559,40 +674,45 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                     "Heart Rate",
                                                                     style: TextStyle(
                                                                         fontSize:
-                                                                        width *
-                                                                            0.045),
+                                                                            width *
+                                                                                0.045),
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(height: 8),
+                                                              SizedBox(
+                                                                  height: 8),
                                                               Column(
                                                                 children: [
                                                                   Image.asset(
                                                                     "assets/heartrate.png",
                                                                     width:
-                                                                    width * 0.3,
+                                                                        width *
+                                                                            0.3,
                                                                   ),
-                                                                  SizedBox(height: 10,),
+                                                                  SizedBox(
+                                                                    height: 10,
+                                                                  ),
                                                                   Row(
-                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .center,
                                                                     children: [
                                                                       Text(
-                                                                        data.first.metrics['heart_rate'],
+                                                                        data.first
+                                                                            .metrics['heart_rate'],
                                                                         style: TextStyle(
-                                                                            fontSize:
-                                                                            width * 0.07,
+                                                                            fontSize: width *
+                                                                                0.07,
                                                                             fontWeight:
-                                                                            FontWeight
-                                                                                .bold),
+                                                                                FontWeight.bold),
                                                                       ),
                                                                       Text(
                                                                         " bpm",
                                                                         style: TextStyle(
-                                                                            fontSize:
-                                                                            width * 0.03,
+                                                                            fontSize: width *
+                                                                                0.03,
                                                                             fontWeight:
-                                                                            FontWeight
-                                                                                .bold),
+                                                                                FontWeight.bold),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -605,29 +725,28 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: const Color.fromRGBO(
+                                                        color: const Color
+                                                            .fromRGBO(
                                                             237, 255, 228, 1),
-                                                        shape:
-                                                        RoundedRectangleBorder(
+                                                        shape: RoundedRectangleBorder(
                                                             borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                20)),
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        20)),
                                                         elevation: 4,
                                                         child: Padding(
                                                           padding:
-                                                          const EdgeInsets.all(
-                                                              16.0),
+                                                              const EdgeInsets
+                                                                  .all(16.0),
                                                           child: Column(
                                                             crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Row(
                                                                 children: [
                                                                   Image.asset(
-                                                                    "assets/spo2_icon.png"
-                                                                  ),
+                                                                      "assets/spo2_icon.png"),
                                                                   SizedBox(
                                                                       width: width *
                                                                           0.02),
@@ -635,16 +754,23 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                     "SpO₂",
                                                                     style: TextStyle(
                                                                         fontSize:
-                                                                        width *
-                                                                            0.04),
+                                                                            width *
+                                                                                0.04),
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(height: 8),
+                                                              SizedBox(
+                                                                  height: 8),
                                                               Stack(
-                                                                alignment: Alignment.center,
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
                                                                 children: [
-                                                                  Center(child: SpO2Gauge(percentage: data.first.metrics['spo2']!="--" ? int.parse(data.first.metrics['spo2'].toString()) : 1))
+                                                                  Center(
+                                                                      child: SpO2Gauge(
+                                                                          percentage: data.first.metrics['spo2'] != "--"
+                                                                              ? int.parse(data.first.metrics['spo2'].toString())
+                                                                              : 1))
                                                                 ],
                                                               ),
                                                             ],
@@ -657,7 +783,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           ],
                                         ),
                                       ),
-                                      SizedBox(height: 16,),
+                                      SizedBox(
+                                        height: 16,
+                                      ),
                                       // Center(
                                       //   child: GestureDetector(
                                       //     onTap: () {

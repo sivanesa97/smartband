@@ -22,14 +22,33 @@ import 'package:smartband/pushnotifications.dart';
 
 import 'firebase_options.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Handling a background message: ${message.messageId}");
+
+  await flutterLocalNotificationsPlugin.initialize(
+    InitializationSettings(android: AndroidInitializationSettings('logo')),
+    onDidReceiveNotificationResponse:
+        (NotificationResponse notificationResponse) {
+      handleNotificationClick(message);
+    },
+  );
 }
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+void handleNotificationClick(RemoteMessage message) {
+  final initialMessage = message.data;
+  print("fsdfs: $message");
+  print("$initialMessage sfnslkf");
+  if (initialMessage.containsKey('uid')) {
+    navigatorKey.currentState?.pushNamed('/sos');
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,7 +73,6 @@ void main() async {
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
   );
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
   final fcmToken = await FirebaseMessaging.instance.getToken();
@@ -91,14 +109,25 @@ void main() async {
       await overlay.FlutterOverlayWindow.showOverlay(
           height: overlay.WindowSize.fullCover,
           width: overlay.WindowSize.fullCover,
-          alignment:
-              overlay.OverlayAlignment.bottomCenter, // Center the overlay
+          alignment: overlay.OverlayAlignment.bottomCenter,
           visibility: overlay.NotificationVisibility.visibilityPublic);
     }
-    SOSPage sosPage = new SOSPage();
+    SOSPage sosPage = SOSPage();
     sosPage.createState().startSOS();
     sendNotification.showNotification(message.notification?.title ?? "",
         message.notification?.body ?? "", navigatorKey);
+  });
+
+  // Check for initial notification
+  RemoteMessage? initialMessage =
+      await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    handleNotificationClick(initialMessage);
+  }
+
+  // Listen for notification clicks when the app is in the background
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    handleNotificationClick(message);
   });
 
   SystemChrome.setPreferredOrientations([
@@ -116,6 +145,9 @@ void main() async {
     home: SplashScreen(),
     debugShowCheckedModeBanner: false,
     navigatorKey: navigatorKey,
+    routes: {
+      '/sos': (context) => SOSPage(),
+    },
   )));
 }
 
