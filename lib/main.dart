@@ -13,7 +13,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:googleapis_auth/auth_io.dart';
-// import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
@@ -165,6 +164,7 @@ class _MyAppState extends State<MyApp> {
       title: 'LifeLongCare',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),

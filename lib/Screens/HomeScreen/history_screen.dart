@@ -1,241 +1,381 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smartband/Screens/HomeScreen/settings.dart';
-import 'package:smartband/Screens/Widgets/appBarProfile.dart';
-import 'package:smartband/Screens/Widgets/drawer.dart';
-import 'package:smartband/Screens/Widgets/string_extensions.dart';
-
-import '../AuthScreen/role_screen.dart';
-import '../Models/usermodel.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
-  BluetoothDevice device;
-  String phNo;
+  final BluetoothDevice device;
+  final String phNo;
 
-  HistoryScreen({super.key, required this.device, required this.phNo});
+  const HistoryScreen({super.key, required this.device, required this.phNo});
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+class _HistoryScreenState extends ConsumerState<HistoryScreen>
+    with TickerProviderStateMixin {
+  final CollectionReference _notificationsHistory =
+      FirebaseFirestore.instance.collection('notifications_history');
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  final Map<String, Map<String, dynamic>> historyMap = {
+    'water': {
+      'icon': Icons.add,
+      'title': "Water Reminder",
+      'color': const Color.fromRGBO(0, 83, 188, 1),
+    },
+    'sos': {
+      'icon': Icons.change_circle_outlined,
+      'title': "SOS alert",
+      'color': const Color.fromRGBO(171, 0, 0, 1),
+    },
+    'tablet': {
+      'icon': Icons.medical_information_outlined,
+      'title': "Tablet Reminder",
+      'color': const Color.fromRGBO(255, 203, 0, 1),
+    },
+    'sleep': {
+      'icon': Icons.star_border_sharp,
+      'title': "Sleep alert",
+      'color': const Color.fromRGBO(88, 164, 160, 1),
+    },
+  };
+
   @override
   Widget build(BuildContext context) {
-    List<List<dynamic>> history_items = [
-      [Icons.add, "Water Reminder", "3min ago", "Sent", Color.fromRGBO(0, 83, 188, 1)],
-      [Icons.change_circle_outlined, "SOS alert", "5min ago", "Received", Color.fromRGBO(171, 0, 0, 1)],
-      [Icons.medical_information_outlined, "Tablet Reminder", "1min ago", "Sent", Color.fromRGBO(255, 203, 0, 1)],
-      [Icons.star_border_sharp, "Sleep alert", "2min ago", "Sent", Color.fromRGBO(88, 164, 160, 1)],
-      [Icons.change_circle_outlined, "SOS alert", "4min ago", "Received", Color.fromRGBO(171, 0, 0, 1)],
-    ];
-    final user_data =
-        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
     return Scaffold(
-        drawer: DrawerScreen(
-          device: bluetoothDeviceManager.connectedDevices.first,
-          phNo: widget.phNo,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFFEBF4FF),
+        title: TabBar(
+          overlayColor: WidgetStateProperty.all(Colors.blue.withOpacity(0.2)),
+          controller: _tabController,
+          indicator: BoxDecoration(
+            color: const Color.fromRGBO(0, 83, 188, 1), // Active tab color
+            borderRadius: BorderRadius.circular(25.0), // Rounded corners
+          ),
+          labelColor: Colors.white, // Text color for active tab
+          unselectedLabelColor: Colors.black, // Text color for inactive tabs
+          tabs: const <Widget>[
+            Padding(padding: EdgeInsets.all(30), child: Tab(text: 'All')),
+            Padding(
+              padding: EdgeInsets.all(25),
+              child: Tab(text: 'Unread'),
+            ),
+            Padding(
+              padding: EdgeInsets.all(25),
+              child: Tab(text: 'Deleted'),
+            )
+          ],
         ),
-        backgroundColor: Colors.white,
-        body: user_data.when(
-          data: (user) {
-            if (user == null) {
-              return Center(child: Text("User data is unavailable"));
-            }
-            return SafeArea(
-                child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    // Adjust this to fit content
-                    children: [
-                      // Profile Picture
-                      GestureDetector(
-                        onTap: () {
-                          Scaffold.of(context).openDrawer();
-                        },
-                        child: Container(
-                          margin: EdgeInsets.all(10.0),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundImage: NetworkImage(
-                              FirebaseAuth.instance.currentUser!.photoURL ??
-                                  "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Tab: All
+          StreamBuilder<QuerySnapshot>(
+            stream: _notificationsHistory.snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent));
+              } else if (snapshot.hasError) {
+                return const Center(
+                    child: Text("Error Fetching Notifications"));
+              } else if (snapshot.hasData) {
+                var historyItems = snapshot.data!.docs.map((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  Timestamp? timestamp = data['time_stamp'];
+                  DateTime dateTime = timestamp?.toDate() ?? DateTime.now();
+
+                  String type = data['type'] ?? 'unknown';
+                  var mapEntry = historyMap[type] ??
+                      {
+                        'icon': Icons.notification_important, // Default icon
+                        'title': 'Unknown Type',
+                        'color': Colors.blue, // Default color
+                      };
+                  return [
+                    doc.id, // Store document ID for later use
+                    mapEntry['icon'],
+                    mapEntry['title'],
+                    formattedTimestamp(dateTime),
+                    data['notification_status'] ?? 'Unknown Status',
+                    mapEntry['color'],
+                  ];
+                }).toList();
+                return SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Text(
+                            "History",
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.05,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 3),
-                      // Spacing between profile picture and text
-                      // Greeting Message
-                      Expanded(
-                        // Use Expanded to take up remaining space
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  "Hello ${user.name.split(' ')[0].toTitleCase()}",
-                                  style: TextStyle(
-                                    fontSize: width * 0.055,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: ListView.builder(
+                            itemCount: historyItems.length,
+                            itemBuilder: (context, index) {
+                              return Dismissible(
+                                key: Key(historyItems[index][0]), // Unique key
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (direction) {
+                                  // Update the status to 'Deleted'
+                                  _notificationsHistory
+                                      .doc(historyItems[index][0])
+                                      .update({
+                                    'notification_status': 'deleted',
+                                  });
+                                },
+                                background: Container(
+                                  padding: const EdgeInsets.only(right: 20),
+                                  alignment: Alignment.centerRight,
+                                  color: Colors.red,
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                Icon(Icons.keyboard_arrow_down)
-                              ],
-                            ),
-                            Text(
-                              DateTime.now().hour > 12
-                                  ? DateTime.now().hour > 16
-                                      ? "Good Evening ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                                            2,
-                                          )}"
-                                      : "Good Afternoon ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                                            2,
-                                          )}"
-                                  : "Good Morning ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                                        2,
-                                      )}",
-                              style: TextStyle(
-                                fontSize: width * 0.04,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          GestureDetector(
-                            child: Image.asset(
-                              "assets/profile_icon.png",
-                              width: 25,
-                              height: 25,
-                            ),
-                            onTap: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => HomePage(
-                                      phNo: user.phone_number.toString())));
+                                child: Column(
+                                  children: [
+                                    Card(
+                                      elevation: 4,
+                                      shadowColor: Colors.grey.withOpacity(0.5),
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 15, vertical: 15),
+                                        leading: Container(
+                                          margin:
+                                              const EdgeInsets.only(right: 10),
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: historyItems[index][5],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            historyItems[index][1],
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          historyItems[index][2],
+                                          style: TextStyle(
+                                            fontSize: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.045,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          historyItems[index][3],
+                                          style: const TextStyle(
+                                            color: Color.fromRGBO(
+                                                115, 115, 115, 1),
+                                          ),
+                                        ),
+                                        trailing: Text(
+                                          historyItems[index][4],
+                                          style: const TextStyle(
+                                            color:
+                                                Color.fromRGBO(0, 83, 188, 1),
+                                          ),
+                                        ),
+                                        tileColor: const Color.fromRGBO(
+                                            255, 255, 255, 1),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(15.0),
+                                        ),
+                                        // contentPadding: const EdgeInsets.all(10),
+                                        visualDensity: VisualDensity
+                                            .adaptivePlatformDensity,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                  ],
+                                ),
+                              );
                             },
                           ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Icon(
-                            Icons.notifications,
-                            size: 25,
-                          )
-                        ],
-                      ),
-                      SizedBox(
-                        width: width * 0.01,
-                      )
-                    ],
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Text(
-                      "History",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(fontSize: width * 0.05, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
-                  Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: SizedBox(
-                        height: height * 0.7,
-                        child: ListView.builder(
-                            itemCount: history_items.length,
-                            itemBuilder: (context, index) {
-                              return Column(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 15, vertical: 15),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15.0),
-                                      color: Color.fromRGBO(255, 255, 255, 1),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.5),
-                                          spreadRadius: 3,
-                                          blurRadius: 3,
-                                          offset: Offset(
-                                              0, 0), // changes position of shadow
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              margin: EdgeInsets.only(right: 10),
-                                              padding: EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                  color: history_items[index][4],
-                                                  shape: BoxShape.circle),
-                                              child: Icon(
-                                                history_items[index][0],
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            Text(
-                                              history_items[index][1],
-                                              style: TextStyle(
-                                                  fontSize: width * 0.045),
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                              history_items[index][2],
-                                              style: TextStyle(
-                                                  color: Color.fromRGBO(
-                                                      115, 115, 115, 1)),
-                                            ),
-                                            Text(
-                                              history_items[index][3],
-                                              style: TextStyle(
-                                                  color: Color.fromRGBO(
-                                                      0, 83, 188, 1)),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                  )
-                                ],
-                              );
-                            }),
+                );
+              } else {
+                return const Center(child: Text("No Notifications"));
+              }
+            },
+          ),
+          //Tab Bar: Unread
+          StreamBuilder<QuerySnapshot>(
+            stream: _notificationsHistory
+                .where('notification_status', isEqualTo: 'unread')
+                .snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent));
+              } else if (snapshot.hasError) {
+                return const Center(
+                    child: Text("Error Fetching Notifications"));
+              } else if (snapshot.hasData) {
+                var deletedItems = snapshot.data!.docs.map((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  Timestamp? timestamp = data['time_stamp'];
+                  DateTime dateTime = timestamp?.toDate() ?? DateTime.now();
+
+                  String type = data['type'] ?? 'unknown';
+
+                  var mapEntry = historyMap[type] ??
+                      {
+                        'icon': Icons.notification_important,
+                        'title': 'Unknown Type',
+                        'color': Colors.blue,
+                      };
+
+                  return [
+                    doc.id,
+                    mapEntry['icon'],
+                    mapEntry['title'],
+                    formattedTimestamp(dateTime),
+                    data['notification_status'] ?? 'Unknown Status',
+                    mapEntry['color'],
+                  ];
+                }).toList();
+
+                return ListView.builder(
+                  itemCount: deletedItems.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 4,
+                      color: Colors.white,
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                              color: deletedItems[index][5],
+                              shape: BoxShape.circle),
+                          child: Icon(
+                            deletedItems[index][1],
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(deletedItems[index][2]),
+                        subtitle: Text(deletedItems[index][3]),
+                        trailing: Text(deletedItems[index][4]),
                       ),
-                  )
-                ],
-              ),
-            ));
-          },
-          error: (error, stackTrace) {
-            return Center(child: Text("Error Fetching User details"));
-          },
-          loading: () {
-            return Center(
-                child: CircularProgressIndicator(color: Colors.blueAccent));
-          },
-        ));
+                    );
+                  },
+                );
+              } else {
+                return const Center(child: Text("No Deleted Notifications"));
+              }
+            },
+          ),
+          // Tab: Deleted
+          StreamBuilder<QuerySnapshot>(
+            stream: _notificationsHistory
+                .where('notification_status', isEqualTo: 'Deleted')
+                .snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent));
+              } else if (snapshot.hasError) {
+                return const Center(
+                    child: Text("Error Fetching Notifications"));
+              } else if (snapshot.hasData) {
+                var deletedItems = snapshot.data!.docs.map((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  Timestamp? timestamp = data['time_stamp'];
+                  DateTime dateTime = timestamp?.toDate() ?? DateTime.now();
+
+                  String type = data['type'] ?? 'unknown';
+
+                  var mapEntry = historyMap[type] ??
+                      {
+                        'icon': Icons.notification_important,
+                        'title': 'Unknown Type',
+                        'color': Colors.blue,
+                      };
+
+                  return [
+                    doc.id,
+                    mapEntry['icon'],
+                    mapEntry['title'],
+                    formattedTimestamp(dateTime),
+                    data['notification_status'] ?? 'Unknown Status',
+                    mapEntry['color'],
+                  ];
+                }).toList();
+
+                return ListView.builder(
+                  itemCount: deletedItems.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      color: Colors.white,
+                      elevation: 4,
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                              color: deletedItems[index][5],
+                              shape: BoxShape.circle),
+                          child: Icon(
+                            deletedItems[index][1],
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(deletedItems[index][2]),
+                        subtitle: Text(deletedItems[index][3]),
+                        trailing: Text(deletedItems[index][4]),
+                      ),
+                    );
+                  },
+                );
+              } else {
+                return const Center(child: Text("No Deleted Notifications"));
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String formattedTimestamp(DateTime dateTime) {
+    // Implement your timestamp formatting logic here
+    return "${dateTime.hour}:${dateTime.minute}";
   }
 }

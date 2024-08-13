@@ -1,7 +1,8 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +10,10 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:smartband/Screens/AuthScreen/role_screen.dart';
-import 'package:smartband/Screens/Widgets/appBarProfile.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
-
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
 import 'dashboard.dart';
@@ -24,7 +22,7 @@ class WearerDashboard extends ConsumerStatefulWidget {
   final BluetoothDevice device;
   final String phNo;
 
-  WearerDashboard({Key? key, required this.device, required this.phNo}) : super(key: key);
+  const WearerDashboard({super.key, required this.device, required this.phNo});
 
   @override
   ConsumerState<WearerDashboard> createState() => _WearerDashboardState();
@@ -82,8 +80,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     return DateTime(newYear, newMonth, newDay);
   }
 
-  Future<void> fetchSubscription(String phno)
-  async {
+  Future<void> fetchSubscription(String phno) async {
     final response = await http.post(
       Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
       headers: <String, String>{
@@ -97,16 +94,17 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
-      setState(() {
+      setState(() 
+      {
         status = data['status'].toString();
-        subscription = data['subscription_period']==null ? "--" : "${data['subscription_period'].toString()} Months";
+        subscription = data['subscription_period'] == null
+            ? "--"
+            : "${data['subscription_period'].toString()} Months";
         print("Fetched");
       });
+    } else {
+      print(response.statusCode);
     }
-    else
-      {
-        print(response.statusCode);
-      }
   }
 
   Future<Position> updateLocation() async {
@@ -132,19 +130,19 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
         body: user_data.when(
           data: (user) {
             if (user == null) {
-              return Center(child: Text("User data is unavailable"));
+              return const Center(child: Text("User data is unavailable"));
             }
             fetchSubscription(user.phone_number.toString());
             return StreamBuilder<Map<String, String>>(
               stream: bluetoothDeviceManager.characteristicValuesStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+                  return const Center(
                       child:
                           CircularProgressIndicator(color: Colors.blueAccent));
                 }
                 if (snapshot.hasError) {
-                  return Center(
+                  return const Center(
                       child: Text("Error reading characteristic values"));
                 }
 
@@ -153,7 +151,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                             "beb5483e-36e1-4688-b7f5-ea07361b26a8"] ??
                         "--,--,0")
                     .split(',');
-                Timer.periodic(Duration(seconds: 5), (Timer timer) async {
+                Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
                   if (FirebaseAuth.instance.currentUser!.uid != null) {
                     await FirebaseFirestore.instance
                         .collection("users")
@@ -172,98 +170,98 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                     child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        // Adjust this to fit content
-                        children: [
-                          // Profile Picture
-                          GestureDetector(
-                            onTap: () {
-                              Scaffold.of(context).openDrawer();
-                            },
-                            child: Container(
-                              margin: EdgeInsets.all(10.0),
-                              child: CircleAvatar(
-                                radius: 20,
-                                backgroundImage: NetworkImage(
-                                  FirebaseAuth.instance.currentUser!.photoURL ??
-                                      "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 3),
-                          // Spacing between profile picture and text
-                          // Greeting Message
-                          Expanded(
-                            // Use Expanded to take up remaining space
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      "Hello ${user.name.split(' ')[0].toTitleCase()}",
-                                      style: TextStyle(
-                                        fontSize: width * 0.055,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.keyboard_arrow_down
-                                    )
-                                  ],
-                                ),
-                                Text(
-                                  DateTime.now().hour > 12
-                                      ? DateTime.now().hour > 16
-                                          ? "Good Evening ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                                          : "Good Afternoon ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                                      : "Good Morning ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}",
-                                  style: TextStyle(
-                                    fontSize: width * 0.04,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              GestureDetector(
-                                child: Image.asset(
-                                  "assets/profile_icon.png",
-                                  width: 25,
-                                  height: 25,
-                                ),
-                                onTap: () {
-                                  Navigator.of(context).push(MaterialPageRoute(
-                                      builder: (context) => HomePage(
-                                          phNo: user.phone_number.toString())));
-                                },
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Icon(
-                                Icons.notifications,
-                                size: 25,
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            width: width * 0.01,
-                          )
-                        ],
-                      ),
+                      // Row(
+                      //   mainAxisSize: MainAxisSize.min,
+                      //   // Adjust this to fit content
+                      //   children: [
+                      //     // Profile Picture
+                      //     GestureDetector(
+                      //       onTap: () {
+                      //         Scaffold.of(context).openDrawer();
+                      //       },
+                      //       child: Container(
+                      //         margin: EdgeInsets.all(10.0),
+                      //         child: CircleAvatar(
+                      //           radius: 20,
+                      //           backgroundImage: NetworkImage(
+                      //             FirebaseAuth.instance.currentUser!.photoURL ??
+                      //                 "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //     SizedBox(width: 3),
+                      //     // Spacing between profile picture and text
+                      //     // Greeting Message
+                      //     Expanded(
+                      //       // Use Expanded to take up remaining space
+                      //       child: Column(
+                      //         crossAxisAlignment: CrossAxisAlignment.start,
+                      //         children: [
+                      //           Row(
+                      //             children: [
+                      //               Text(
+                      //                 "Hello ${user.name.split(' ')[0].toTitleCase()}",
+                      //                 style: TextStyle(
+                      //                   fontSize: width * 0.055,
+                      //                   fontWeight: FontWeight.bold,
+                      //                   color: Colors.black,
+                      //                 ),
+                      //               ),
+                      //               Icon(
+                      //                 Icons.keyboard_arrow_down
+                      //               )
+                      //             ],
+                      //           ),
+                      //           Text(
+                      //             DateTime.now().hour > 12
+                      //                 ? DateTime.now().hour > 16
+                      //                     ? "Good Evening ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
+                      //                     : "Good Afternoon ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
+                      //                 : "Good Morning ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}",
+                      //             style: TextStyle(
+                      //               fontSize: width * 0.04,
+                      //               color: Colors.grey[600],
+                      //             ),
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //     Row(
+                      //       children: [
+                      //         GestureDetector(
+                      //           child: Image.asset(
+                      //             "assets/profile_icon.png",
+                      //             width: 25,
+                      //             height: 25,
+                      //           ),
+                      //           onTap: () {
+                      //             Navigator.of(context).push(MaterialPageRoute(
+                      //                 builder: (context) => HomePage(
+                      //                     phNo: user.phone_number.toString())));
+                      //           },
+                      //         ),
+                      //         SizedBox(
+                      //           width: 10,
+                      //         ),
+                      //         Icon(
+                      //           Icons.notifications,
+                      //           size: 25,
+                      //         )
+                      //       ],
+                      //     ),
+                      //     SizedBox(
+                      //       width: width * 0.01,
+                      //     )
+                      //   ],
+                      // ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Center(
                               child: Stack(
                             children: [
-                              Container(
+                              SizedBox(
                                 width: width * 0.9,
                                 height: height * 0.17,
                                 child: ClipRRect(
@@ -306,7 +304,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           fontSize: width * 0.06,
                                           color: Colors.white),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 5,
                                     ),
                                     Text(
@@ -315,7 +313,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           fontSize: width * 0.035,
                                           color: Colors.white),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     InkWell(
@@ -327,7 +325,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                             locationNew.longitude);
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.all(5.0),
+                                        padding: const EdgeInsets.all(5.0),
                                         decoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(10.0),
@@ -336,7 +334,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           "Open in Maps",
                                           style: TextStyle(
                                             fontSize: width * 0.035,
-                                            color: Color.fromRGBO(0, 90, 170, 0.8),
+                                            color:
+                                                const Color.fromRGBO(0, 90, 170, 0.8),
                                           ),
                                         ),
                                       ),
@@ -400,7 +399,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           ),
                                         ],
                                       ),
-                                      VerticalDivider(
+                                      const VerticalDivider(
                                         color: Colors.white,
                                         thickness: 2,
                                       ),
@@ -428,7 +427,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                           ),
                           const SizedBox(height: 16),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
                             child: Text(
                               "For You, ",
                               style: TextStyle(fontSize: width * 0.06),
@@ -449,7 +448,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                       Expanded(
                                           flex: 2,
                                           child: Card(
-                                            color: Color.fromRGBO(255, 245, 227, 1),
+                                            color: const Color.fromRGBO(
+                                                255, 245, 227, 1),
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20)),
@@ -463,7 +463,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                 children: [
                                                   Row(
                                                     children: [
-                                                      Icon(
+                                                      const Icon(
                                                           Icons
                                                               .monitor_heart_outlined,
                                                           size: 30),
@@ -510,7 +510,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           flex: 2,
                                           child: Card(
                                             color: const Color.fromRGBO(
-                                              228, 240, 254, 1),
+                                                228, 240, 254, 1),
                                             shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20)),
@@ -538,44 +538,52 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                       ),
                                                     ],
                                                   ),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   Column(
                                                     children: [
                                                       Image.asset(
                                                         "assets/heartrate.png",
                                                         width: width * 0.3,
                                                       ),
-                                                      SizedBox(
+                                                      const SizedBox(
                                                         height: 10,
                                                       ),
                                                       Row(
                                                         mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
+                                                            MainAxisAlignment
+                                                                .center,
                                                         children: [
                                                           Text(
                                                             values[0],
                                                             style: TextStyle(
                                                                 fontSize:
-                                                                width *
-                                                                    0.07,
+                                                                    width *
+                                                                        0.07,
                                                                 fontWeight:
-                                                                FontWeight
-                                                                    .bold,
-                                                                color: Color.fromRGBO(0, 83, 188, 1)
-                                                            ),
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: const Color
+                                                                    .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
                                                           ),
                                                           Text(
                                                             " bpm",
                                                             style: TextStyle(
                                                                 fontSize:
-                                                                width *
-                                                                    0.03,
+                                                                    width *
+                                                                        0.03,
                                                                 fontWeight:
-                                                                FontWeight
-                                                                    .bold,
-                                                                color: Color.fromRGBO(0, 83, 188, 1)
-                                                            ),
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: const Color
+                                                                    .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
                                                           ),
                                                         ],
                                                       ),
@@ -603,7 +611,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                 children: [
                                                   Row(
                                                     children: [
-                                                      Icon(Icons.water_drop,
+                                                      const Icon(Icons.water_drop,
                                                           size: 30),
                                                       SizedBox(
                                                           width: width * 0.02),
@@ -615,7 +623,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                       ),
                                                     ],
                                                   ),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   Stack(
                                                     alignment: Alignment.center,
                                                     children: [
@@ -649,10 +657,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             );
           },
           error: (error, stackTrace) {
-            return Center(child: Text("Error Fetching User details"));
+            return const Center(child: Text("Error Fetching User details"));
           },
           loading: () {
-            return Center(
+            return const Center(
                 child: CircularProgressIndicator(color: Colors.blueAccent));
           },
         ));
@@ -662,7 +670,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
 class SpO2Gauge extends StatelessWidget {
   final int percentage;
 
-  SpO2Gauge({required this.percentage});
+  const SpO2Gauge({required this.percentage});
 
   @override
   Widget build(BuildContext context) {
@@ -735,8 +743,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter tp = TextPainter(
         text: span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     tp.layout();
     tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
 
@@ -793,8 +800,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter label25Tp = TextPainter(
         text: label25Span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     label25Tp.layout();
     label25Tp.paint(canvas,
         label25Offset - Offset(label25Tp.width / 2, label25Tp.height / 2));
@@ -809,8 +815,7 @@ class SpO2GaugePainter extends CustomPainter {
     TextPainter label99Tp = TextPainter(
         text: label99Span,
         textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr
-    );
+        textDirection: TextDirection.ltr);
     label99Tp.layout();
     label99Tp.paint(canvas,
         label99Offset - Offset(label99Tp.width / 2, label99Tp.height / 2));
