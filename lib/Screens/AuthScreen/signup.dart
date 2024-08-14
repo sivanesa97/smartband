@@ -9,6 +9,8 @@ import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 
+import 'package:smartband/Screens/Models/messaging.dart';
+
 class SignupScreen extends StatefulWidget {
   String phNo;
   String role;
@@ -41,7 +43,8 @@ class _SignupScreenState extends State<SignupScreen> {
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
-        _dateOfBirth.text = "${picked.year}-${picked.month.toString().padLeft(2,'0')}-${picked.day.toString().padLeft(2,'0')}";
+        _dateOfBirth.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -79,88 +82,94 @@ class _SignupScreenState extends State<SignupScreen> {
             .where("email", isEqualTo: _emailId.text)
             .get();
         if (datas.docs.isEmpty) {
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-              email: _emailId.text,
-              password: "admin123",
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Creating account... Please wait")));
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Fetching Location... Please wait")));
-            final locationData = await getLocation();
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: _emailId.text,
-              password: "admin123",
-            );
-            print("first one");
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(FirebaseAuth.instance.currentUser?.uid)
-                .set({
-              'name': _username.text,
-              'dob': _dateOfBirth.text,
-              'height': double.parse(_height.text),
-              'weight': double.parse(_weight.text),
-              'email': _emailId.text,
-              'gender': _selectedGender,
-              'phone_number': int.parse(_phone_number.text),
-              'relations': [],
-              'isSOSClicked': false,
-              'location': locationData,
-              'home_location': locationData,
-              'metrics': {'heart_rate': '0', 'spo2': '0', 'fall_axis': "-- -- --"},
-              'role': widget.role,
-              "emergency": {
-                "name": "",
-                "blood_group": "",
-                "medical_notes": "",
-                "address": "",
-                "medications": "",
-                "organ_donor": false,
-                "contact": 0,
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: _emailId.text,
+            password: "admin123",
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Creating account... Please wait")));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Fetching Location... Please wait")));
+          final locationData = await getLocation();
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailId.text,
+            password: "admin123",
+          );
+          print("first one");
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser?.uid)
+              .set({
+            'name': _username.text,
+            'dob': _dateOfBirth.text,
+            'height': double.parse(_height.text),
+            'weight': double.parse(_weight.text),
+            'email': _emailId.text,
+            'gender': _selectedGender,
+            'phone_number': int.parse(_phone_number.text),
+            'relations': [],
+            'isSOSClicked': false,
+            'location': locationData,
+            'home_location': locationData,
+            'metrics': {
+              'heart_rate': '0',
+              'spo2': '0',
+              'fall_axis': "-- -- --"
+            },
+            'role': widget.role,
+            "emergency": {
+              "name": "",
+              "blood_group": "",
+              "medical_notes": "",
+              "address": "",
+              "medications": "",
+              "organ_donor": false,
+              "contact": 0,
+            },
+            'device_id': "",
+            'steps_goal': 0,
+            'fcmKey': await FirebaseMessaging.instance.getToken()
+          });
+
+          print("second one");
+          if (widget.role == "watch wearer") {
+            final response = await http.post(
+              Uri.parse("https://snvisualworks.com/public/api/auth/register"),
+              headers: <String, String>{
+                'Content-Type': 'application/json; charset=UTF-8',
               },
-              'device_id': "",
-              'steps_goal': 0,
-              'fcmKey': await FirebaseMessaging.instance.getToken()
-            });
-
-            print("second one");
-            if (widget.role == "watch wearer") {
-                final response = await http.post(
-                  Uri.parse("https://snvisualworks.com/public/api/auth/register"),
-                  headers: <String, String>{
-                    'Content-Type': 'application/json; charset=UTF-8',
-                  },
-                  body: jsonEncode(<String, dynamic>{
-                    'name': _username.text,
-                    'mobile_number': _phone_number.text,
-                    'email': _emailId.text,
-                    'date_of_birth': _dateOfBirth.text,
-                    'gender': _selectedGender?.toLowerCase(),
-                    'height': double.parse(_height.text).toInt(),
-                    'weight': double.parse(_weight.text).toInt(),
-                  }),
-                );
-                print(response.statusCode);
-              }
-            print("third one");
-
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Account created successfully")));
-            Navigator.of(context, rootNavigator: true).pushReplacement(
-                MaterialPageRoute(
-                    maintainState: true,
-                    builder: (context) => HomepageScreen(hasDeviceId: false,)));
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Account already exists with this mail ID ")));
+              body: jsonEncode(<String, dynamic>{
+                'name': _username.text,
+                'mobile_number': _phone_number.text,
+                'email': _emailId.text,
+                'date_of_birth': _dateOfBirth.text,
+                'gender': _selectedGender?.toLowerCase(),
+                'height': double.parse(_height.text).toInt(),
+                'weight': double.parse(_weight.text).toInt(),
+              }),
+            );
+            print(response.statusCode);
           }
+          print("third one");
+
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Account created successfully")));
+          Navigator.of(context, rootNavigator: true)
+              .pushReplacement(MaterialPageRoute(
+                  maintainState: true,
+                  builder: (context) => HomepageScreen(
+                        hasDeviceId: false,
+                      )));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Account already exists with this mail ID ")));
+        }
       } catch (exception) {
         User? user = FirebaseAuth.instance.currentUser;
         user?.delete();
         print("Account deleted");
       }
-      } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e) {
       User? user = FirebaseAuth.instance.currentUser;
       user?.delete();
       print("Account deleted");
@@ -170,17 +179,15 @@ class _SignupScreenState extends State<SignupScreen> {
       } else if (e.code == 'email-already-in-use') {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("The account already exists for that email.")));
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Error : ${e.message}")));
       }
-      else
-        {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text("Error : ${e.message}")));
-        }
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRelationDetails(String email,
-      int otp_num) async {
+  Future<List<Map<String, dynamic>>> _fetchRelationDetails(
+      String email, int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
@@ -189,7 +196,8 @@ class _SignupScreenState extends State<SignupScreen> {
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
-      // await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
+      Messaging messaging = Messaging();
+      messaging.sendSMS(data, "Your OTP is $otp_num");
     }
     return relationDetails;
   }
@@ -218,7 +226,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         return DropdownMenuItem<String>(
                           value: value,
                           child:
-                          Text(value[0].toUpperCase() + value.substring(1)),
+                              Text(value[0].toUpperCase() + value.substring(1)),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -230,29 +238,32 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _emailConn,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Email',
-                          suffixIcon: IconButton(
-                              onPressed: () {
-                                sent = true;
-                                _otpConn.text = "";
-                                _fetchRelationDetails(
-                                    _emailConn.text, otp_num);
-                              },
-                              icon: Icon(sent ? Icons.check : Icons.send))),
-                    )
+                            controller: _emailConn,
+                            decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Email',
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      sent = true;
+                                      _otpConn.text = "";
+                                      _fetchRelationDetails(
+                                          _emailConn.text, otp_num);
+                                    },
+                                    icon:
+                                        Icon(sent ? Icons.check : Icons.send))),
+                          )
                         : const SizedBox.shrink(),
-                    SizedBox(height: 16,),
+                    SizedBox(
+                      height: 16,
+                    ),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _otpConn,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'OTP',
-                      ),
-                    )
+                            controller: _otpConn,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'OTP',
+                            ),
+                          )
                         : const SizedBox.shrink(),
                   ],
                 ),
@@ -268,7 +279,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: const Text('OK'),
                   onPressed: () {
                     if (_selectedRole == 'supervisor' &&
-                        _emailConn.text != "" ||
+                            _emailConn.text != "" ||
                         _selectedRole == 'watch wearer') {
                       signUpWithCredentials();
                       Navigator.of(context, rootNavigator: true).pop();
@@ -287,19 +298,13 @@ class _SignupScreenState extends State<SignupScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _phone_number.text = widget.phNo.substring(3,widget.phNo.length);
+    _phone_number.text = widget.phNo.substring(3, widget.phNo.length);
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery
-        .of(context)
-        .size
-        .height;
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -309,7 +314,9 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: height * 0.02,),
+                SizedBox(
+                  height: height * 0.02,
+                ),
                 SizedBox(
                   height: height * 0.075,
                 ),
@@ -348,12 +355,13 @@ class _SignupScreenState extends State<SignupScreen> {
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: 'Email',
-                        suffixIcon: RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailId.text)
-                            ? const Icon(Icons.check, color: Colors.green)
-                            : null,
+                        suffixIcon:
+                            RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                                    .hasMatch(_emailId.text)
+                                ? const Icon(Icons.check, color: Colors.green)
+                                : null,
                       ),
                     ),
-
                   ),
                 ),
                 SizedBox(
@@ -366,84 +374,105 @@ class _SignupScreenState extends State<SignupScreen> {
                       controller: _phone_number,
                       readOnly: true,
                       decoration: InputDecoration(
-                        suffixIcon: RegExp(r'^(?!([0-9])\1{9,})(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?[\d\s-]{7,10}$').hasMatch(_phone_number.text) ? Icon(Icons.check, color: Colors.green,) : Icon(Icons.close, color: Colors.red,),
+                        suffixIcon:
+                            RegExp(r'^(?!([0-9])\1{9,})(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?[\d\s-]{7,10}$')
+                                    .hasMatch(_phone_number.text)
+                                ? Icon(
+                                    Icons.check,
+                                    color: Colors.green,
+                                  )
+                                : Icon(
+                                    Icons.close,
+                                    color: Colors.red,
+                                  ),
                         border: const OutlineInputBorder(),
                         labelText: 'Phone Number',
                       ),
-
                     ),
                   ),
                 ),
                 SizedBox(height: height * 0.015),
-                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
-                  child: SizedBox(
-                    width: width * 0.9,
-                    child: TextFormField(
-                      controller: _dateOfBirth,
-                      decoration: InputDecoration(
-                        labelText: 'Select Birth Date',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(Icons.calendar_today),
-                          onPressed: () => _selectDate(context),
+                widget.role == 'supervisor'
+                    ? SizedBox.shrink()
+                    : Center(
+                        child: SizedBox(
+                          width: width * 0.9,
+                          child: TextFormField(
+                            controller: _dateOfBirth,
+                            decoration: InputDecoration(
+                              labelText: 'Select Birth Date',
+                              border: OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: Icon(Icons.calendar_today),
+                                onPressed: () => _selectDate(context),
+                              ),
+                            ),
+                            readOnly: true,
+                          ),
                         ),
                       ),
-                      readOnly: true,
-                    ),
-                  ),
-                ),
                 SizedBox(height: height * 0.015),
-                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
-                  child: SizedBox(
-                    width: width * 0.9,
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Select your gender',
+                widget.role == 'supervisor'
+                    ? SizedBox.shrink()
+                    : Center(
+                        child: SizedBox(
+                          width: width * 0.9,
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Select your gender',
+                            ),
+                            value: _selectedGender,
+                            items:
+                                ['Male', 'Female', 'Other'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value,
+                                  style: TextStyle(fontWeight: FontWeight.w400),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedGender = newValue;
+                              });
+                            },
+                          ),
+                        ),
                       ),
-                      value: _selectedGender,
-                      items: ['Male', 'Female', 'Other'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value, style: TextStyle(fontWeight: FontWeight.w400),),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedGender = newValue;
-                        });
-                      },
-                    ),
-                  ),
-                ),
                 SizedBox(
                   height: height * 0.015,
                 ),
-                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
-                  child: SizedBox(
-                    width: width * 0.9,
-                    child: TextFormField(
-                      controller: _height,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Height (in cm)',
+                widget.role == 'supervisor'
+                    ? SizedBox.shrink()
+                    : Center(
+                        child: SizedBox(
+                          width: width * 0.9,
+                          child: TextFormField(
+                            controller: _height,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Height (in cm)',
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
                 SizedBox(height: height * 0.015),
-                widget.role == 'supervisor' ? SizedBox.shrink() : Center(
-                  child: SizedBox(
-                    width: width * 0.9,
-                    child: TextFormField(
-                      controller: _weight,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Weight (in Kg)',
+                widget.role == 'supervisor'
+                    ? SizedBox.shrink()
+                    : Center(
+                        child: SizedBox(
+                          width: width * 0.9,
+                          child: TextFormField(
+                            controller: _weight,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Weight (in Kg)',
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
                 SizedBox(height: height * 0.015),
                 SizedBox(
                   height: height * 0.015,
@@ -452,64 +481,64 @@ class _SignupScreenState extends State<SignupScreen> {
                   height: 50,
                   child: InkWell(
                     onTap: () {
-                      if (widget.role=='supervisor')
-                      {
+                      if (widget.role == 'supervisor') {
                         _selectedGender = "Male";
                         _dateOfBirth.text = '2024-01-01';
                         _height.text = "0.0";
                         _weight.text = "0.0";
-                      }
-                      else if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailId.text))
-                        {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter valid email id")));
-                        }
-                      else if (!RegExp(r'^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$').hasMatch(_dateOfBirth.text))
-                      {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter valid date of birth")));
-                      }
-                      else if (_height.text.isNotEmpty && _weight.text.isNotEmpty)
-                      {
-                        try
-                        {
+                      } else if (!RegExp(
+                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                          .hasMatch(_emailId.text)) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("Please enter valid email id")));
+                      } else if (!RegExp(
+                              r'^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$')
+                          .hasMatch(_dateOfBirth.text)) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("Please enter valid date of birth")));
+                      } else if (_height.text.isNotEmpty &&
+                          _weight.text.isNotEmpty) {
+                        try {
                           double val = double.parse(_height.text);
-                          if (val<100.0 || val>250.0)
-                            {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid height")));
-                            }
+                          if (val < 100.0 || val > 250.0) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text("Please enter a valid height")));
+                          }
+                        } catch (Exception) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Please enter a valid height")));
                         }
-                        catch(Exception){
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid height")));
-                        }
-                        try
-                        {
+                        try {
                           double val1 = double.parse(_weight.text);
-                        }
-                        catch(Exception){
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter a valid weight")));
+                        } catch (Exception) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Please enter a valid weight")));
                         }
                       }
-                      if (_username.text != "" && _emailId.text != "" &&
-                          _phone_number.text != "" && _dateOfBirth.text != "" &&
-                          _height.text != "" && _weight.text != "" && _selectedGender!="" )
-                        {
-                          signUpWithCredentials();
-                        }
-                      else
-                        {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter all fields")));
-                        }
+                      if (_username.text != "" &&
+                          _emailId.text != "" &&
+                          _phone_number.text != "" &&
+                          _dateOfBirth.text != "" &&
+                          _height.text != "" &&
+                          _weight.text != "" &&
+                          _selectedGender != "") {
+                        signUpWithCredentials();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Please enter all fields")));
+                      }
                     },
-                    child : Container(
+                    child: Container(
                       width: width * 0.9,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
                           color: Color.fromRGBO(0, 83, 188, 1),
-                          borderRadius: BorderRadius.circular(30)
-                      ),
+                          borderRadius: BorderRadius.circular(30)),
                       child: Text(
                         "Continue",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white, fontSize: width * 0.05),
+                        style: TextStyle(
+                            color: Colors.white, fontSize: width * 0.05),
                       ),
                     ),
                   ),

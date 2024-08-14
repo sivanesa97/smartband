@@ -109,8 +109,7 @@ class _PhoneSignInState extends State<PhoneSignIn> {
                                     color: Color.fromRGBO(0, 83, 188, 1),
                                   ),
                                   child: TextButton(
-                                    onPressed: ()
-                                    {
+                                    onPressed: (){
                                       if (_phoneController.text.isNotEmpty)
                                       {
                                         Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (context) =>  OtpVerificationScreen(phoneNumber: '${country_code}${_phoneController.text}',)));

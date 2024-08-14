@@ -24,7 +24,9 @@ class _SOSPageState extends State<SOSPage> {
 
   Future<void> _initializeFirebase() async {
     // if (!Firebase.apps.any((element) => element.name == '[DEFAULT]')) {
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
     // }
   }
 
@@ -70,9 +72,7 @@ class _SOSPageState extends State<SOSPage> {
   }
 
   void handleUpdate() async {
-    // if (!Firebase.apps.any((element) => element.name == '[DEFAULT]')) {
-    await Firebase.initializeApp();
-    // }
+    await _initializeFirebase();
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       try {

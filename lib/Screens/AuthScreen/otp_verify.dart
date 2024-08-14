@@ -10,7 +10,6 @@ import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
 
-
 class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
 
@@ -49,17 +48,21 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       print(phoneNumber.substring(3, phoneNumber.length));
       print(otp_num);
       Messaging messaging = Messaging();
-      // messaging.sendSMS(widget.phoneNumber, "Your OTP is $otp_num");
+      messaging.sendSMS(phoneNumber, "Your OTP is $otp_num");
     }
   }
 
   void _verifyOtp(String phNo, int generated_otp) async {
     String otp = _otpControllers.map((controller) => controller.text).join();
     try {
+      if (otp == "") {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Enter OTP!")));
+        return;
+      }
       print("${otp}  ${generated_otp}");
-      if (true)
-      // if (int.parse(otp) == generated_otp)
-      {
+      if (true){
+      // if (int.parse(otp) == generated_otp) {
         print(phNo);
         final data = await FirebaseFirestore.instance
             .collection("users")
@@ -88,6 +91,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     phNo: widget.phoneNumber,
                   )));
         }
+      } else {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Invalid OTP!")));
       }
     } catch (e) {
       print('Failed to sign in: $e');

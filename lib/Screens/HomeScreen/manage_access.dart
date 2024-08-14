@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartband/Screens/Models/messaging.dart';
 
 import '../Models/usermodel.dart';
 
@@ -20,6 +21,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   String? _selectedRole = "supervisor";
   final TextEditingController _phoneConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
+  final TextEditingController _priorityInputController = TextEditingController();
 
   void _showRoleDialog() {
     print(widget.phNo);
@@ -38,29 +40,38 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                   children: [
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _phoneConn,
-                      decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Phone Number',
-                          suffixIcon: IconButton(
-                              onPressed: () {
-                                sent = true;
-                                _fetchPhoneDetails(
-                                    _phoneConn.text, otp_num);
-                              },
-                              icon:
-                              Icon(sent ? Icons.check : Icons.send))),
-                    )
+                            controller: _phoneConn,
+                            decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Phone Number',
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      sent = true;
+                                      _fetchPhoneDetails(
+                                          _phoneConn.text, otp_num);
+                                    },
+                                    icon:
+                                        Icon(sent ? Icons.check : Icons.send))),
+                          )
                         : const SizedBox.shrink(),
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
-                      controller: _otpConn,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'OTP',
-                      ),
-                    )
+                            controller: _otpConn,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'OTP',
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                    _selectedRole == "supervisor"
+                        ? TextFormField(
+                            controller: _priorityInputController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Priority',
+                            ),
+                          )
                         : const SizedBox.shrink(),
                   ],
                 ),
@@ -91,27 +102,26 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
       // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phoneConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
-      var querySnapshot =
-      await usersCollection.where(
-          'phone_number', isEqualTo: int.parse(phonetoCheck)).get();
+      var querySnapshot = await usersCollection
+          .where('phone_number', isEqualTo: int.parse(phonetoCheck))
+          .get();
       if (querySnapshot.docs.isNotEmpty) {
-        await querySnapshot.docs.first.reference
-            .update({
+        var data = querySnapshot.docs.first.data()['relations'];
+        print(data);
+        await querySnapshot.docs.first.reference.update({
           "relations": FieldValue.arrayUnion([widget.phNo.toString()])
         });
 
         Navigator.of(context, rootNavigator: true).pop();
       } else {
         // Handle email not existing case
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Phone number does not exist in the collection.")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Phone number does not exist in the collection.")));
       }
-    }
-    else if (_phoneConn.text==widget.phNo) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Please enter a different number")));
-    }
-    else {
+    } else if (_phoneConn.text == widget.phNo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter a different number")));
+    } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
     }
@@ -131,9 +141,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     });
   }
 
-
-  Future<List<Map<String, dynamic>>> _fetchPhoneDetails(String phone_number,
-      int otp_num) async {
+  Future<List<Map<String, dynamic>>> _fetchPhoneDetails(
+      String phone_number, int otp_num) async {
     List<Map<String, dynamic>> relationDetails = [];
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
@@ -143,6 +152,9 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     if (userDoc.docs.isNotEmpty) {
       // print(userDoc.docs);
       final data = userDoc.docs.first.data()['phone_number'];
+
+      Messaging messaging = Messaging();
+      messaging.sendSMS(data, "Your OTP is $otp_num");
       // await twilioService.sendSms('+91${data}', 'Your OTP is ${otp_num}');
     }
     return relationDetails;
@@ -150,16 +162,10 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
-    final height = MediaQuery
-        .of(context)
-        .size
-        .height;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     final userData =
-    ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+        ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -296,12 +302,18 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                       ),
                                       GestureDetector(
                                         onTap: () async {
-                                          final data = await FirebaseFirestore.instance
+                                          final data = await FirebaseFirestore
+                                              .instance
                                               .collection('users')
-                                              .where('name', isEqualTo: relationName)
-                                              .where('relations', arrayContains: widget.phNo)
+                                              .where('name',
+                                                  isEqualTo: relationName)
+                                              .where('relations',
+                                                  arrayContains: widget.phNo)
                                               .get();
-                                          data.docs.first.reference.update({'relations' : FieldValue.arrayRemove([widget.phNo])});
+                                          data.docs.first.reference.update({
+                                            'relations': FieldValue.arrayRemove(
+                                                [widget.phNo])
+                                          });
                                         },
                                         child: Icon(
                                           Icons.delete,
@@ -331,12 +343,12 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               decoration: BoxDecoration(
                                   color: Color.fromRGBO(0, 83, 188, 1),
-                                  borderRadius: BorderRadius.circular(30)
-                              ),
+                                  borderRadius: BorderRadius.circular(30)),
                               child: Text(
                                 "Add Members",
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white,
+                                style: TextStyle(
+                                    color: Colors.white,
                                     fontSize: width * 0.05),
                               ),
                             ),

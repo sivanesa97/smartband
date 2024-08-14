@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,6 +34,9 @@ class WearerDashboard extends ConsumerStatefulWidget {
 }
 
 class _WearerDashboardState extends ConsumerState<WearerDashboard> {
+  Timer? _timer;
+  bool _isTimerRunning = false;
+  bool _isSubscriptionFetched = false;
   final BluetoothDeviceManager bluetoothDeviceManager =
       BluetoothDeviceManager();
   Position locationNew = const Position(
@@ -90,6 +95,12 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     bluetoothDeviceManager.discoverServicesAndCharacteristics(widget.device);
   }
 
+  // @override
+  // void dispose() {
+  //   _timer?.cancel();
+  //   super.dispose();
+  // }
+
   DateTime addMonths(DateTime date, int months) {
     int newYear = date.year;
     int newMonth = date.month + months;
@@ -110,6 +121,23 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     return DateTime(newYear, newMonth, newDay);
   }
 
+  void _startTimer(List<String> values) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection("users")
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .update({
+          "metrics": {
+            "spo2": values[2].toString(),
+            "heart_rate": values[1].toString(),
+            "fall_axis": "-- -- --"
+          }
+        });
+      }
+    });
+  }
+
   Future<void> fetchSubscription(String phno) async {
     final response = await http.post(
       Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
@@ -124,14 +152,66 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
-      setState(() 
-      {
-        status = data['status'].toString();
-        subscription = data['subscription_period'] == null
-            ? "--"
-            : "${data['subscription_period'].toString()} Months";
-        print("Fetched");
-      });
+      // if (data['status'].toString() != 'active') {
+      //   final GoogleSignIn googleSignIn = GoogleSignIn();
+      //   await googleSignIn.signOut();
+      //   await FirebaseAuth.instance.signOut();
+      //   ScaffoldMessenger.of(context)
+      //       .showSnackBar(const SnackBar(content: Text("User not active")));
+      //   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      //       MaterialPageRoute(builder: (context) => PhoneSignIn()),
+      //       (Route<dynamic> route) => false);
+      //   return;
+      // }
+
+      // DocumentReference docRef = FirebaseFirestore.instance
+      //     .collection('server_time')
+      //     .doc('current_time');
+      // await docRef.set({'timestamp': FieldValue.serverTimestamp()});
+
+      // DocumentSnapshot docSnapshot = await docRef.get();
+      // Timestamp serverTimestamp = docSnapshot['timestamp'];
+      // DateTime serverDate = serverTimestamp.toDate();
+      // if (data['subscription_date'] != null && data['end_date'] != null) {
+      //   DateTime startDate =
+      //       DateTime.parse(data['subscription_date'].toString());
+      //   DateTime endDate = DateTime.parse(data['end_date'].toString());
+      //   if ((startDate.isAtSameMomentAs(serverDate) ||
+      //           startDate.isBefore(serverDate)) &&
+      //       (endDate.isAtSameMomentAs(serverDate) ||
+      //           endDate.isAfter(serverDate))) {
+          setState(() {
+            status = data['status'].toString();
+            subscription = data['subscription_period'] == null
+                ? "--"
+                : "${data['subscription_period'].toString()} Months";
+            setState(() {
+              _isSubscriptionFetched = true;
+            });
+            print("Fetched");
+          });
+      //   } else {
+      //     final GoogleSignIn googleSignIn = GoogleSignIn();
+      //     await googleSignIn.signOut();
+      //     await FirebaseAuth.instance.signOut();
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //         const SnackBar(content: Text("Subscription To Continue")));
+      //     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      //         MaterialPageRoute(builder: (context) => PhoneSignIn()),
+      //         (Route<dynamic> route) => false);
+      //     return;
+      //   }
+      // } else {
+      //   final GoogleSignIn googleSignIn = GoogleSignIn();
+      //   await googleSignIn.signOut();
+      //   await FirebaseAuth.instance.signOut();
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //       const SnackBar(content: Text("Subscribe to Continue!")));
+      //   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      //       MaterialPageRoute(builder: (context) => PhoneSignIn()),
+      //       (Route<dynamic> route) => false);
+      //   return;
+      // }
     } else {
       print(response.statusCode);
     }
@@ -142,6 +222,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
       desiredAccuracy: LocationAccuracy.high,
     );
     print("Fetched Location");
+    setState(() {
+      locationNew = location;
+    });
+    await openGoogleMaps(location.latitude, location.longitude);
     return location;
   }
 
@@ -162,7 +246,9 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             if (user == null) {
               return const Center(child: Text("User data is unavailable"));
             }
-            fetchSubscription(user.phone_number.toString());
+            if (!_isSubscriptionFetched) {
+              fetchSubscription(user.phone_number.toString());
+            }
             return StreamBuilder<Map<String, String>>(
               stream: bluetoothDeviceManager.characteristicValuesStream,
               builder: (context, snapshot) {
@@ -181,20 +267,12 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                             "beb5483e-36e1-4688-b7f5-ea07361b26a8"] ??
                         "--,--,0")
                     .split(',');
-                Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
-                  if (FirebaseAuth.instance.currentUser!.uid != null) {
-                    await FirebaseFirestore.instance
-                        .collection("users")
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
-                        .update({
-                      "metrics": {
-                        "spo2": values[2].toString(),
-                        "heart_rate": values[1].toString(),
-                        "fall_axis": "-- -- --"
-                      }
-                    });
-                  }
-                });
+                if (!_isTimerRunning) {
+                  _isTimerRunning = true;
+                  _startTimer(values);
+                } else if (_timer?.isActive == false) {
+                  _startTimer(values);
+                }
                 bool sosClicked = values[2] == '1' ? true : false;
                 return SafeArea(
                     child: SingleChildScrollView(
@@ -347,12 +425,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                       height: 10,
                                     ),
                                     InkWell(
-                                      onTap: () {
-                                        setState(() async {
-                                          locationNew = await updateLocation();
-                                        });
-                                        openGoogleMaps(locationNew.latitude,
-                                            locationNew.longitude);
+                                      onTap: () async {
+                                        // setState(() async {
+                                        await updateLocation();
+                                        // });
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.all(5.0),
@@ -364,8 +440,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                           "Open in Maps",
                                           style: TextStyle(
                                             fontSize: width * 0.035,
-                                            color:
-                                                const Color.fromRGBO(0, 90, 170, 0.8),
+                                            color: const Color.fromRGBO(
+                                                0, 90, 170, 0.8),
                                           ),
                                         ),
                                       ),
@@ -457,7 +533,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                           ),
                           const SizedBox(height: 16),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20.0),
                             child: Text(
                               "For You, ",
                               style: TextStyle(fontSize: width * 0.06),
@@ -594,10 +671,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                                         .bold,
                                                                 color: const Color
                                                                     .fromRGBO(
-                                                                        0,
-                                                                        83,
-                                                                        188,
-                                                                        1)),
+                                                                    0,
+                                                                    83,
+                                                                    188,
+                                                                    1)),
                                                           ),
                                                           Text(
                                                             " bpm",
@@ -610,10 +687,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                                         .bold,
                                                                 color: const Color
                                                                     .fromRGBO(
-                                                                        0,
-                                                                        83,
-                                                                        188,
-                                                                        1)),
+                                                                    0,
+                                                                    83,
+                                                                    188,
+                                                                    1)),
                                                           ),
                                                         ],
                                                       ),
@@ -641,7 +718,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                 children: [
                                                   Row(
                                                     children: [
-                                                      const Icon(Icons.water_drop,
+                                                      const Icon(
+                                                          Icons.water_drop,
                                                           size: 30),
                                                       SizedBox(
                                                           width: width * 0.02),
