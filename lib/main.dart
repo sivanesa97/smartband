@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background/flutter_background.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +21,7 @@ import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/SosPage.dart';
+import 'package:smartband/bluetooth_connection_service.dart';
 import 'package:smartband/pushnotifications.dart';
 
 import 'firebase_options.dart';
@@ -126,6 +130,7 @@ void main() async {
     handleNotificationClick(initialMessage);
   }
 
+  await initializeService();
   // Listen for notification clicks when the app is in the background
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     handleNotificationClick(message);
@@ -150,6 +155,57 @@ void main() async {
       '/sos': (context) => SOSPage(),
     },
   )));
+}
+
+Future<void> initializeService() async {
+  final service = FlutterBackgroundService();
+
+  await service.configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onStart,
+      autoStart: true,
+      isForegroundMode: true,
+    ),
+    iosConfiguration: IosConfiguration(
+      autoStart: true,
+      onForeground: onStart,
+      onBackground: onIosBackground,
+    ),
+  );
+
+  service.startService();
+}
+
+@pragma('vm:entry-point')
+void onStart(ServiceInstance service) async {
+  DartPluginRegistrant.ensureInitialized();
+
+  if (service is AndroidServiceInstance) {
+    service.on('setAsForeground').listen((event) {
+      service.setAsForegroundService();
+    });
+
+    service.on('setAsBackground').listen((event) {
+      service.setAsBackgroundService();
+    });
+  }
+
+  service.on('stopService').listen((event) {
+    service.stopSelf();
+  });
+
+  BluetoothConnectionService().startBluetoothService();
+
+  Timer.periodic(Duration(minutes: 1), (timer) async {
+    await BluetoothConnectionService().checkAndReconnect();
+  });
+}
+
+@pragma('vm:entry-point')
+Future<bool> onIosBackground(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  return true;
 }
 
 @pragma("vm:entry-point")

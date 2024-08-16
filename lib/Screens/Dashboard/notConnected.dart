@@ -104,10 +104,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: DrawerScreen(
-        device: null,
-        phNo: "",
-      ),
+      drawer:
+          DrawerScreen(device: null, phNo: "", subscription: "", status: ""),
       appBar: addDeviceBtn
           ? AppBar(
               surfaceTintColor: Colors.white,

@@ -519,117 +519,117 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                           ),
                                                         ),
                                                       )),
-                                                  Expanded(
-                                                      flex: 2,
-                                                      child: Card(
-                                                        color: Color.fromRGBO(
-                                                            255, 234, 234, 1),
-                                                        shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        18)),
-                                                        elevation: 4,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  vertical: 5.0,
-                                                                  horizontal:
-                                                                      15.0),
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceAround,
-                                                            children: [
-                                                              Row(
-                                                                children: [
-                                                                  Icon(
-                                                                      Icons
-                                                                          .warning,
-                                                                      size: 25),
-                                                                  SizedBox(
-                                                                      width: width *
-                                                                          0.01),
-                                                                  Text(
-                                                                      'Emergency',
-                                                                      style: TextStyle(
-                                                                          fontSize:
-                                                                              width * 0.04)),
-                                                                ],
-                                                              ),
-                                                              Stack(
-                                                                alignment:
-                                                                    Alignment
-                                                                        .center,
-                                                                children: [
-                                                                  Container(
-                                                                    width:
-                                                                        width *
-                                                                            0.25,
-                                                                    height:
-                                                                        width *
-                                                                            0.25,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(width *
-                                                                              0.5),
-                                                                      color: Colors
-                                                                          .white,
-                                                                      boxShadow: const [
-                                                                        BoxShadow(
-                                                                          color:
-                                                                              Colors.redAccent,
-                                                                          blurRadius:
-                                                                              5.0,
-                                                                        ),
-                                                                      ],
-                                                                      border: Border.all(
-                                                                          color: Colors
-                                                                              .redAccent,
-                                                                          width:
-                                                                              10.0),
-                                                                    ),
-                                                                  ),
-                                                                  Container(
-                                                                    width:
-                                                                        width *
-                                                                            0.15,
-                                                                    height:
-                                                                        width *
-                                                                            0.15,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(width *
-                                                                              0.5),
-                                                                      color: Colors
-                                                                          .black26,
-                                                                      boxShadow: const [
-                                                                        BoxShadow(
-                                                                          color:
-                                                                              Colors.redAccent,
-                                                                          blurRadius:
-                                                                              5.0,
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                  Text(
-                                                                    "SOS",
-                                                                    style: TextStyle(
-                                                                        color: Colors
-                                                                            .white,
-                                                                        fontSize:
-                                                                            20),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      )),
+                                                  // Expanded(
+                                                  //     flex: 2,
+                                                  //     child: Card(
+                                                  //       color: Color.fromRGBO(
+                                                  //           255, 234, 234, 1),
+                                                  //       shape: RoundedRectangleBorder(
+                                                  //           borderRadius:
+                                                  //               BorderRadius
+                                                  //                   .circular(
+                                                  //                       18)),
+                                                  //       elevation: 4,
+                                                  //       child: Padding(
+                                                  //         padding:
+                                                  //             const EdgeInsets
+                                                  //                 .symmetric(
+                                                  //                 vertical: 5.0,
+                                                  //                 horizontal:
+                                                  //                     15.0),
+                                                  //         child: Column(
+                                                  //           mainAxisAlignment:
+                                                  //               MainAxisAlignment
+                                                  //                   .spaceAround,
+                                                  //           children: [
+                                                  //             Row(
+                                                  //               children: [
+                                                  //                 Icon(
+                                                  //                     Icons
+                                                  //                         .warning,
+                                                  //                     size: 25),
+                                                  //                 SizedBox(
+                                                  //                     width: width *
+                                                  //                         0.01),
+                                                  //                 Text(
+                                                  //                     'Emergency',
+                                                  //                     style: TextStyle(
+                                                  //                         fontSize:
+                                                  //                             width * 0.04)),
+                                                  //               ],
+                                                  //             ),
+                                                  //             Stack(
+                                                  //               alignment:
+                                                  //                   Alignment
+                                                  //                       .center,
+                                                  //               children: [
+                                                  //                 Container(
+                                                  //                   width:
+                                                  //                       width *
+                                                  //                           0.25,
+                                                  //                   height:
+                                                  //                       width *
+                                                  //                           0.25,
+                                                  //                   decoration:
+                                                  //                       BoxDecoration(
+                                                  //                     borderRadius:
+                                                  //                         BorderRadius.circular(width *
+                                                  //                             0.5),
+                                                  //                     color: Colors
+                                                  //                         .white,
+                                                  //                     boxShadow: const [
+                                                  //                       BoxShadow(
+                                                  //                         color:
+                                                  //                             Colors.redAccent,
+                                                  //                         blurRadius:
+                                                  //                             5.0,
+                                                  //                       ),
+                                                  //                     ],
+                                                  //                     border: Border.all(
+                                                  //                         color: Colors
+                                                  //                             .redAccent,
+                                                  //                         width:
+                                                  //                             10.0),
+                                                  //                   ),
+                                                  //                 ),
+                                                  //                 Container(
+                                                  //                   width:
+                                                  //                       width *
+                                                  //                           0.15,
+                                                  //                   height:
+                                                  //                       width *
+                                                  //                           0.15,
+                                                  //                   decoration:
+                                                  //                       BoxDecoration(
+                                                  //                     borderRadius:
+                                                  //                         BorderRadius.circular(width *
+                                                  //                             0.5),
+                                                  //                     color: Colors
+                                                  //                         .black26,
+                                                  //                     boxShadow: const [
+                                                  //                       BoxShadow(
+                                                  //                         color:
+                                                  //                             Colors.redAccent,
+                                                  //                         blurRadius:
+                                                  //                             5.0,
+                                                  //                       ),
+                                                  //                     ],
+                                                  //                   ),
+                                                  //                 ),
+                                                  //                 Text(
+                                                  //                   "SOS",
+                                                  //                   style: TextStyle(
+                                                  //                       color: Colors
+                                                  //                           .white,
+                                                  //                       fontSize:
+                                                  //                           20),
+                                                  //                 ),
+                                                  //               ],
+                                                  //             ),
+                                                  //           ],
+                                                  //         ),
+                                                  //       ),
+                                                  //     )),
                                                 ],
                                               ),
                                             ),

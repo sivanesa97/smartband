@@ -237,9 +237,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
         drawer: DrawerScreen(
-          device: bluetoothDeviceManager.connectedDevices.first,
-          phNo: widget.phNo,
-        ),
+            device: bluetoothDeviceManager.connectedDevices.first,
+            phNo: widget.phNo,
+            subscription: subscription,
+            status: status),
         backgroundColor: Colors.white,
         body: user_data.when(
           data: (user) {

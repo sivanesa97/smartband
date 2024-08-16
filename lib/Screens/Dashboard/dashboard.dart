@@ -18,18 +18,20 @@ import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/pushnotifications.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  final String device_name;
+  final String? device_name;
   final String mac_address;
   final BluetoothDevice device;
   final String phNo;
+  final String subscription;
+  final String status;
 
-  const DashboardScreen(
-    this.phNo, {
-    super.key,
-    required this.device_name,
-    required this.mac_address,
-    required this.device,
-  });
+  const DashboardScreen(this.phNo,
+      {super.key,
+      required this.device_name,
+      required this.mac_address,
+      required this.device,
+      required this.subscription,
+      required this.status});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -105,9 +107,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return user == "watch wearer"
             ? Scaffold(
                 drawer: DrawerScreen(
-                  device: bluetoothDeviceManager.connectedDevices.first,
-                  phNo: widget.phNo,
-                ),
+                    device: bluetoothDeviceManager.connectedDevices.first,
+                    phNo: widget.phNo,
+                    subscription: widget.subscription,
+                    status: widget.status),
                 appBar: AppBar(
                   backgroundColor: Colors.white,
                   leading: GestureDetector(
