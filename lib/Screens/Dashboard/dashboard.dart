@@ -368,6 +368,11 @@ class _EmergencyCardState extends State<EmergencyCard> {
           });
           await Future.delayed(Duration(seconds: 30));
         }
+        if (attempt == 3) {
+          setState(() {
+            _isEmergency = false;
+          });
+        }
       }
     } catch (e) {
       print("Exception $e");

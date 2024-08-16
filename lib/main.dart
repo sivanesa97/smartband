@@ -114,6 +114,7 @@ void main() async {
     }
     SOSPage sosPage = SOSPage();
     sosPage.createState().startSOS();
+    // sosPage.createState().startCountdown();
     sendNotification.showNotification(message.notification?.title ?? "",
         message.notification?.body ?? "", navigatorKey);
   });

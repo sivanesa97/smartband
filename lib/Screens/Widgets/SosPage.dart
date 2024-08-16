@@ -13,12 +13,11 @@ class SOSPage extends StatefulWidget {
 }
 
 class _SOSPageState extends State<SOSPage> {
-  int countdown = 5;
+  int countdown = 30;
 
   @override
   void initState() {
     super.initState();
-    startCountdown();
     _initializeFirebase();
   }
 
@@ -59,12 +58,15 @@ class _SOSPageState extends State<SOSPage> {
   }
 
   void startCountdown() {
+    setState(() {
+      countdown = 30;
+    });
     Future.delayed(Duration(seconds: 1), () {
       if (countdown > 0) {
         setState(() {
           countdown--;
         });
-        startCountdown();
+        // startCountdown();
       } else {
         // Handle emergency call action here
       }
@@ -109,7 +111,7 @@ class _SOSPageState extends State<SOSPage> {
     }
 
     // Close the overlay window after updating
-    // FlutterOverlayWindow.closeOverlay();
+    FlutterOverlayWindow.closeOverlay();
   }
 
   @override

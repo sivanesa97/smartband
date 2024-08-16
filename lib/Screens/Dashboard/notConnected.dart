@@ -162,127 +162,127 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   padding: EdgeInsets.only(right: 15.0),
                   child: InkWell(
                     onTap: () async {
-                      Future<void> _handleSOSClick(bool sosClicked) async {
-                        setState(() {
-                          _isEmergency = true;
-                        });
-                        for (var attempt = 1; attempt <= 3; attempt++) {
-                          if (!_isEmergency) {
-                            break;
-                          }
-                          print("Attempt ");
-                          print(attempt);
-                          // Position location = await updateLocation();
-                          try {
-                            if (FirebaseAuth
-                                .instance.currentUser!.uid.isNotEmpty) {
-                              await FirebaseFirestore.instance
-                                  .collection("users")
-                                  .doc(FirebaseAuth.instance.currentUser!.uid)
-                                  .update({
-                                "metrics": {
-                                  "spo2": "168",
-                                  "heart_rate": "200",
-                                  "fall_axis": "-- -- --"
-                                }
-                              });
-                            }
-                            final data = await FirebaseFirestore.instance
-                                .collection("users")
-                                .where('relations', arrayContains: "965538193")
-                                .get();
-                            SendNotification send = SendNotification();
-                            for (var attempt = 1; attempt <= 3; attempt++) {
-                              if (!_isEmergency) {
-                                break;
-                              }
-                              print("Attempt ");
-                              print(attempt);
-                              for (QueryDocumentSnapshot<Map<String, dynamic>> i
-                                  in data.docs) {
-                                print(i);
-                                if (!_isEmergency) {
-                                  break;
-                                }
-                                print("Sending");
-                                print("Email : ${i.data()['email']}");
-                                print("Inside SOS Click");
+                      // Future<void> _handleSOSClick(bool sosClicked) async {
+                      //   setState(() {
+                      //     _isEmergency = true;
+                      //   });
+                      //   for (var attempt = 1; attempt <= 3; attempt++) {
+                      //     if (!_isEmergency) {
+                      //       break;
+                      //     }
+                      //     print("Attempt ");
+                      //     print(attempt);
+                      //     // Position location = await updateLocation();
+                      //     try {
+                      //       if (FirebaseAuth
+                      //           .instance.currentUser!.uid.isNotEmpty) {
+                      //         await FirebaseFirestore.instance
+                      //             .collection("users")
+                      //             .doc(FirebaseAuth.instance.currentUser!.uid)
+                      //             .update({
+                      //           "metrics": {
+                      //             "spo2": "168",
+                      //             "heart_rate": "200",
+                      //             "fall_axis": "-- -- --"
+                      //           }
+                      //         });
+                      //       }
+                      //       final data = await FirebaseFirestore.instance
+                      //           .collection("users")
+                      //           .where('relations', arrayContains: "965538193")
+                      //           .get();
+                      //       SendNotification send = SendNotification();
+                      //       for (var attempt = 1; attempt <= 3; attempt++) {
+                      //         if (!_isEmergency) {
+                      //           break;
+                      //         }
+                      //         print("Attempt ");
+                      //         print(attempt);
+                      //         for (QueryDocumentSnapshot<Map<String, dynamic>> i
+                      //             in data.docs) {
+                      //           print(i);
+                      //           if (!_isEmergency) {
+                      //             break;
+                      //           }
+                      //           print("Sending");
+                      //           print("Email : ${i.data()['email']}");
+                      //           print("Inside SOS Click");
 
-                                await FirebaseFirestore.instance
-                                    .collection("emergency_alerts")
-                                    .doc(i.id)
-                                    .set({
-                                  "isEmergency": true,
-                                  "responseStatus": false,
-                                  "response": "",
-                                  "userUid":
-                                      FirebaseAuth.instance.currentUser?.uid,
-                                  "heartbeatRate": '93',
-                                  "location": "0°N 0°E",
-                                  "sfo2": '35',
-                                  "fallDetection": false,
-                                  "isManual": true,
-                                  "timestamp": FieldValue.serverTimestamp()
-                                }, SetOptions(merge: true));
+                      //           await FirebaseFirestore.instance
+                      //               .collection("emergency_alerts")
+                      //               .doc(i.id)
+                      //               .set({
+                      //             "isEmergency": true,
+                      //             "responseStatus": false,
+                      //             "response": "",
+                      //             "userUid":
+                      //                 FirebaseAuth.instance.currentUser?.uid,
+                      //             "heartbeatRate": '93',
+                      //             "location": "0°N 0°E",
+                      //             "sfo2": '35',
+                      //             "fallDetection": false,
+                      //             "isManual": true,
+                      //             "timestamp": FieldValue.serverTimestamp()
+                      //           }, SetOptions(merge: true));
 
-                                await FirebaseFirestore.instance
-                                    .collection("emergency_alerts")
-                                    .doc(i.id)
-                                    .collection(FirebaseAuth
-                                            .instance.currentUser?.uid ??
-                                        "public")
-                                    .add({
-                                  "isEmergency": true,
-                                  "responseStatus": false,
-                                  "response": "",
-                                  "heartbeatRate": '93',
-                                  "location": "0°N 0°E",
-                                  "sfo2": '35',
-                                  "fallDetection": false,
-                                  "isManual": true,
-                                  "timestamp": FieldValue.serverTimestamp()
-                                });
+                      //           await FirebaseFirestore.instance
+                      //               .collection("emergency_alerts")
+                      //               .doc(i.id)
+                      //               .collection(FirebaseAuth
+                      //                       .instance.currentUser?.uid ??
+                      //                   "public")
+                      //               .add({
+                      //             "isEmergency": true,
+                      //             "responseStatus": false,
+                      //             "response": "",
+                      //             "heartbeatRate": '93',
+                      //             "location": "0°N 0°E",
+                      //             "sfo2": '35',
+                      //             "fallDetection": false,
+                      //             "isManual": true,
+                      //             "timestamp": FieldValue.serverTimestamp()
+                      //           });
 
-                                send.sendNotification(
-                                    i.data()['phone_number'].toString(),
-                                    "Emergency!!",
-                                    "Siva has clicked SOS Button from 0°N 0°E. Please respond");
-                                print("Message sent");
-                                String name = i.data()['name'].toString();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("Sent Alert to $name")),
-                                );
-                                FirebaseFirestore.instance
-                                    .collection("emergency_alerts")
-                                    .doc(i.id)
-                                    .snapshots()
-                                    .listen((DocumentSnapshot doc) {
-                                  if (doc.exists &&
-                                      doc["responseStatus"] == true) {
-                                    setState(() {
-                                      _isEmergency = false;
-                                    });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text("User Responded")),
-                                    );
-                                  }
-                                });
-                                await Future.delayed(Duration(seconds: 30));
-                              }
-                            }
-                          } catch (e) {
-                            print("Exception ${e}");
-                          }
-                        }
-                      }
+                      //           send.sendNotification(
+                      //               i.data()['phone_number'].toString(),
+                      //               "Emergency!!",
+                      //               "Siva has clicked SOS Button from 0°N 0°E. Please respond");
+                      //           print("Message sent");
+                      //           String name = i.data()['name'].toString();
+                      //           ScaffoldMessenger.of(context).showSnackBar(
+                      //             SnackBar(
+                      //                 content: Text("Sent Alert to $name")),
+                      //           );
+                      //           FirebaseFirestore.instance
+                      //               .collection("emergency_alerts")
+                      //               .doc(i.id)
+                      //               .snapshots()
+                      //               .listen((DocumentSnapshot doc) {
+                      //             if (doc.exists &&
+                      //                 doc["responseStatus"] == true) {
+                      //               setState(() {
+                      //                 _isEmergency = false;
+                      //               });
+                      //               ScaffoldMessenger.of(context).showSnackBar(
+                      //                 const SnackBar(
+                      //                     content: Text("User Responded")),
+                      //               );
+                      //             }
+                      //           });
+                      //           await Future.delayed(Duration(seconds: 30));
+                      //         }
+                      //       }
+                      //     } catch (e) {
+                      //       print("Exception ${e}");
+                      //     }
+                      //   }
+                      // }
 
-                      await _handleSOSClick(true);
-                      // setState(() {
-                      //   addDeviceBtn = true;
-                      //   scanForDevices(context);
-                      // });
+                      // await _handleSOSClick(true);
+                      setState(() {
+                        addDeviceBtn = true;
+                        scanForDevices(context);
+                      });
                     },
                     child: Align(
                       alignment: Alignment.center,

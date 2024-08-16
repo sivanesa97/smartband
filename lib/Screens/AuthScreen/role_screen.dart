@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   String phNo;
@@ -17,7 +20,9 @@ class _HomePageState extends State<HomePage> {
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
-      body: MainScreen(phNo: widget.phNo,),
+      body: MainScreen(
+        phNo: widget.phNo,
+      ),
     );
   }
 }
@@ -69,9 +74,7 @@ class _MainScreenState extends State<MainScreen> {
                   'Select one to continue',
                   textAlign: TextAlign.left,
                   style: TextStyle(
-                    fontSize: width * 0.05,
-                    fontWeight: FontWeight.bold
-                  ),
+                      fontSize: width * 0.05, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: height * 0.07),
                 Row(
@@ -98,30 +101,29 @@ class _MainScreenState extends State<MainScreen> {
                           Text(
                             'Device Owner',
                             style: TextStyle(
-                              color: selected_role=='watch wearer' ? const Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              color: selected_role == 'watch wearer'
+                                  ? const Color.fromRGBO(0, 83, 188, 1)
+                                  : Colors.black,
                               fontSize: width * 0.045,
                             ),
                           ),
                           SizedBox(height: height * 0.02),
-                          if (selected_role=='watch wearer')
+                          if (selected_role == 'watch wearer')
                             Container(
                               padding: const EdgeInsets.all(5),
                               decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.lightGreen
-                              ),
+                                  shape: BoxShape.circle,
+                                  color: Colors.lightGreen),
                               child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
+                                Icons.check,
+                                color: Colors.white,
                               ),
                             )
                           else
                             Container(
                               padding: const EdgeInsets.all(5),
                               decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white
-                              ),
+                                  shape: BoxShape.circle, color: Colors.white),
                               child: const Icon(
                                 Icons.check,
                                 color: Colors.white,
@@ -153,32 +155,33 @@ class _MainScreenState extends State<MainScreen> {
                           Text(
                             'Monitoring Person',
                             style: TextStyle(
-                              color: selected_role=="supervisor" ? const Color.fromRGBO(0, 83, 188, 1) : Colors.black,
+                              color: selected_role == "supervisor"
+                                  ? const Color.fromRGBO(0, 83, 188, 1)
+                                  : Colors.black,
                               fontSize: width * 0.045,
                             ),
                           ),
-                          SizedBox(height: height * 0.02,),
-                          if (selected_role=='supervisor')
+                          SizedBox(
+                            height: height * 0.02,
+                          ),
+                          if (selected_role == 'supervisor')
                             Container(
                               padding: const EdgeInsets.all(5),
                               decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.lightGreen
-                              ),
+                                  color: Colors.lightGreen),
                               child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
+                                Icons.check,
+                                color: Colors.white,
                               ),
                             )
                           else
                             Container(
                               padding: const EdgeInsets.all(5),
                               decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white
-                              ),
+                                  shape: BoxShape.circle, color: Colors.white),
                               child: const Icon(
-                                  Icons.check,
+                                Icons.check,
                                 color: Colors.white,
                               ),
                             )
@@ -187,29 +190,60 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: height * 0.15,),
+                SizedBox(
+                  height: height * 0.15,
+                ),
                 Center(
                     child: Container(
-                      width: width * 0.9,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: const Color.fromRGBO(0, 83, 188, 1),
-                      ),
-                      child: TextButton(
-                        onPressed: ()
-                        {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => SignupScreen(phNo: widget.phNo, role: selected_role,)));
-                        },
-                        child: Text(
-                          'Continue',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: width * 0.05
-                          ),
-                        ),
-                      ),
-                    )
-                ),
+                  width: width * 0.9,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color.fromRGBO(0, 83, 188, 1),
+                  ),
+                  child: TextButton(
+                    onPressed: () async {
+                      if (selected_role == 'watch wearer') {
+                        final response = await http.post(
+                          Uri.parse(
+                              "https://snvisualworks.com/public/api/auth/check-mobile"),
+                          headers: <String, String>{
+                            'Content-Type': 'application/json; charset=UTF-8',
+                          },
+                          body: jsonEncode(<String, dynamic>{
+                            'mobile_number': widget.phNo,
+                          }),
+                        );
+
+                        if (response.statusCode == 200) {
+                          final data = json.decode(response.body)
+                              as Map<String, dynamic>;
+                          if (data['status'].toString() != 'active') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("User is not active")));
+                          } else {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) => SignupScreen(
+                                      phNo: widget.phNo,
+                                      role: selected_role,
+                                    )));
+                          }
+                        }
+                      } else {
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => SignupScreen(
+                                  phNo: widget.phNo,
+                                  role: selected_role,
+                                )));
+                      }
+                    },
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(
+                          color: Colors.white, fontSize: width * 0.05),
+                    ),
+                  ),
+                )),
               ],
             ),
           ),

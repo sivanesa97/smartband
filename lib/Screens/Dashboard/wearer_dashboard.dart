@@ -145,41 +145,41 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, dynamic>{
-        'mobile_number': phno,
+        'mobile_number': '+94$phno',
       }),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
-      // if (data['status'].toString() != 'active') {
-      //   final GoogleSignIn googleSignIn = GoogleSignIn();
-      //   await googleSignIn.signOut();
-      //   await FirebaseAuth.instance.signOut();
-      //   ScaffoldMessenger.of(context)
-      //       .showSnackBar(const SnackBar(content: Text("User not active")));
-      //   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-      //       MaterialPageRoute(builder: (context) => PhoneSignIn()),
-      //       (Route<dynamic> route) => false);
-      //   return;
-      // }
+      if (data['status'].toString() != 'active') {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("User not active")));
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => PhoneSignIn()),
+            (Route<dynamic> route) => false);
+        return;
+      }
 
-      // DocumentReference docRef = FirebaseFirestore.instance
-      //     .collection('server_time')
-      //     .doc('current_time');
-      // await docRef.set({'timestamp': FieldValue.serverTimestamp()});
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('server_time')
+          .doc('current_time');
+      await docRef.set({'timestamp': FieldValue.serverTimestamp()});
 
-      // DocumentSnapshot docSnapshot = await docRef.get();
-      // Timestamp serverTimestamp = docSnapshot['timestamp'];
-      // DateTime serverDate = serverTimestamp.toDate();
-      // if (data['subscription_date'] != null && data['end_date'] != null) {
-      //   DateTime startDate =
-      //       DateTime.parse(data['subscription_date'].toString());
-      //   DateTime endDate = DateTime.parse(data['end_date'].toString());
-      //   if ((startDate.isAtSameMomentAs(serverDate) ||
-      //           startDate.isBefore(serverDate)) &&
-      //       (endDate.isAtSameMomentAs(serverDate) ||
-      //           endDate.isAfter(serverDate))) {
+      DocumentSnapshot docSnapshot = await docRef.get();
+      Timestamp serverTimestamp = docSnapshot['timestamp'];
+      DateTime serverDate = serverTimestamp.toDate();
+      if (data['subscription_date'] != null && data['end_date'] != null) {
+        DateTime startDate =
+            DateTime.parse(data['subscription_date'].toString());
+        DateTime endDate = DateTime.parse(data['end_date'].toString());
+        if ((startDate.isAtSameMomentAs(serverDate) ||
+                startDate.isBefore(serverDate)) &&
+            (endDate.isAtSameMomentAs(serverDate) ||
+                endDate.isAfter(serverDate))) {
           setState(() {
             status = data['status'].toString();
             subscription = data['subscription_period'] == null
@@ -190,28 +190,28 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             });
             print("Fetched");
           });
-      //   } else {
-      //     final GoogleSignIn googleSignIn = GoogleSignIn();
-      //     await googleSignIn.signOut();
-      //     await FirebaseAuth.instance.signOut();
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //         const SnackBar(content: Text("Subscription To Continue")));
-      //     Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-      //         MaterialPageRoute(builder: (context) => PhoneSignIn()),
-      //         (Route<dynamic> route) => false);
-      //     return;
-      //   }
-      // } else {
-      //   final GoogleSignIn googleSignIn = GoogleSignIn();
-      //   await googleSignIn.signOut();
-      //   await FirebaseAuth.instance.signOut();
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //       const SnackBar(content: Text("Subscribe to Continue!")));
-      //   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-      //       MaterialPageRoute(builder: (context) => PhoneSignIn()),
-      //       (Route<dynamic> route) => false);
-      //   return;
-      // }
+        } else {
+          final GoogleSignIn googleSignIn = GoogleSignIn();
+          await googleSignIn.signOut();
+          await FirebaseAuth.instance.signOut();
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Subscription To Continue")));
+          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => PhoneSignIn()),
+              (Route<dynamic> route) => false);
+          return;
+        }
+      } else {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Subscribe to Continue!")));
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => PhoneSignIn()),
+            (Route<dynamic> route) => false);
+        return;
+      }
     } else {
       print(response.statusCode);
     }
