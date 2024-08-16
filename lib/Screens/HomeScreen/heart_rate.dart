@@ -29,9 +29,10 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
         drawer: DrawerScreen(
-          device: bluetoothDeviceManager.connectedDevices.first,
-          phNo: widget.phNo,
-        ),
+            device: bluetoothDeviceManager.connectedDevices.first,
+            phNo: widget.phNo,
+            subscription: "",
+            status: ""),
         backgroundColor: Colors.white,
         body: userData.when(
           data: (user) {

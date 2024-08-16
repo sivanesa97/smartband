@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
@@ -18,7 +19,14 @@ import '../HomeScreen/settings.dart';
 class DrawerScreen extends StatefulWidget {
   BluetoothDevice? device;
   String phNo;
-  DrawerScreen({super.key, required this.device, required this.phNo});
+  String subscription;
+  String status;
+  DrawerScreen(
+      {super.key,
+      required this.device,
+      required this.phNo,
+      required this.subscription,
+      required this.status});
 
   @override
   State<DrawerScreen> createState() => _DrawerScreenState();
@@ -29,6 +37,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
+
     return Drawer(
         backgroundColor: Colors.white,
         child: SafeArea(
@@ -180,6 +189,24 @@ class _DrawerScreenState extends State<DrawerScreen> {
                               color: Colors.black26,
                             ),
                             title: Text("Manage Access"),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                  widget.subscription != "" || widget.status == "active"
+                      ? InkWell(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                    maintainState: true,
+                                    builder: (context) => SupervisorDashboard(
+                                        phNo: widget.phNo)));
+                          },
+                          child: const ListTile(
+                            leading: Icon(
+                              Icons.upgrade,
+                              color: Colors.black26,
+                            ),
+                            title: Text("Supervisor"),
                           ),
                         )
                       : const SizedBox.shrink(),

@@ -220,9 +220,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
       backgroundColor: Colors.white,
       appBar: const AppBarProfileWidget(),
       drawer: DrawerScreen(
-        device: bluetoothDeviceManager.connectedDevices.first,
-        phNo: widget.phno,
-      ),
+          device: bluetoothDeviceManager.connectedDevices.first,
+          phNo: widget.phno,
+          subscription: "",
+          status: ""),
       body: SafeArea(
         child: user_data.when(
           data: (user) {

@@ -180,16 +180,16 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
       //           startDate.isBefore(serverDate)) &&
       //       (endDate.isAtSameMomentAs(serverDate) ||
       //           endDate.isAfter(serverDate))) {
-          setState(() {
-            status = data['status'].toString();
-            subscription = data['subscription_period'] == null
-                ? "--"
-                : "${data['subscription_period'].toString()} Months";
-            setState(() {
-              _isSubscriptionFetched = true;
-            });
-            print("Fetched");
-          });
+      setState(() {
+        status = data['status'].toString();
+        subscription = data['subscription_period'] == null
+            ? "--"
+            : "${data['subscription_period'].toString()} Months";
+        setState(() {
+          _isSubscriptionFetched = true;
+        });
+        print("Fetched");
+      });
       //   } else {
       //     final GoogleSignIn googleSignIn = GoogleSignIn();
       //     await googleSignIn.signOut();
@@ -237,9 +237,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
         drawer: DrawerScreen(
-          device: bluetoothDeviceManager.connectedDevices.first,
-          phNo: widget.phNo,
-        ),
+            device: bluetoothDeviceManager.connectedDevices.first,
+            phNo: widget.phNo,
+            subscription: subscription,
+            status: status),
         backgroundColor: Colors.white,
         body: user_data.when(
           data: (user) {
