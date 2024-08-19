@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
@@ -14,8 +15,13 @@ import 'package:smartband/Screens/Models/messaging.dart';
 class SignupScreen extends StatefulWidget {
   String phNo;
   String role;
+  String deviceId;
 
-  SignupScreen({super.key, required this.phNo, required this.role});
+  SignupScreen(
+      {super.key,
+      required this.phNo,
+      required this.role,
+      required this.deviceId});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -106,7 +112,7 @@ class _SignupScreenState extends State<SignupScreen> {
             'weight': double.parse(_weight.text),
             'email': _emailId.text,
             'gender': _selectedGender,
-            'phone_number': int.parse(_phone_number.text),
+            'phone_number': _phone_number.text,
             'relations': [],
             'isSOSClicked': false,
             'location': locationData,
@@ -126,7 +132,7 @@ class _SignupScreenState extends State<SignupScreen> {
               "organ_donor": false,
               "contact": 0,
             },
-            'device_id': "",
+            'device_id': widget.deviceId,
             'steps_goal': 0,
             'fcmKey': await FirebaseMessaging.instance.getToken()
           });
@@ -154,12 +160,21 @@ class _SignupScreenState extends State<SignupScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Account created successfully")));
-          Navigator.of(context, rootNavigator: true)
-              .pushReplacement(MaterialPageRoute(
-                  maintainState: true,
-                  builder: (context) => HomepageScreen(
-                        hasDeviceId: false,
-                      )));
+          if (widget.role == "watch wearer" && widget.deviceId != "") {
+            Navigator.of(context, rootNavigator: true)
+                .pushReplacement(MaterialPageRoute(
+                    maintainState: true,
+                    builder: (context) => HomepageScreen(
+                          hasDeviceId: false,
+                        )));
+          } else {
+            Navigator.of(context, rootNavigator: true)
+                .pushReplacement(MaterialPageRoute(
+                    maintainState: true,
+                    builder: (context) => SupervisorDashboard(
+                          phNo: _phone_number.text,
+                        )));
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Account already exists with this mail ID ")));
@@ -298,7 +313,8 @@ class _SignupScreenState extends State<SignupScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _phone_number.text = widget.phNo.substring(3, widget.phNo.length);
+    // _phone_number.text = widget.phNo.substring(3, widget.phNo.length);
+    _phone_number.text = widget.phNo;
   }
 
   @override

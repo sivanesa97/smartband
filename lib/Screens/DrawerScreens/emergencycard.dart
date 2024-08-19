@@ -123,7 +123,7 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                       : false,
                                   "contact": _contactController.text == ""
                                       ? 0
-                                      : int.parse(_contactController.text),
+                                      : _contactController.text,
                                 }
                               });
                             }

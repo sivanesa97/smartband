@@ -425,7 +425,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
                                     .update({
                                   "phone_number":
-                                      int.parse(_contactController.text),
+                                      _contactController.text,
                                   "gender":
                                       _selectedGender,
                                   "dob": _birthdayController.text,

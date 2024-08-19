@@ -54,7 +54,7 @@ class _SOSPageState extends State<SOSPage> {
 
   void startSOS() {
     endTime = DateTime.now().millisecondsSinceEpoch + 1000 * 5;
-    // playSound();
+    playSound();
   }
 
   void startCountdown() {
@@ -187,9 +187,9 @@ class _SOSPageState extends State<SOSPage> {
                   onPressed: () {
                     print("closing overlay");
                     handleUpdate();
-                    // FlutterOverlayWindow.closeOverlay();
+                    FlutterOverlayWindow.closeOverlay();
 
-                    // stopSound();
+                    stopSound();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color.fromARGB(255, 142, 147, 238),
@@ -211,7 +211,7 @@ class _SOSPageState extends State<SOSPage> {
                   onPressed: () {
                     print("closing overlay");
                     FlutterOverlayWindow.closeOverlay();
-                    // stopSound();
+                    stopSound();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

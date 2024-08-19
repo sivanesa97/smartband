@@ -5,10 +5,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
+import 'package:smartband/Screens/AuthScreen/signup.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
+import 'package:smartband/bluetooth_connection_service.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -52,7 +57,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     }
   }
 
-  void _verifyOtp(String phNo, int generated_otp) async {
+  void _verifyOtp(String phNo, int generated_otp, BuildContext context) async {
     String otp = _otpControllers.map((controller) => controller.text).join();
     try {
       if (otp == "") {
@@ -60,18 +65,46 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             .showSnackBar(const SnackBar(content: Text("Enter OTP!")));
         return;
       }
-      print("${otp}  ${generated_otp}");
+      // print("${otp}  ${generated_otp}");
       // if (true){
       if (int.parse(otp) == generated_otp) {
-        print(phNo);
         final data = await FirebaseFirestore.instance
             .collection("users")
-            .where("phone_number",
-                isEqualTo: int.parse(phNo.substring(3, phNo.length)))
+            .where("phone_number", isEqualTo: phNo)
             .get();
+        // print(phNo);
+        var apiData = await BluetoothConnectionService().getApiData(phNo);
+        int ownerStatus = 0;
+        String deviceName = "";
+        // print(apiData);
+        if (apiData != null) {
+          deviceName = apiData['deviceName'];
+          if (deviceName == "null") {
+            deviceName = "";
+          }
+          bool isSubscriptionActive = apiData?['isSubscriptionActive'];
+          bool isUserActive = apiData?['isUserActive'];
+          if (isUserActive && isSubscriptionActive) {
+            if (deviceName != "") {
+              ownerStatus = 1;
+              Provider.of<SubscriptionDataProvider>(context, listen: false)
+                  .updateStatus(
+                      active: true, deviceName: deviceName, subscribed: true);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Device is not assigned!")));
+            }
+          } else if (isUserActive && deviceName != "") {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text("Please Subscribe to use watch!")));
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("API Issue! Contact Tech Support!")));
+        }
+        print(apiData);
         if (data.docs.isNotEmpty) {
           final email = data.docs.first.data()['email'];
-
           await FirebaseAuth.instance
               .signInWithEmailAndPassword(email: email, password: "admin123");
           print(FirebaseAuth.instance.currentUser!.uid);
@@ -79,16 +112,40 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               .collection('users')
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({'fcmKey': await FirebaseMessaging.instance.getToken()});
-          Navigator.of(context, rootNavigator: true)
-              .pushReplacement(MaterialPageRoute(
-                  maintainState: true,
-                  builder: (context) => HomepageScreen(
-                        hasDeviceId: false,
-                      )));
+          if (ownerStatus == 1) {
+            Navigator.of(context, rootNavigator: true)
+                .pushReplacement(MaterialPageRoute(
+                    maintainState: true,
+                    builder: (context) => const HomepageScreen(
+                          hasDeviceId: true,
+                        )));
+          } else {
+            Provider.of<SubscriptionDataProvider>(context, listen: false)
+                .updateStatus(active: false, deviceName: "", subscribed: false);
+            Navigator.of(context, rootNavigator: true)
+                .pushReplacement(MaterialPageRoute(
+                    maintainState: true,
+                    builder: (context) => SupervisorDashboard(
+                          phNo: phNo,
+                        )));
+          }
         } else {
+          // Navigator.of(context).push(MaterialPageRoute(
+          //     builder: (context) => HomePage(
+          //           phNo: widget.phoneNumber,
+          //         )));
+          String selected_role = "supervisor";
+          if (ownerStatus == 1) {
+            selected_role = "watch wearer";
+          } else {
+            Provider.of<SubscriptionDataProvider>(context, listen: false)
+                .updateStatus(active: false, deviceName: "", subscribed: false);
+          }
           Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => HomePage(
-                    phNo: widget.phoneNumber,
+              builder: (context) => SignupScreen(
+                    phNo: phNo,
+                    role: selected_role,
+                    deviceId: deviceName,
                   )));
         }
       } else {
@@ -250,7 +307,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               ),
                               child: TextButton(
                                 onPressed: () {
-                                  _verifyOtp(widget.phoneNumber, otp_num);
+                                  _verifyOtp(
+                                      widget.phoneNumber, otp_num, context);
                                 },
                                 child: Text(
                                   'Verify OTP',

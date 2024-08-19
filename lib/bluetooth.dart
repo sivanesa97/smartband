@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/Dashboard/connected.dart';
+import 'package:http/http.dart' as http;
 
 import 'Screens/Dashboard/dashboard.dart';
 import 'Screens/InstructionsScreen/instructions.dart';
@@ -106,14 +107,42 @@ class BluetoothDeviceManager {
   Future<void> connectToDevice(
       BluetoothDevice device, BuildContext context, bool hasDeviceId) async {
     try {
+      // final data = await FirebaseFirestore.instance
+      //     .collection('users')
+      //     .doc(FirebaseAuth.instance.currentUser!.uid)
+      //     .get();
+      // String deviceName = data.data()?['device_id'] ?? '';
+      String deviceName = '';
       final data = await FirebaseFirestore.instance
           .collection('users')
           .doc(FirebaseAuth.instance.currentUser!.uid)
           .get();
-      String deviceName = data.data()?['device_id'] ?? '';
+      var phoneNumber = data.data()?["phone_number"];
+      if (phoneNumber == null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Invalid Mobile Number!")));
+        return;
+      }
+      final response = await http.post(
+        Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'mobile_number': '$phoneNumber',
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        if (data['status'].toString() == 'active' && data['deviceId'] != null) {
+          deviceName = data['device_id'].toString();
+        }
+      } else {
+        print(response.statusCode);
+      }
 
-      // if (deviceName.isEmpty || deviceName == device.platformName) {
-      if (true) {
+      if (deviceName.isEmpty || deviceName == device.platformName) {
+        // if (true) {
         await device.connect();
         // Navigator.of(context).push(
         //   MaterialPageRoute(builder: (context) => DashboardScreen(device_name: device.platformName, mac_address: device.remoteId.toString(), device: device))

@@ -37,12 +37,12 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
       String phonetoCheck = _phNoConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: int.parse(widget.phNo))
+          .where('phone_number', isEqualTo: widget.phNo)
           .get();
 
       final docs1 = await FirebaseFirestore.instance
           .collection('users')
-          .where('phone_number', isEqualTo: int.parse(phonetoCheck))
+          .where('phone_number', isEqualTo: phonetoCheck)
           .get();
       if (docs1.docs.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -69,7 +69,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     for (String i in phoneNumber) {
       var userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .where('phone_number', isEqualTo: int.parse(i))
+          .where('phone_number', isEqualTo: i)
           .get();
       if (userDoc.docs.isNotEmpty) {
         relationDetails.add(userDoc.docs.first.data());
@@ -84,7 +84,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where('phone_number', isEqualTo: int.parse(phNo))
+        .where('phone_number', isEqualTo: phNo)
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
@@ -234,7 +234,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           ),
         ],
       ),
-      drawer: DrawerSupervisorScreen(device: null, phNo: widget.phNo),
+      drawer: DrawerScreen(
+          device: null, phNo: widget.phNo, status: "", subscription: ""),
       body: user_data.when(
         data: (user) {
           Map<String, dynamic> relation = {};
@@ -519,117 +520,117 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                           ),
                                                         ),
                                                       )),
-                                                  // Expanded(
-                                                  //     flex: 2,
-                                                  //     child: Card(
-                                                  //       color: Color.fromRGBO(
-                                                  //           255, 234, 234, 1),
-                                                  //       shape: RoundedRectangleBorder(
-                                                  //           borderRadius:
-                                                  //               BorderRadius
-                                                  //                   .circular(
-                                                  //                       18)),
-                                                  //       elevation: 4,
-                                                  //       child: Padding(
-                                                  //         padding:
-                                                  //             const EdgeInsets
-                                                  //                 .symmetric(
-                                                  //                 vertical: 5.0,
-                                                  //                 horizontal:
-                                                  //                     15.0),
-                                                  //         child: Column(
-                                                  //           mainAxisAlignment:
-                                                  //               MainAxisAlignment
-                                                  //                   .spaceAround,
-                                                  //           children: [
-                                                  //             Row(
-                                                  //               children: [
-                                                  //                 Icon(
-                                                  //                     Icons
-                                                  //                         .warning,
-                                                  //                     size: 25),
-                                                  //                 SizedBox(
-                                                  //                     width: width *
-                                                  //                         0.01),
-                                                  //                 Text(
-                                                  //                     'Emergency',
-                                                  //                     style: TextStyle(
-                                                  //                         fontSize:
-                                                  //                             width * 0.04)),
-                                                  //               ],
-                                                  //             ),
-                                                  //             Stack(
-                                                  //               alignment:
-                                                  //                   Alignment
-                                                  //                       .center,
-                                                  //               children: [
-                                                  //                 Container(
-                                                  //                   width:
-                                                  //                       width *
-                                                  //                           0.25,
-                                                  //                   height:
-                                                  //                       width *
-                                                  //                           0.25,
-                                                  //                   decoration:
-                                                  //                       BoxDecoration(
-                                                  //                     borderRadius:
-                                                  //                         BorderRadius.circular(width *
-                                                  //                             0.5),
-                                                  //                     color: Colors
-                                                  //                         .white,
-                                                  //                     boxShadow: const [
-                                                  //                       BoxShadow(
-                                                  //                         color:
-                                                  //                             Colors.redAccent,
-                                                  //                         blurRadius:
-                                                  //                             5.0,
-                                                  //                       ),
-                                                  //                     ],
-                                                  //                     border: Border.all(
-                                                  //                         color: Colors
-                                                  //                             .redAccent,
-                                                  //                         width:
-                                                  //                             10.0),
-                                                  //                   ),
-                                                  //                 ),
-                                                  //                 Container(
-                                                  //                   width:
-                                                  //                       width *
-                                                  //                           0.15,
-                                                  //                   height:
-                                                  //                       width *
-                                                  //                           0.15,
-                                                  //                   decoration:
-                                                  //                       BoxDecoration(
-                                                  //                     borderRadius:
-                                                  //                         BorderRadius.circular(width *
-                                                  //                             0.5),
-                                                  //                     color: Colors
-                                                  //                         .black26,
-                                                  //                     boxShadow: const [
-                                                  //                       BoxShadow(
-                                                  //                         color:
-                                                  //                             Colors.redAccent,
-                                                  //                         blurRadius:
-                                                  //                             5.0,
-                                                  //                       ),
-                                                  //                     ],
-                                                  //                   ),
-                                                  //                 ),
-                                                  //                 Text(
-                                                  //                   "SOS",
-                                                  //                   style: TextStyle(
-                                                  //                       color: Colors
-                                                  //                           .white,
-                                                  //                       fontSize:
-                                                  //                           20),
-                                                  //                 ),
-                                                  //               ],
-                                                  //             ),
-                                                  //           ],
-                                                  //         ),
-                                                  //       ),
-                                                  //     )),
+                                                  Expanded(
+                                                      flex: 2,
+                                                      child: Card(
+                                                        color: Color.fromRGBO(
+                                                            255, 234, 234, 1),
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        18)),
+                                                        elevation: 4,
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  vertical: 5.0,
+                                                                  horizontal:
+                                                                      15.0),
+                                                          child: Column(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceAround,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Icon(
+                                                                      Icons
+                                                                          .warning,
+                                                                      size: 25),
+                                                                  SizedBox(
+                                                                      width: width *
+                                                                          0.01),
+                                                                  Text(
+                                                                      'Emergency',
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                              width * 0.04)),
+                                                                ],
+                                                              ),
+                                                              Stack(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                children: [
+                                                                  Container(
+                                                                    width:
+                                                                        width *
+                                                                            0.25,
+                                                                    height:
+                                                                        width *
+                                                                            0.25,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(width *
+                                                                              0.5),
+                                                                      color: Colors
+                                                                          .white,
+                                                                      boxShadow: const [
+                                                                        BoxShadow(
+                                                                          color:
+                                                                              Colors.redAccent,
+                                                                          blurRadius:
+                                                                              5.0,
+                                                                        ),
+                                                                      ],
+                                                                      border: Border.all(
+                                                                          color: Colors
+                                                                              .redAccent,
+                                                                          width:
+                                                                              10.0),
+                                                                    ),
+                                                                  ),
+                                                                  Container(
+                                                                    width:
+                                                                        width *
+                                                                            0.15,
+                                                                    height:
+                                                                        width *
+                                                                            0.15,
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(width *
+                                                                              0.5),
+                                                                      color: Colors
+                                                                          .black26,
+                                                                      boxShadow: const [
+                                                                        BoxShadow(
+                                                                          color:
+                                                                              Colors.redAccent,
+                                                                          blurRadius:
+                                                                              5.0,
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  Text(
+                                                                    "SOS",
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontSize:
+                                                                            20),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      )),
                                                 ],
                                               ),
                                             ),

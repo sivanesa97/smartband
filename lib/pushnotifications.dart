@@ -49,7 +49,7 @@ class SendNotification {
       print('User granted permission');
       final data = await FirebaseFirestore.instance
           .collection("users")
-          .where('phone_number', isEqualTo: int.parse(phone_number))
+          .where('phone_number', isEqualTo: phone_number)
           .get();
       // print(data.docs.first.data());
       final targetToken = data.docs.first.data()['fcmKey'];

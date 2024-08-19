@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:audio_session/audio_session.dart';
@@ -7,35 +8,59 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:googleapis_auth/auth_io.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:smartband/Screens/AuthScreen/phone_number.dart';
+import 'package:provider/provider.dart' as provider;
+import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
+import 'package:smartband/Screens/AuthScreen/signup.dart';
+import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/SosPage.dart';
+import 'package:smartband/SplashScreen.dart';
 import 'package:smartband/bluetooth_connection_service.dart';
 import 'package:smartband/pushnotifications.dart';
+import 'package:http/http.dart' as http;
 
 import 'firebase_options.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+Future<void> setupOverlay() async {
+  bool status = await overlay.FlutterOverlayWindow.isPermissionGranted();
+  if (!status) {
+    await overlay.FlutterOverlayWindow.requestPermission();
+  }
+}
 
+Future<void> showSOSOverlay() async {
+  await overlay.FlutterOverlayWindow.showOverlay(
+    height: overlay.WindowSize.fullCover,
+    width: overlay.WindowSize.fullCover,
+    alignment: overlay.OverlayAlignment.bottomCenter,
+    visibility: overlay.NotificationVisibility.visibilityPublic,
+  );
+
+  // Create and show the SOSPage in the overlay
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: SOSPage(),
+  ));
+}
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+  await setupOverlay();
+  await showSOSOverlay();
 
+  // Initialize local notifications
   await flutterLocalNotificationsPlugin.initialize(
     InitializationSettings(android: AndroidInitializationSettings('logo')),
     onDidReceiveNotificationResponse:
@@ -47,9 +72,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void handleNotificationClick(RemoteMessage message) {
   final initialMessage = message.data;
-  print("fsdfs: $message");
-  print("$initialMessage sfnslkf");
   if (initialMessage.containsKey('uid')) {
+    // Perform any additional navigation if needed
+    // For example, you could use the navigatorKey to navigate to a different screen
     navigatorKey.currentState?.pushNamed('/sos');
   }
 }
@@ -60,18 +85,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  Future<void> initializeAudioSession() async {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration(
-      androidAudioAttributes: AndroidAudioAttributes(
-        usage: AndroidAudioUsage.alarm,
-        contentType: AndroidAudioContentType.sonification,
-        flags: AndroidAudioFlags.audibilityEnforced,
-      ),
-    ));
-  }
-
-  await initializeAudioSession();
+  // Initialize notification settings
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('logo');
   const InitializationSettings initializationSettings = InitializationSettings(
@@ -79,48 +93,17 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'default_channel_id', // id
-    'channel.name', // name
-    description: 'description', // description
-    importance: Importance.max,
-    sound: RawResourceAndroidNotificationSound('ringtone'),
-    playSound: true,
-  );
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-  void wakeScreen() {
-    const platform = MethodChannel('com.keydraft.smartband/wake_screen');
-    try {
-      platform.invokeMethod('wakeScreen');
-    } on PlatformException catch (e) {
-      print("Failed to wake screen: '${e.message}'.");
-    }
-  }
-
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-    wakeScreen();
+    // showSOSOverlay();
+    handleNotificationClick(message);
     SendNotification sendNotification = SendNotification();
-    bool status = await overlay.FlutterOverlayWindow.isPermissionGranted();
-    if (status) {
-      await overlay.FlutterOverlayWindow.showOverlay(
-          height: overlay.WindowSize.fullCover,
-          width: overlay.WindowSize.fullCover,
-          alignment: overlay.OverlayAlignment.bottomCenter,
-          visibility: overlay.NotificationVisibility.visibilityPublic);
-    }
-    SOSPage sosPage = SOSPage();
-    sosPage.createState().startSOS();
-    // sosPage.createState().startCountdown();
     sendNotification.showNotification(message.notification?.title ?? "",
         message.notification?.body ?? "", navigatorKey);
+  });
+
+   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    handleNotificationClick(message);
   });
 
   // Check for initial notification
@@ -130,8 +113,6 @@ void main() async {
     handleNotificationClick(initialMessage);
   }
 
-  await initializeService();
-  // Listen for notification clicks when the app is in the background
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     handleNotificationClick(message);
   });
@@ -141,72 +122,80 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark));
+    statusBarColor: Colors.white,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
   runApp(ProviderScope(
+    child: provider.MultiProvider(
+      providers: [
+        provider.ChangeNotifierProvider(
+            create: (_) => SubscriptionDataProvider())
+      ],
       child: MaterialApp(
-    home: SplashScreen(),
-    debugShowCheckedModeBanner: false,
-    navigatorKey: navigatorKey,
-    routes: {
-      '/sos': (context) => SOSPage(),
-    },
-  )));
-}
-
-Future<void> initializeService() async {
-  final service = FlutterBackgroundService();
-
-  await service.configure(
-    androidConfiguration: AndroidConfiguration(
-      onStart: onStart,
-      autoStart: true,
-      isForegroundMode: true,
+        home: SplashScreen(),
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
+        routes: {
+          '/sos': (context) => SOSPage(),
+        },
+      ),
     ),
-    iosConfiguration: IosConfiguration(
-      autoStart: true,
-      onForeground: onStart,
-      onBackground: onIosBackground,
-    ),
-  );
-
-  service.startService();
+  ));
 }
 
-@pragma('vm:entry-point')
-void onStart(ServiceInstance service) async {
-  DartPluginRegistrant.ensureInitialized();
+// Future<void> initializeService() async {
+//   final service = FlutterBackgroundService();
 
-  if (service is AndroidServiceInstance) {
-    service.on('setAsForeground').listen((event) {
-      service.setAsForegroundService();
-    });
+//   await service.configure(
+//     androidConfiguration: AndroidConfiguration(
+//       onStart: onStart,
+//       autoStart: true,
+//       isForegroundMode: true,
+//     ),
+//     iosConfiguration: IosConfiguration(
+//       autoStart: true,
+//       onForeground: onStart,
+//       onBackground: onIosBackground,
+//     ),
+//   );
 
-    service.on('setAsBackground').listen((event) {
-      service.setAsBackgroundService();
-    });
-  }
+//   service.startService();
+// }
 
-  service.on('stopService').listen((event) {
-    service.stopSelf();
-  });
+// @pragma('vm:entry-point')
+// void onStart(ServiceInstance service) async {
+//   DartPluginRegistrant.ensureInitialized();
 
-  BluetoothConnectionService().startBluetoothService();
+//   if (service is AndroidServiceInstance) {
+//     service.on('setAsForeground').listen((event) {
+//       service.setAsForegroundService();
+//     });
 
-  Timer.periodic(Duration(minutes: 1), (timer) async {
-    await BluetoothConnectionService().checkAndReconnect();
-  });
-}
+//     service.on('setAsBackground').listen((event) {
+//       service.setAsBackgroundService();
+//     });
+//   }
 
-@pragma('vm:entry-point')
-Future<bool> onIosBackground(ServiceInstance service) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
-  return true;
-}
+//   service.on('stopService').listen((event) {
+//     service.stopSelf();
+//   });
+
+//   BluetoothConnectionService().startBluetoothService();
+
+//   Timer.periodic(Duration(minutes: 1), (timer) async {
+//     await BluetoothConnectionService().checkAndReconnect();
+//   });
+// }
+
+// @pragma('vm:entry-point')
+// Future<bool> onIosBackground(ServiceInstance service) async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   DartPluginRegistrant.ensureInitialized();
+//   return true;
+// }
 
 @pragma("vm:entry-point")
 void overlayMain() {
@@ -215,265 +204,99 @@ void overlayMain() {
       home: SafeArea(child: Material(child: SOSPage()))));
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+// class MyApp extends StatefulWidget {
+//   const MyApp({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
+//   @override
+//   State<MyApp> createState() => _MyAppState();
+// }
 
-class _MyAppState extends State<MyApp> {
-  late Widget initialScreen;
+// class _MyAppState extends State<MyApp> {
+//   late Widget initialScreen;
 
-  @override
-  void initState() {
-    super.initState();
-    _checkLoginStatus();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     _checkLoginStatus();
+//   }
 
-  Future<void> _checkLoginStatus() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      initialScreen = const SignIn();
-    } else {
-      final data = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      bool hasDeviceId = data.data()?['device_id'] != "" ? true : false;
-      initialScreen = HomepageScreen(hasDeviceId: hasDeviceId);
-    }
-    setState(() {});
-  }
+//   Future<void> _checkLoginStatus() async {
+//     User? user = FirebaseAuth.instance.currentUser;
+//     print("inside checkLoginStatus");
+//     if (user == null) {
+//       initialScreen = const SignIn();
+//     } else {
+//       print("inside else of checkLoginStatus");
+//       final data = await FirebaseFirestore.instance
+//           .collection('users')
+//           .doc(user.uid)
+//           .get();
+//       var phoneNumber = data.data()?['phone_number'];
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'LifeLongCare',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          } else if (snapshot.hasData) {
-            return HomepageScreen(hasDeviceId: false);
-          } else {
-            return SplashScreen();
-          }
-        },
-      ),
-    );
-  }
-}
+//       var apiData = await BluetoothConnectionService().getApiData(phoneNumber);
+//       int ownerStatus = 0;
+//       String deviceName = "";
+//       if (apiData != null) {
+//         deviceName = apiData['deviceName'];
+//         if (deviceName == "null") {
+//           deviceName = "";
+//         }
+//         print(apiData);
+//         bool isSubscriptionActive = apiData?['isSubscriptionActive'];
+//         bool isUserActive = apiData?['isUserActive'];
+//         if (isUserActive && isSubscriptionActive) {
+//           if (deviceName != "") {
+//             ownerStatus = 1;
+//           } else {
+//             ScaffoldMessenger.of(context).showSnackBar(
+//                 const SnackBar(content: Text("Device is not assigned!")));
+//           }
+//         } else if (isUserActive && deviceName != "") {
+//           ScaffoldMessenger.of(context).showSnackBar(
+//               const SnackBar(content: Text("Please Subscribe to use watch!")));
+//         }
+//       } else {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//             const SnackBar(content: Text("API Issue! Contact Tech Support!")));
+//       }
 
-class SplashScreen extends StatefulWidget {
-  @override
-  _SplashScreenState createState() => _SplashScreenState();
-}
+//       String selected_role = "supervisor";
+//       if (ownerStatus == 1) {
+//         provider.Provider.of<SubscriptionDataProvider>(context, listen: false)
+//             .updateStatus(
+//                 active: true, deviceName: deviceName, subscribed: true);
+//         selected_role = "watch wearer";
+//         print("owner status is watch wearer");
+//         initialScreen = const HomepageScreen(hasDeviceId: true);
+//       } else {
+//         provider.Provider.of<SubscriptionDataProvider>(context, listen: false)
+//             .updateStatus(active: false, deviceName: "", subscribed: false);
+//         initialScreen = SupervisorDashboard(phNo: phoneNumber);
+//       }
+//     }
+//     setState(() {});
+//   }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _progressAnimation;
+//   @override
+//   Widget build(BuildContext context) {
+//     // If initialScreen is null, show loading screen
+//     if (initialScreen == null) {
+//       return const Scaffold(
+//         body: Center(
+//           child: CircularProgressIndicator(),
+//         ),
+//       );
+//     }
 
-  Future<void> requestPermissions() async {
-    final bluetoothStatus = await Permission.bluetooth.request();
-    if (bluetoothStatus.isDenied) {
-      print('Bluetooth permission denied');
-    }
-    print('Bluetooth permission granted');
-
-    // Request Bluetooth scan permission
-    final bluetoothScanStatus = await Permission.bluetoothScan.request();
-    if (bluetoothScanStatus.isDenied) {
-      print('Bluetooth scan permission denied');
-    }
-    print('Bluetooth scan permission granted');
-
-    // Request Bluetooth connect permission
-    final bluetoothConnectStatus = await Permission.bluetoothConnect.request();
-    if (bluetoothConnectStatus.isDenied) {
-      print('Bluetooth connect permission denied');
-    }
-    print('Bluetooth connect permission granted');
-
-    // Request Location permission
-    final locationStatus = await Permission.locationWhenInUse.request();
-    if (locationStatus.isDenied) {
-      print('Location permission denied');
-    }
-    print('Location permission granted');
-
-    // Request Notification permission
-    final notificationStatus = await Permission.notification.request();
-    if (notificationStatus.isDenied) {
-      print('Notification permission denied');
-    }
-    await Permission.ignoreBatteryOptimizations.request();
-    await Permission.backgroundRefresh.request();
-    await Permission.systemAlertWindow.request();
-    await Permission.microphone.request();
-    if (!(await overlay.FlutterOverlayWindow.isPermissionGranted())) {
-      await overlay.FlutterOverlayWindow.requestPermission();
-    }
-    // await Permission.phone.request();
-
-    print('Notification permission granted');
-  }
-
-  Future<void> _initBackgroundService() async {
-    final hasPermissions = await FlutterBackground.hasPermissions;
-    if (!hasPermissions) {
-      await FlutterBackground.initialize(
-        androidConfig: const FlutterBackgroundAndroidConfig(
-          notificationTitle: "Background Service",
-          notificationText: "Playing sound in the background",
-          notificationImportance: AndroidNotificationImportance.Default,
-          enableWifiLock: true,
-        ),
-      );
-    }
-  }
-
-  Future<String> getAccessToken() async {
-    final jsonString =
-        await rootBundle.loadString('assets/service_account.json');
-    final serviceAccount = ServiceAccountCredentials.fromJson(jsonString);
-
-    final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-    final client = await clientViaServiceAccount(serviceAccount, scopes);
-    final accessToken = client.credentials.accessToken;
-    print(accessToken.data);
-    return accessToken.data;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    requestPermissions();
-    _initBackgroundService();
-    getAccessToken();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    );
-
-    _progressAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Scaffold(
-          body: CustomPaint(
-            painter: RadialGradientPainter(_progressAnimation.value),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ClipOval(
-                    child: Container(
-                      width: width * 0.6,
-                      child: Image.asset(
-                        "assets/logo1.png",
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "LONG LIFE CARE",
-                    style:
-                        TextStyle(fontSize: width * 0.05, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(const Duration(milliseconds: 3000));
-      if (mounted) {
-        User? user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          final data = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-          bool hasDeviceId = data.data()?['device_id'] != "" ? true : false;
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => HomepageScreen(hasDeviceId: hasDeviceId),
-            ),
-          );
-        } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => PhoneSignIn(),
-            ),
-          );
-        }
-      }
-    });
-  }
-}
-
-class RadialGradientPainter extends CustomPainter {
-  final double progress;
-
-  RadialGradientPainter(this.progress);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        radius: progress,
-        colors: const [
-          Color.fromRGBO(255, 127, 23, 1),
-          Colors.white,
-        ],
-        stops: const [0.0, 1.0],
-      ).createShader(Rect.fromCircle(
-          center: size.center(Offset.zero), radius: size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
-  }
-}
+//     // Otherwise, display the determined initial screen
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       title: 'LifeLongCare',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//         scaffoldBackgroundColor: Colors.white,
+//       ),
+//       home: initialScreen,
+//     );
+//   }
+// }

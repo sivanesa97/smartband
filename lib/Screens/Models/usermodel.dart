@@ -13,7 +13,7 @@ class UserModel {
   String name;
   double weight;
   List<String> relations;
-  int phone_number;
+  String phone_number;
   String role;
   Map<String, dynamic> emergency;
   String gender;
@@ -111,7 +111,7 @@ final userModelProvider = StreamProvider.family<UserModel?, String>((ref, userId
 });
 
 final supervisorModelProvider = StreamProviderFamily<List<UserModel>?, String>((ref, userId) {
-  return FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: int.parse(userId))
+  return FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: userId)
       .snapshots()
       .map((snapshot) => snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
 });

@@ -39,7 +39,7 @@ class HomepageScreenState extends State<HomepageScreen> {
       BluetoothDeviceManager();
 
   Future<void> _initializeBluetooth() async {
-    print(widget.hasDeviceId);
+    // print(widget.hasDeviceId);
     FlutterBluePlus.adapterState.listen((state) async {
       if (state == BluetoothAdapterState.on) {
         // Retrieve the list of connected devices
@@ -158,7 +158,7 @@ class HomepageScreenState extends State<HomepageScreen> {
           await googleSignIn.signOut();
           await FirebaseAuth.instance.signOut();
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Subscription To Continue")));
+              const SnackBar(content: Text("Subscribe To Continue")));
           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => PhoneSignIn()),
               (Route<dynamic> route) => false);
@@ -189,54 +189,55 @@ class HomepageScreenState extends State<HomepageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return role1 == 'supervisor'
-        ? SupervisorDashboard(
-            phNo: phNo,
-          )
-        : StreamBuilder<List<BluetoothDevice>>(
-            stream: bluetoothDeviceManager.connectedDevicesStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                print(snapshot.data);
-                return const Scaffold(
+    // role1 == 'supervisor'
+    //     ? SupervisorDashboard(
+    //         phNo: phNo,
+    //       )
+    //     :
+    return StreamBuilder<List<BluetoothDevice>>(
+      stream: bluetoothDeviceManager.connectedDevicesStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          print(snapshot.data);
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
+        } else if (snapshot.hasData &&
+            snapshot.data != null &&
+            snapshot.data!.isNotEmpty) {
+          // Navigate to DashboardScreen if devices are connected
+          String? deviceName = snapshot.data!.first.platformName;
+          bluetoothDeviceManager
+              .discoverServicesAndCharacteristics(snapshot.data!.first);
+          if (deviceName == deviceId) {
+            deviceName = deviceId;
+          } else {
+            deviceName = null;
+          }
+          return DashboardScreen(phNo,
+              device_name: deviceName,
+              subscription: subscription,
+              status: status,
+              mac_address: snapshot.data!.first.remoteId.toString(),
+              device: snapshot.data!.first);
+        } else {
+          return role1 == ""
+              ? const Scaffold(
                   body: Center(
                     child: CircularProgressIndicator(),
                   ),
+                )
+              : NotConnectedPage(
+                  hasDeviceId: widget.hasDeviceId,
                 );
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              } else if (snapshot.hasData &&
-                  snapshot.data != null &&
-                  snapshot.data!.isNotEmpty) {
-                // Navigate to DashboardScreen if devices are connected
-                String? deviceName = snapshot.data!.first.platformName;
-                bluetoothDeviceManager
-                    .discoverServicesAndCharacteristics(snapshot.data!.first);
-                if (deviceName == deviceId) {
-                  deviceName = deviceId;
-                } else {
-                  deviceName = null;
-                }
-                return DashboardScreen(phNo,
-                    device_name: deviceName,
-                    subscription: subscription,
-                    status: status,
-                    mac_address: snapshot.data!.first.remoteId.toString(),
-                    device: snapshot.data!.first);
-              } else {
-                return role1 == ""
-                    ? const Scaffold(
-                        body: Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : NotConnectedPage(
-                        hasDeviceId: widget.hasDeviceId,
-                      );
-              }
-            },
-          );
+        }
+      },
+    );
   }
 }

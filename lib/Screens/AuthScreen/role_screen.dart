@@ -226,6 +226,7 @@ class _MainScreenState extends State<MainScreen> {
                                 builder: (context) => SignupScreen(
                                       phNo: widget.phNo,
                                       role: selected_role,
+                                      deviceId: "",
                                     )));
                           }
                         }
@@ -234,6 +235,7 @@ class _MainScreenState extends State<MainScreen> {
                             builder: (context) => SignupScreen(
                                   phNo: widget.phNo,
                                   role: selected_role,
+                                  deviceId: "",
                                 )));
                       }
                     },

@@ -58,7 +58,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final userData =
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
-    int index = 0;
+    // int index = 0;
 
     return userData.when(
       data: (data) {

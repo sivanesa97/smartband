@@ -34,7 +34,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
       String phonetoCheck = _phoneConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: int.parse(phonetoCheck))
+          .where('phone_number', isEqualTo: phonetoCheck)
           .get();
       if (querySnapshot.docs.isNotEmpty) {
         await usersCollection
@@ -61,7 +61,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
     for (String i in phone_number) {
       var userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .where('phone_number', isEqualTo: int.parse(i))
+          .where('phone_number', isEqualTo: i)
           .get();
 
       if (userDoc.docs.isNotEmpty) {

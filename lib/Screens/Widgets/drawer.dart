@@ -2,13 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
+import 'package:smartband/Screens/Dashboard/dashboard.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
 import 'package:smartband/Screens/DrawerScreens/profilepage.dart';
 import 'package:smartband/Screens/DrawerScreens/reportproblem.dart';
+import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/HomeScreen/manage_access.dart';
 import 'package:smartband/Screens/HomeScreen/upgrade.dart';
 import 'package:smartband/Screens/Widgets/coming_soon.dart';
@@ -37,6 +41,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
+    final subscriptionStatus = Provider.of<SubscriptionDataProvider>(context);
 
     return Drawer(
         backgroundColor: Colors.white,
@@ -102,14 +107,18 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                 ),
                               ],
                             )
-                          : Text(
-                              "You have not connected a device",
-                              maxLines: 2,
-                              style: TextStyle(
-                                  fontSize: width * 0.05,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
+                          : subscriptionStatus.deviceId != "" &&
+                                  subscriptionStatus.isSubscribed &&
+                                  subscriptionStatus.isActive
+                              ? Text(
+                                  "You have not connected a device",
+                                  maxLines: 2,
+                                  style: TextStyle(
+                                      fontSize: width * 0.05,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                )
+                              : SizedBox.shrink(),
                     ),
                   ),
                   widget.device != null
@@ -143,6 +152,43 @@ class _DrawerScreenState extends State<DrawerScreen> {
                               )),
                         )
                       : SizedBox.shrink(),
+                  subscriptionStatus.deviceId != "" &&
+                          subscriptionStatus.isSubscribed &&
+                          subscriptionStatus.isActive
+                      ? InkWell(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true)
+                                .push(MaterialPageRoute(
+                                    maintainState: true,
+                                    builder: (context) => HomepageScreen(
+                                          hasDeviceId: true,
+                                        )));
+                          },
+                          child: const ListTile(
+                            leading: Icon(
+                              Icons.upgrade,
+                              color: Colors.black26,
+                            ),
+                            title: Text("Dashboard"),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) =>
+                                  SupervisorDashboard(phNo: widget.phNo)));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.upgrade,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Monitoring Dashboard"),
+                    ),
+                  ),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
@@ -173,7 +219,9 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Profile"),
                     ),
                   ),
-                  widget.device == null
+                  subscriptionStatus.deviceId != "" &&
+                          subscriptionStatus.isSubscribed &&
+                          subscriptionStatus.isActive
                       ? InkWell(
                           onTap: () {
                             Navigator.of(context, rootNavigator: true)
@@ -189,24 +237,6 @@ class _DrawerScreenState extends State<DrawerScreen> {
                               color: Colors.black26,
                             ),
                             title: Text("Manage Access"),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                  widget.subscription != "" || widget.status == "active"
-                      ? InkWell(
-                          onTap: () {
-                            Navigator.of(context, rootNavigator: true).push(
-                                MaterialPageRoute(
-                                    maintainState: true,
-                                    builder: (context) => SupervisorDashboard(
-                                        phNo: widget.phNo)));
-                          },
-                          child: const ListTile(
-                            leading: Icon(
-                              Icons.upgrade,
-                              color: Colors.black26,
-                            ),
-                            title: Text("Supervisor"),
                           ),
                         )
                       : const SizedBox.shrink(),

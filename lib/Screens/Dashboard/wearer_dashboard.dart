@@ -139,19 +139,21 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   Future<void> fetchSubscription(String phno) async {
+    // print(phno);
     final response = await http.post(
       Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, dynamic>{
-        'mobile_number': '+94$phno',
+        'mobile_number': '$phno',
       }),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
       intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
+      print(data);
       if (data['status'].toString() != 'active') {
         final GoogleSignIn googleSignIn = GoogleSignIn();
         await googleSignIn.signOut();

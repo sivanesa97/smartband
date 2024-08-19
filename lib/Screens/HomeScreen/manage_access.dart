@@ -21,7 +21,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   String? _selectedRole = "supervisor";
   final TextEditingController _phoneConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
-  final TextEditingController _priorityInputController = TextEditingController();
+  final TextEditingController _priorityInputController =
+      TextEditingController();
 
   void _showRoleDialog() {
     print(widget.phNo);
@@ -64,6 +65,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                             ),
                           )
                         : const SizedBox.shrink(),
+                    const SizedBox(height: 16),
                     _selectedRole == "supervisor"
                         ? TextFormField(
                             controller: _priorityInputController,
@@ -102,8 +104,39 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
       // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phoneConn.text;
       var usersCollection = FirebaseFirestore.instance.collection("users");
+      var ownerSnapshot = await usersCollection
+          .where('phone_number', isEqualTo: widget.phNo)
+          .get();
+
+      if (ownerSnapshot.docs.isNotEmpty) {
+        var docData = ownerSnapshot.docs.first.data();
+
+        if (docData.containsKey('supervisors') &&
+            docData['supervisors'] != null) {
+          if (_priorityInputController.text.isNotEmpty &&
+              int.parse(_priorityInputController.text) > 0) {
+            Map<String, dynamic> supervisors =
+                Map<String, dynamic>.from(docData['supervisors']);
+            supervisors[phonetoCheck] = _priorityInputController.text;
+
+            await ownerSnapshot.docs.first.reference.update({
+              'supervisors': supervisors,
+            });
+          }
+        } else {
+          await ownerSnapshot.docs.first.reference.set(
+              {
+                'supervisors': {
+                  phonetoCheck: _priorityInputController.text,
+                }
+              },
+              SetOptions(
+                  merge:
+                      true)); // Merge: true to avoid overwriting other fields
+        }
+      }
       var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: int.parse(phonetoCheck))
+          .where('phone_number', isEqualTo: phonetoCheck)
           .get();
       if (querySnapshot.docs.isNotEmpty) {
         var data = querySnapshot.docs.first.data()['relations'];
@@ -147,7 +180,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where('phone_number', isEqualTo: int.parse(phone_number))
+        .where('phone_number', isEqualTo: phone_number)
         .get();
     if (userDoc.docs.isNotEmpty) {
       // print(userDoc.docs);
