@@ -109,12 +109,16 @@ class SendNotification {
     if (title == "Emergency!!") {
       // showIncomingCall();
       print("Inside Emergency");
-      // final context = globalKey.currentContext;
-      // if (context != null) {
-      //   showDialog(context: context, builder: (_) => const EmergencyDialog());
-      // } else {
-      //   runApp(const EmergencyDialog());
-      // }
+
+      final context = globalKey.currentContext;
+      if (context != null) {
+        globalKey.currentState?.pushNamed('/sos');
+        //   showDialog(context: context, builder: (_) => const EmergencyDialog());
+        // } else {
+        //   runApp(const EmergencyDialog());
+      }
+    } else {
+      globalKey.currentState?.pushNamed('/sos');
     }
     await flutterLocalNotificationsPlugin.show(
       0,

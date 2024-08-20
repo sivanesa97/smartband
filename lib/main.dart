@@ -71,12 +71,15 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void handleNotificationClick(RemoteMessage message) {
-  final initialMessage = message.data;
-  if (initialMessage.containsKey('uid')) {
-    // Perform any additional navigation if needed
-    // For example, you could use the navigatorKey to navigate to a different screen
-    navigatorKey.currentState?.pushNamed('/sos');
-  }
+  SendNotification sendNotification = SendNotification();
+  sendNotification.showNotification(message.notification?.title ?? "",
+      message.notification?.body ?? "", navigatorKey);
+  // final initialMessage = message.data;
+  // if (initialMessage.containsKey('uid')) {
+  //   // Perform any additional navigation if needed
+  //   // For example, you could use the navigatorKey to navigate to a different screen
+  //   navigatorKey.currentState?.pushNamed('/sos');
+  // }
 }
 
 void main() async {
@@ -97,12 +100,9 @@ void main() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     // showSOSOverlay();
     handleNotificationClick(message);
-    SendNotification sendNotification = SendNotification();
-    sendNotification.showNotification(message.notification?.title ?? "",
-        message.notification?.body ?? "", navigatorKey);
   });
 
-   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     handleNotificationClick(message);
   });
 

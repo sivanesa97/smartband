@@ -252,12 +252,15 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                   .listen((DocumentSnapshot doc) {
                                 if (doc.exists &&
                                     doc["responseStatus"] == true) {
+                                  String responderName =
+                                      i.data()['name'] ?? "User";
                                   setState(() {
                                     _isEmergency = false;
                                   });
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text("User Responded")),
+                                    SnackBar(
+                                      content: Text("$responderName Responded"),
+                                    ),
                                   );
                                 }
                               });
