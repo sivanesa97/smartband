@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:googleapis_auth/auth_io.dart';
@@ -127,5 +128,33 @@ class SendNotification {
       platformChannelSpecifics,
       payload: 'item x',
     );
+  }
+
+  Future<void> checkLocationAndSendNotification() async {
+    Position currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+    GeoPoint homeLocation = userData['homeLocation'] as GeoPoint;
+
+    double distance = Geolocator.distanceBetween(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      homeLocation.latitude,
+      homeLocation.longitude,
+    );
+
+    if (distance > 10000) {
+      await sendNotification(
+        FirebaseAuth.instance.currentUser!.phoneNumber!,
+        'Location Alert',
+        'Your current location is more than 10 km away from your home.',
+      );
+    }
   }
 }

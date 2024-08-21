@@ -292,8 +292,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
       }
       final data = await FirebaseFirestore.instance
           .collection("users")
-          .where('relations',
-              arrayContains: widget.user.phone_number.toString())
+          .where('phone_number',
+              isEqualTo: FirebaseAuth.instance.currentUser!.phoneNumber)
           .get();
       setState(() {
         _isEmergency = true;
@@ -346,14 +346,21 @@ class _EmergencyCardState extends State<EmergencyCard> {
             "timestamp": FieldValue.serverTimestamp()
           });
 
-          send.sendNotification(
-              i.data()['phone_number'].toString(),
-              "Emergency!!",
-              "${widget.user.name} has clicked SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
-          print("Message sent");
-          String name = i.data()['name'].toString();
+          Map<String, String> supervisors =
+              Map<String, String>.from(i.data()['supervisors']);
+          var sortedSupervisors = supervisors.entries.toList()
+            ..sort((a, b) => int.parse(b.value).compareTo(int.parse(a.value)));
+
+          for (var supervisor in sortedSupervisors) {
+            send.sendNotification(supervisor.key, "Emergency!!",
+                "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
+            await Future.delayed(Duration(seconds: 30));
+            print(
+                "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Sent Alert to $name")),
+            SnackBar(content: Text("Sent Alert to ${i.data()['name']}")),
           );
           FirebaseFirestore.instance
               .collection("emergency_alerts")

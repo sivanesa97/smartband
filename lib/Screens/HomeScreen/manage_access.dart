@@ -100,6 +100,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   }
 
   void _showSupervisorDialog(int otp_num) async {
+    // String phn = '+94965538193';
     if (_phoneConn.text != widget.phNo) {
       // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phoneConn.text;
@@ -107,10 +108,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
       var ownerSnapshot = await usersCollection
           .where('phone_number', isEqualTo: widget.phNo)
           .get();
-
       if (ownerSnapshot.docs.isNotEmpty) {
         var docData = ownerSnapshot.docs.first.data();
-
         if (docData.containsKey('supervisors') &&
             docData['supervisors'] != null) {
           if (_priorityInputController.text.isNotEmpty &&
@@ -124,15 +123,11 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
             });
           }
         } else {
-          await ownerSnapshot.docs.first.reference.set(
-              {
-                'supervisors': {
-                  phonetoCheck: _priorityInputController.text,
-                }
-              },
-              SetOptions(
-                  merge:
-                      true)); // Merge: true to avoid overwriting other fields
+          await ownerSnapshot.docs.first.reference.set({
+            'supervisors': {
+              phonetoCheck: _priorityInputController.text,
+            }
+          }, SetOptions(merge: true));
         }
       }
       var querySnapshot = await usersCollection

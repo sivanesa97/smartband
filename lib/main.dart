@@ -14,7 +14,9 @@ import 'package:flutter_background_service_android/flutter_background_service_an
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart' as provider;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
@@ -71,14 +73,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void handleNotificationClick(RemoteMessage message) {
-  SendNotification sendNotification = SendNotification();
-  sendNotification.showNotification(message.notification?.title ?? "",
-      message.notification?.body ?? "", navigatorKey);
   // final initialMessage = message.data;
   // if (initialMessage.containsKey('uid')) {
-  //   // Perform any additional navigation if needed
-  //   // For example, you could use the navigatorKey to navigate to a different screen
-  //   navigatorKey.currentState?.pushNamed('/sos');
+  // Perform any additional navigation if needed
+  // For example, you could use the navigatorKey to navigate to a different screen
+  navigatorKey.currentState?.pushNamed('/sos');
   // }
 }
 
@@ -87,6 +86,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // await initializeService();
 
   // Initialize notification settings
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -99,7 +100,10 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     // showSOSOverlay();
-    handleNotificationClick(message);
+    // handleNotificationClick(message);
+    SendNotification sendNotification = SendNotification();
+    sendNotification.showNotification(message.notification?.title ?? "",
+        message.notification?.body ?? "", navigatorKey);
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -183,11 +187,48 @@ void main() async {
 //     service.stopSelf();
 //   });
 
+//   // Handle background tasks
+//   await setupOverlay();
+//   await showSOSOverlay();
+
+//   // Other background tasks
 //   BluetoothConnectionService().startBluetoothService();
+
+//   Timer.periodic(Duration(minutes: 1), (timer) async {
+//     await checkLocationAndSendNotification();
+//   });
 
 //   Timer.periodic(Duration(minutes: 1), (timer) async {
 //     await BluetoothConnectionService().checkAndReconnect();
 //   });
+// }
+
+// Future<void> checkLocationAndSendNotification() async {
+//   Position currentPosition = await Geolocator.getCurrentPosition(
+//     desiredAccuracy: LocationAccuracy.high,
+//   );
+
+//   DocumentSnapshot userDoc = await FirebaseFirestore.instance
+//       .collection('users')
+//       .doc(FirebaseAuth.instance.currentUser!.uid)
+//       .get();
+//   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+//   GeoPoint homeLocation = userData['homeLocation'] as GeoPoint;
+
+//   double distance = Geolocator.distanceBetween(
+//     currentPosition.latitude,
+//     currentPosition.longitude,
+//     homeLocation.latitude,
+//     homeLocation.longitude,
+//   );
+
+//   if (distance > 10000) {
+//     SendNotification sendNotification = SendNotification();
+//     sendNotification.showNotification(
+//         'Emergency!!',
+//         "Location Alert : Your current location is more than 10 km away from your home.",
+//         navigatorKey);
+//   }
 // }
 
 // @pragma('vm:entry-point')

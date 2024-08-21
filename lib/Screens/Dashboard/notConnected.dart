@@ -187,8 +187,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             }
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
-                                .where('relations',
-                                    arrayContains: "+94965538193")
+                                .where('phone_number',
+                                    isEqualTo: '+94965538193')
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -236,14 +236,28 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "timestamp": FieldValue.serverTimestamp()
                               });
 
-                              send.sendNotification(
-                                  i.data()['phone_number'].toString(),
-                                  "Emergency!!",
-                                  "Siva has clicked SOS Button from 0°N 0°E. Please respond");
-                              print("Message sent");
-                              String name = i.data()['name'].toString();
+                              Map<String, String> supervisors =
+                                  Map<String, String>.from(
+                                      i.data()['supervisors']);
+                              var sortedSupervisors = supervisors.entries
+                                  .toList()
+                                ..sort((a, b) => int.parse(b.value)
+                                    .compareTo(int.parse(a.value)));
+
+                              for (var supervisor in sortedSupervisors) {
+                                send.sendNotification(
+                                    supervisor.key,
+                                    "Emergency!!",
+                                    "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
+                                await Future.delayed(Duration(seconds: 30));
+                                print(
+                                    "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+                              }
+
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Sent Alert to $name")),
+                                SnackBar(
+                                    content: Text(
+                                        "Sent Alert to ${i.data()['name']}")),
                               );
                               FirebaseFirestore.instance
                                   .collection("emergency_alerts")
@@ -264,7 +278,6 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                   );
                                 }
                               });
-                              await Future.delayed(Duration(seconds: 30));
                             }
 
                             if (attempt == 3) {

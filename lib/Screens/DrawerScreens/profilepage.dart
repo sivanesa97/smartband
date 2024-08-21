@@ -260,58 +260,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                             )
                           ],
                         ),
-                        SizedBox(
-                          height: 5,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Location",
-                              style: TextStyle(
-                                  color: Colors.grey, fontSize: width * 0.04),
-                            ),
-                            SizedBox(
-                              width: width,
-                              height: isEdit ? 50 : 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _locationController,
-                                      decoration: InputDecoration(
-                                        suffixIcon: IconButton(
-                                          icon: Icon(Icons.map),
-                                          onPressed: () async {
-                                            final result = await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MapSelectionScreen(
-                                                        defaultLocation:
-                                                            defaultLocation),
-                                              ),
-                                            );
-                                            if (result != null) {
-                                              setState(() {
-                                                _locationController.text =
-                                                    formatLatLng(result);
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      _locationController.text,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.left,
-                                      style: TextStyle(
-                                          fontSize: width * 0.05,
-                                          color: Colors.black),
-                                    ),
-                            ),
-                          ],
-                        ),
                         if (data.role == 'supervisor')
                           SizedBox.shrink()
                         else if (data.role == 'watch wearer') ...[
@@ -457,6 +405,59 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                             TextStyle(fontSize: width * 0.05),
                                       ),
                               )
+                            ],
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Location",
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                        controller: _locationController,
+                                        decoration: InputDecoration(
+                                          suffixIcon: IconButton(
+                                            icon: Icon(Icons.map),
+                                            onPressed: () async {
+                                              final result =
+                                                  await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MapSelectionScreen(
+                                                          defaultLocation:
+                                                              defaultLocation),
+                                                ),
+                                              );
+                                              if (result != null) {
+                                                setState(() {
+                                                  _locationController.text =
+                                                      formatLatLng(result);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        _locationController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                            fontSize: width * 0.05,
+                                            color: Colors.black),
+                                      ),
+                              ),
                             ],
                           ),
                         ],
