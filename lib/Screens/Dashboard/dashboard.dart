@@ -276,35 +276,34 @@ class _EmergencyCardState extends State<EmergencyCard> {
   }
 
   Future<void> _handleSOSClick(bool sosClicked) async {
-    Position location = await updateLocation();
-    try {
-      if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(FirebaseAuth.instance.currentUser!.uid)
-            .update({
-          "metrics": {
-            "spo2": widget.values[1],
-            "heart_rate": widget.values[0],
-            "fall_axis": "-- -- --"
-          }
-        });
+    setState(() {
+      _isEmergency = true;
+    });
+    for (var attempt = 1; attempt <= 3; attempt++) {
+      if (!_isEmergency) {
+        break;
       }
-      final data = await FirebaseFirestore.instance
-          .collection("users")
-          .where('phone_number',
-              isEqualTo: FirebaseAuth.instance.currentUser!.phoneNumber)
-          .get();
-      setState(() {
-        _isEmergency = true;
-      });
-      SendNotification send = SendNotification();
-      for (var attempt = 1; attempt <= 3; attempt++) {
-        if (!_isEmergency) {
-          break;
+      print("Attempt ");
+      print(attempt);
+      // Position location = await updateLocation();
+      try {
+        if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .update({
+            "metrics": {
+              "spo2": "168",
+              "heart_rate": "200",
+              "fall_axis": "-- -- --"
+            }
+          });
         }
-        print("Attempt ");
-        print(attempt);
+        final data = await FirebaseFirestore.instance
+            .collection("users")
+            .where('phone_number', isEqualTo: '+94965538193')
+            .get();
+        SendNotification send = SendNotification();
         for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
           print(i);
           if (!_isEmergency) {
@@ -322,9 +321,9 @@ class _EmergencyCardState extends State<EmergencyCard> {
             "responseStatus": false,
             "response": "",
             "userUid": FirebaseAuth.instance.currentUser?.uid,
-            "heartbeatRate": widget.values[0],
-            "location": "${location.latitude}°N ${location.longitude}°E",
-            "sfo2": widget.values[1],
+            "heartbeatRate": '93',
+            "location": "0°N 0°E",
+            "sfo2": '35',
             "fallDetection": false,
             "isManual": true,
             "timestamp": FieldValue.serverTimestamp()
@@ -338,20 +337,23 @@ class _EmergencyCardState extends State<EmergencyCard> {
             "isEmergency": true,
             "responseStatus": false,
             "response": "",
-            "heartbeatRate": widget.values[0],
-            "location": "${location.latitude}°N ${location.longitude}°E",
-            "sfo2": widget.values[1],
+            "heartbeatRate": '93',
+            "location": "0°N 0°E",
+            "sfo2": '35',
             "fallDetection": false,
             "isManual": true,
             "timestamp": FieldValue.serverTimestamp()
           });
 
-          Map<String, String> supervisors =
-              Map<String, String>.from(i.data()['supervisors']);
-          var sortedSupervisors = supervisors.entries.toList()
-            ..sort((a, b) => int.parse(b.value).compareTo(int.parse(a.value)));
+          Map<String, Map<String, dynamic>> supervisors =
+              Map<String, Map<String, dynamic>>.from(i.data()['supervisors']);
+          var filteredSupervisors = supervisors.entries
+              .where((entry) => entry.value['status'] == 'active')
+              .toList()
+            ..sort((a, b) => int.parse(b.value['priority'].toString())
+                .compareTo(int.parse(a.value['priority'].toString())));
 
-          for (var supervisor in sortedSupervisors) {
+          for (var supervisor in filteredSupervisors) {
             send.sendNotification(supervisor.key, "Emergency!!",
                 "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
             await Future.delayed(Duration(seconds: 30));
@@ -379,16 +381,16 @@ class _EmergencyCardState extends State<EmergencyCard> {
               );
             }
           });
-          await Future.delayed(Duration(seconds: 30));
         }
+
         if (attempt == 3) {
           setState(() {
             _isEmergency = false;
           });
         }
+      } catch (e) {
+        print("Exception ${e}");
       }
-    } catch (e) {
-      print("Exception $e");
     }
   }
 

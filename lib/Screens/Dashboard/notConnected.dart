@@ -236,15 +236,19 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "timestamp": FieldValue.serverTimestamp()
                               });
 
-                              Map<String, String> supervisors =
-                                  Map<String, String>.from(
+                              Map<String, Map<String, dynamic>> supervisors =
+                                  Map<String, Map<String, dynamic>>.from(
                                       i.data()['supervisors']);
-                              var sortedSupervisors = supervisors.entries
+                              var filteredSupervisors = supervisors.entries
+                                  .where((entry) =>
+                                      entry.value['status'] == 'active')
                                   .toList()
-                                ..sort((a, b) => int.parse(b.value)
-                                    .compareTo(int.parse(a.value)));
+                                ..sort((a, b) =>
+                                    int.parse(b.value['priority'].toString())
+                                        .compareTo(int.parse(
+                                            a.value['priority'].toString())));
 
-                              for (var supervisor in sortedSupervisors) {
+                              for (var supervisor in filteredSupervisors) {
                                 send.sendNotification(
                                     supervisor.key,
                                     "Emergency!!",
