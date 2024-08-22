@@ -29,6 +29,8 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
   TextEditingController _weightController = TextEditingController();
   TextEditingController _stepsgoalController = TextEditingController();
   TextEditingController _locationController = TextEditingController();
+  TextEditingController _minKmController = TextEditingController();
+
   String _selectedGender = "";
   DateTime? _selectedDate;
   LatLng? defaultLocation;
@@ -83,6 +85,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
             _heightController.text = data1['height'].toString() ?? '';
             _weightController.text = data1['weight'].toString() ?? '';
             _stepsgoalController.text = data1['steps_goal'].toString();
+            _minKmController.text = (data1?['minimum_km'] ?? 0).toString();
             if (data1['home_location'] is GeoPoint) {
               GeoPoint geoPoint = data1['home_location'];
               _locationController.text =
@@ -460,6 +463,40 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                               ),
                             ],
                           ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Minimum KM",
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                        controller: _minKmController,
+                                        decoration: InputDecoration(
+                                          hintText:
+                                              data.minimum_km?.toString() ?? '',
+                                        ),
+                                        keyboardType: TextInputType
+                                            .number, // To input numbers
+                                      )
+                                    : Text(
+                                        _minKmController.text,
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
+                              )
+                            ],
+                          ),
                         ],
                         SizedBox(
                           height: 5,
@@ -549,6 +586,8 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                   "weight":
                                       double.parse(_weightController.text),
                                   "home_location": geoPoint,
+                                  "minimum_km":
+                                      int.parse(_minKmController.text),
                                 });
                                 getData();
                               }

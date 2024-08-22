@@ -18,43 +18,44 @@ class UserModel {
   Map<String, dynamic> emergency;
   String gender;
   String device_id;
+  final int minimum_km;
 
-  UserModel({
-    required this.dob,
-    required this.email,
-    required this.height,
-    required this.metrics,
-    required this.name,
-    required this.latitude,
-    required this.longitude,
-    required this.phone_number,
-    required this.relations,
-    required this.weight,
-    required this.role,
-    required this.emergency,
-    required this.gender,
-    required this.device_id
-  });
+  UserModel(
+      {required this.dob,
+      required this.email,
+      required this.height,
+      required this.metrics,
+      required this.name,
+      required this.latitude,
+      required this.longitude,
+      required this.phone_number,
+      required this.relations,
+      required this.weight,
+      required this.role,
+      required this.emergency,
+      required this.gender,
+      required this.device_id,
+      this.minimum_km = 0});
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     print(data['emergency']);
     return UserModel(
-      dob: data['dob'] ?? '',
-      email: data['email'] ?? '',
-      height: data['height']?.toDouble() ?? 0.0,
-      metrics: Map<String, dynamic>.from(data['metrics'] ?? {}),
-      name: data['name'] ?? '',
-      latitude: data['location'].latitude ?? 0.1,
-      longitude: data['location'].longitude ?? 0.1,
-      phone_number: data['phone_number'] ?? 0,
-      relations: List<String>.from(data['relations']),
-      weight: data['weight'].toDouble() ?? 0,
-      role: data['role'],
-      emergency: Map<String, dynamic>.from(data['emergency']),
-      gender: data['gender'],
-      device_id: data['device_id']
-    );
+        dob: data['dob'] ?? '',
+        email: data['email'] ?? '',
+        height: data['height']?.toDouble() ?? 0.0,
+        metrics: Map<String, dynamic>.from(data['metrics'] ?? {}),
+        name: data['name'] ?? '',
+        latitude: data['location'].latitude ?? 0.1,
+        longitude: data['location'].longitude ?? 0.1,
+        phone_number: data['phone_number'] ?? 0,
+        relations: List<String>.from(data['relations']),
+        weight: data['weight'].toDouble() ?? 0,
+        role: data['role'],
+        emergency: Map<String, dynamic>.from(data['emergency']),
+        gender: data['gender'],
+        minimum_km: data['minimum_km'] ?? 0,
+        device_id: data['device_id']);
   }
 
   Map<String, dynamic> toMap() {
@@ -69,10 +70,11 @@ class UserModel {
       'phone_number': phone_number,
       'relations': relations,
       'weight': weight,
-      'role' : role,
-      'emergency' : emergency,
-      'gender' : gender,
-      'device_id': device_id
+      'role': role,
+      'emergency': emergency,
+      'gender': gender,
+      'device_id': device_id,
+      'minimum_km': minimum_km
     };
   }
 }
@@ -102,7 +104,8 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
 
-final userModelProvider = StreamProvider.family<UserModel?, String>((ref, userId) {
+final userModelProvider =
+    StreamProvider.family<UserModel?, String>((ref, userId) {
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.streamCurrentUser(userId).handleError((error) {
     print('Error streaming user data: $error');
@@ -110,8 +113,12 @@ final userModelProvider = StreamProvider.family<UserModel?, String>((ref, userId
   });
 });
 
-final supervisorModelProvider = StreamProviderFamily<List<UserModel>?, String>((ref, userId) {
-  return FirebaseFirestore.instance.collection('users').where('phone_number', isEqualTo: userId)
+final supervisorModelProvider =
+    StreamProviderFamily<List<UserModel>?, String>((ref, userId) {
+  return FirebaseFirestore.instance
+      .collection('users')
+      .where('phone_number', isEqualTo: userId)
       .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
 });
