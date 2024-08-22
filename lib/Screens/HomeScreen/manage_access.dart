@@ -100,14 +100,15 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   }
 
   void _showSupervisorDialog(int otp_num) async {
-    String phn = '+94965538193';
-    if (_phoneConn.text != phn) {
+    // String phn = '+94965538193';
+    if (_phoneConn.text != widget.phNo) {
       // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phoneConn.text;
       print(phonetoCheck);
       var usersCollection = FirebaseFirestore.instance.collection("users");
-      var ownerSnapshot =
-          await usersCollection.where('phone_number', isEqualTo: phn).get();
+      var ownerSnapshot = await usersCollection
+          .where('phone_number', isEqualTo: widget.phNo)
+          .get();
       if (ownerSnapshot.docs.isNotEmpty) {
         var docData = ownerSnapshot.docs.first.data();
         if (docData.containsKey('supervisors') &&
@@ -164,7 +165,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   Stream<List<Map<String, String>>> _fetchRelationDetails(String phNo) {
     return FirebaseFirestore.instance
         .collection('users')
-        .where('phone_number', isEqualTo: '+94965538193')
+        .where('phone_number', isEqualTo: phNo)
         .snapshots()
         .map((QuerySnapshot query) {
       List<Map<String, String>> supervisorsList = [];
@@ -367,10 +368,10 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                             final data = await FirebaseFirestore
                                                 .instance
                                                 .collection('users')
-                                                .where('phone_number',
-                                                    isEqualTo: '+94965538193')
                                                 // .where('phone_number',
-                                                //     isEqualTo: widget.phNo)
+                                                //     isEqualTo: '+94965538193')
+                                                .where('phone_number',
+                                                    isEqualTo: widget.phNo)
                                                 .get();
 
                                             if (data.docs.isNotEmpty) {
@@ -415,11 +416,11 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                                     .collection("users");
                                             var ownerSnapshot =
                                                 await usersCollection
-                                                    .where('phone_number',
-                                                        isEqualTo:
-                                                            '+94965538193')
                                                     // .where('phone_number',
-                                                    //     isEqualTo: widget.phNo)
+                                                    //     isEqualTo:
+                                                    //         '+94965538193')
+                                                    .where('phone_number',
+                                                        isEqualTo: widget.phNo)
                                                     .get();
 
                                             if (ownerSnapshot.docs.isNotEmpty) {
