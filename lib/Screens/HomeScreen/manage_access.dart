@@ -100,7 +100,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   }
 
   void _showSupervisorDialog(int otp_num) async {
-    // String phn = '+94965538193';
+    // String phn = '+94965538195';
+    // if (_phoneConn.text != phn) {
     if (_phoneConn.text != widget.phNo) {
       // _otpConn.text == otp_num.toString()) {
       String phonetoCheck = _phoneConn.text;
@@ -108,7 +109,9 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var ownerSnapshot = await usersCollection
           .where('phone_number', isEqualTo: widget.phNo)
+          .where('role', isEqualTo: 'watch wearer')
           .get();
+      // await usersCollection.where('phone_number', isEqualTo: phn).get();
       if (ownerSnapshot.docs.isNotEmpty) {
         var docData = ownerSnapshot.docs.first.data();
         if (docData.containsKey('supervisors') &&
@@ -166,6 +169,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     return FirebaseFirestore.instance
         .collection('users')
         .where('phone_number', isEqualTo: phNo)
+        // .where('phone_number', isEqualTo: '+94965538195')
         .snapshots()
         .map((QuerySnapshot query) {
       List<Map<String, String>> supervisorsList = [];
@@ -177,20 +181,15 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
               data['supervisors'] as Map<String, dynamic>;
 
           supervisorsList.addAll(supervisors.entries.map((e) {
-            // Ensure all fields are present and convert to string where necessary
             String phone = e.key;
-            String priority = e.value['priority']?.toString() ??
-                '0'; // Default to '0' if null
-            String status = e.value['status']?.toString() ??
-                'inactive'; // Default to 'inactive' if null
+            String priority = e.value['priority']?.toString() ?? '0';
+            String status = e.value['status']?.toString() ?? 'inactive';
             return {'phone': phone, 'priority': priority, 'status': status};
           }).toList());
         }
       }
 
-      // Ensure priority is sorted correctly
       supervisorsList.sort((a, b) {
-        // Convert priority to int for sorting
         int priorityA = int.tryParse(a['priority'] ?? '0') ?? 0;
         int priorityB = int.tryParse(b['priority'] ?? '0') ?? 0;
         return priorityA.compareTo(priorityB);
@@ -369,7 +368,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                                 .instance
                                                 .collection('users')
                                                 // .where('phone_number',
-                                                //     isEqualTo: '+94965538193')
+                                                //     isEqualTo: '+94965538195')
                                                 .where('phone_number',
                                                     isEqualTo: widget.phNo)
                                                 .get();
@@ -418,7 +417,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                                 await usersCollection
                                                     // .where('phone_number',
                                                     //     isEqualTo:
-                                                    //         '+94965538193')
+                                                    //         '+94965538195')
                                                     .where('phone_number',
                                                         isEqualTo: widget.phNo)
                                                     .get();

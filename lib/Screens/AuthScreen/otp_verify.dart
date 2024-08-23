@@ -76,6 +76,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         // print(phNo);
         var apiData = await BluetoothConnectionService().getApiData(phNo);
         int ownerStatus = 0;
+        int subscriptionStatus = 0;
         String deviceName = "";
         // print(apiData);
         if (apiData != null) {
@@ -96,6 +97,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   const SnackBar(content: Text("Device is not assigned!")));
             }
           } else if (isUserActive && deviceName != "") {
+            subscriptionStatus = 1;
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("Please Subscribe to use watch!")));
           }
@@ -120,21 +122,27 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             //         builder: (context) => const HomepageScreen(
             //               hasDeviceId: true,
             //             )));
-            Navigator.of(context, rootNavigator: true)
-                .pushReplacement(MaterialPageRoute(
+            Navigator.of(context, rootNavigator: true).pushReplacement(
+                MaterialPageRoute(
                     maintainState: true,
                     builder: (context) => RoleSelectionScreen(
-                          role: 'watch wearer',
-                          phNo: '',
-                        )));
+                        role: 'watch wearer',
+                        phNo: '',
+                        deviceId: '',
+                        status: '1',
+                        subscribe: subscriptionStatus)));
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
                 .updateStatus(active: false, deviceName: "", subscribed: false);
             Navigator.of(context, rootNavigator: true).pushReplacement(
                 MaterialPageRoute(
                     maintainState: true,
-                    builder: (context) =>
-                        RoleSelectionScreen(role: 'supervisor', phNo: phNo)));
+                    builder: (context) => RoleSelectionScreen(
+                        role: 'supervisor',
+                        phNo: phNo,
+                        deviceId: '',
+                        status: '1',
+                        subscribe: subscriptionStatus)));
             // Navigator.of(context, rootNavigator: true)
             //     .pushReplacement(MaterialPageRoute(
             //         maintainState: true,
@@ -155,11 +163,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 .updateStatus(active: false, deviceName: "", subscribed: false);
           }
           Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => SignupScreen(
-                    phNo: phNo,
-                    role: selected_role,
-                    deviceId: deviceName,
-                  )));
+              builder: (context) => RoleSelectionScreen(
+                  phNo: phNo,
+                  role: selected_role,
+                  deviceId: deviceName,
+                  status: '2',
+                  subscribe: subscriptionStatus)));
+          // Navigator.of(context).push(MaterialPageRoute(
+          //     builder: (context) => SignupScreen(
+          //           phNo: phNo,
+          //           role: selected_role,
+          //           deviceId: deviceName,
+          //         )));
         }
       } else {
         ScaffoldMessenger.of(context)

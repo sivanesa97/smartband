@@ -244,22 +244,14 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                             SizedBox(
                               width: width,
                               height: isEdit ? 50 : 40,
-                              child: isEdit
-                                  ? TextFormField(
-                                      controller: _contactController,
-                                      readOnly: true,
-                                      decoration: InputDecoration(
-                                        hintText: data.phone_number.toString(),
-                                      ),
-                                    )
-                                  : Text(
-                                      data.phone_number.toString(),
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.left,
-                                      style: TextStyle(
-                                          fontSize: width * 0.05,
-                                          color: Colors.black),
-                                    ),
+                              child: Text(
+                                data.phone_number.toString(),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                    fontSize: width * 0.05,
+                                    color: Colors.black),
+                              ),
                             )
                           ],
                         ),
@@ -578,7 +570,8 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                     .collection("users")
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
                                     .update({
-                                  "phone_number": _contactController.text,
+                                  "name": _nameController.text,
+                                  "email": _mailController.text,
                                   "gender": _selectedGender,
                                   "dob": _birthdayController.text,
                                   "height":
