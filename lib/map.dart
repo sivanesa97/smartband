@@ -34,8 +34,8 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
   void _onTap(TapPosition tapPosition, LatLng location) {
     setState(() {
       _selectedLocation = location;
-      _animateToLocation(
-          location, _zoomLevel); // Animate to the tapped location
+      // _mapController.move(location,
+      //     _mapController.zoom); // Move without changing the zoom level
     });
   }
 
