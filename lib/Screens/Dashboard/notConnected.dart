@@ -187,8 +187,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             }
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
-                                .where('relations',
-                                    arrayContains: "+94965538193")
+                                .where('phone_number',
+                                    isEqualTo: '+94965538193')
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -236,14 +236,32 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "timestamp": FieldValue.serverTimestamp()
                               });
 
-                              send.sendNotification(
-                                  i.data()['phone_number'].toString(),
-                                  "Emergency!!",
-                                  "Siva has clicked SOS Button from 0°N 0°E. Please respond");
-                              print("Message sent");
-                              String name = i.data()['name'].toString();
+                              Map<String, Map<String, dynamic>> supervisors =
+                                  Map<String, Map<String, dynamic>>.from(
+                                      i.data()['supervisors']);
+                              var filteredSupervisors = supervisors.entries
+                                  .where((entry) =>
+                                      entry.value['status'] == 'active')
+                                  .toList()
+                                ..sort((a, b) =>
+                                    int.parse(b.value['priority'].toString())
+                                        .compareTo(int.parse(
+                                            a.value['priority'].toString())));
+
+                              for (var supervisor in filteredSupervisors) {
+                                send.sendNotification(
+                                    supervisor.key,
+                                    "Emergency!!",
+                                    "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
+                                await Future.delayed(Duration(seconds: 30));
+                                print(
+                                    "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+                              }
+
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Sent Alert to $name")),
+                                SnackBar(
+                                    content: Text(
+                                        "Sent Alert to ${i.data()['name']}")),
                               );
                               FirebaseFirestore.instance
                                   .collection("emergency_alerts")
@@ -252,16 +270,18 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                   .listen((DocumentSnapshot doc) {
                                 if (doc.exists &&
                                     doc["responseStatus"] == true) {
+                                  String responderName =
+                                      i.data()['name'] ?? "User";
                                   setState(() {
                                     _isEmergency = false;
                                   });
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text("User Responded")),
+                                    SnackBar(
+                                      content: Text("$responderName Responded"),
+                                    ),
                                   );
                                 }
                               });
-                              await Future.delayed(Duration(seconds: 30));
                             }
 
                             if (attempt == 3) {
@@ -275,11 +295,11 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         }
                       }
 
-                      // await _handleSOSClick(true);
-                      setState(() {
-                        addDeviceBtn = true;
-                        scanForDevices(context);
-                      });
+                      await _handleSOSClick(true);
+                      // setState(() {
+                      //   addDeviceBtn = true;
+                      //   scanForDevices(context);
+                      // });
                     },
                     child: Align(
                       alignment: Alignment.center,

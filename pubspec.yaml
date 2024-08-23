@@ -35,7 +35,7 @@ dependencies:
   firebase_messaging: ^15.0.3
   firebase_analytics: ^11.2.0
   googleapis_auth: ^1.6.0
-  flutter_local_notifications: ^17.2.1+2
+  flutter_local_notifications: ^17.2.2
   flutter_background: ^1.2.0
   just_audio: ^0.9.39
   audio_session: ^0.1.21
@@ -49,6 +49,9 @@ dependencies:
   provider: ^6.1.2
   android_intent_plus: ^5.1.0
   google_maps_flutter: ^2.9.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -76,3 +79,5 @@ flutter:
     - assets/service_account.json
     - assets/sounds/security_alarm.mp3
     - assets/monitoring_person_background.png
+    - assets/image230.png
+    - assets/image231.png

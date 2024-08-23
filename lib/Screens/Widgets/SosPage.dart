@@ -19,6 +19,7 @@ class _SOSPageState extends State<SOSPage> {
   void initState() {
     super.initState();
     _initializeFirebase();
+    startCountdown();
   }
 
   Future<void> _initializeFirebase() async {
@@ -58,17 +59,19 @@ class _SOSPageState extends State<SOSPage> {
   }
 
   void startCountdown() {
-    setState(() {
-      countdown = 30;
-    });
     Future.delayed(Duration(seconds: 1), () {
-      if (countdown > 0) {
-        setState(() {
-          countdown--;
-        });
-        // startCountdown();
-      } else {
-        // Handle emergency call action here
+      if (mounted) {
+        if (countdown > 0) {
+          setState(() {
+            countdown--;
+          });
+          startCountdown();
+        } else {
+          if (mounted) {
+            FlutterOverlayWindow.closeOverlay();
+            Navigator.pop(context);
+          }
+        }
       }
     });
   }
@@ -112,6 +115,7 @@ class _SOSPageState extends State<SOSPage> {
 
     // Close the overlay window after updating
     FlutterOverlayWindow.closeOverlay();
+    Navigator.pop(context);
   }
 
   @override
@@ -212,6 +216,7 @@ class _SOSPageState extends State<SOSPage> {
                     print("closing overlay");
                     FlutterOverlayWindow.closeOverlay();
                     stopSound();
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

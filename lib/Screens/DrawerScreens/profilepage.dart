@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
+import 'package:smartband/map.dart';
 
 class Profilepage extends ConsumerStatefulWidget {
   const Profilepage({super.key});
@@ -26,8 +28,12 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
   TextEditingController _heightController = TextEditingController();
   TextEditingController _weightController = TextEditingController();
   TextEditingController _stepsgoalController = TextEditingController();
+  TextEditingController _locationController = TextEditingController();
+  TextEditingController _minKmController = TextEditingController();
+
   String _selectedGender = "";
   DateTime? _selectedDate;
+  LatLng? defaultLocation;
 
   Future<String> getLocation() async {
     Position location = await Geolocator.getCurrentPosition(
@@ -52,7 +58,8 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
-        _birthdayController.text = "${picked.year}-${picked.month.toString().padLeft(2,'0')}-${picked.day.toString().padLeft(2,'0')}";
+        _birthdayController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -70,14 +77,23 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
           var data1 = data.data();
           print(data1!['phone_number']);
           setState(() {
-            _nameController.text= data1['name'] ?? "";
-            _mailController.text= data1['email'] ?? "";
+            _nameController.text = data1['name'] ?? "";
+            _mailController.text = data1['email'] ?? "";
             _contactController.text = data1['phone_number'].toString() ?? '';
             _selectedGender = data1['gender'] ?? "Male";
             _birthdayController.text = data1['dob'] ?? '';
             _heightController.text = data1['height'].toString() ?? '';
             _weightController.text = data1['weight'].toString() ?? '';
             _stepsgoalController.text = data1['steps_goal'].toString();
+            _minKmController.text = (data1?['minimum_km'] ?? 0).toString();
+            if (data1['home_location'] is GeoPoint) {
+              GeoPoint geoPoint = data1['home_location'];
+              _locationController.text =
+                  formatLatLng(LatLng(geoPoint.latitude, geoPoint.longitude));
+              defaultLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
+            } else {
+              _locationController.text = data1['home_location'] ?? '';
+            }
           });
         } else {
           print('Document does not exist');
@@ -95,6 +111,15 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
     // TODO: implement initState
     super.initState();
     getData();
+  }
+
+  String formatLatLng(LatLng latLng) {
+    String latitude = latLng.latitude.toStringAsFixed(6);
+    String longitude = latLng.longitude.toStringAsFixed(6);
+    String latDirection = latLng.latitude >= 0 ? 'N' : 'S';
+    String longDirection = latLng.longitude >= 0 ? 'E' : 'W';
+
+    return '$latitude° $latDirection, $longitude° $longDirection';
   }
 
   @override
@@ -141,237 +166,341 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                             size: width * 0.35,
                           ),
                         ),
-
-                        SizedBox(height: 5,),
+                        SizedBox(
+                          height: 5,
+                        ),
                         Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Name",
-                              style:
-                              TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                              style: TextStyle(
+                                  color: Colors.grey, fontSize: width * 0.04),
                             ),
                             SizedBox(
                               width: width,
                               height: isEdit ? 50 : 40,
                               child: isEdit
                                   ? TextFormField(
-                                controller: _nameController,
-                                decoration: InputDecoration(
-                                  hintText: data!.name,
-                                ),
-                              )
+                                      controller: _nameController,
+                                      decoration: InputDecoration(
+                                        hintText: data!.name,
+                                      ),
+                                    )
                                   : Text(
-                                data!.name,
-                                textAlign: TextAlign.left,
-                                style: TextStyle(fontSize: width * 0.05),
-                              ),
+                                      data!.name,
+                                      textAlign: TextAlign.left,
+                                      style: TextStyle(fontSize: width * 0.05),
+                                    ),
                             )
                           ],
                         ),
-
-                        SizedBox(height: 5,),
+                        SizedBox(
+                          height: 5,
+                        ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               "Email Address",
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                              style: TextStyle(
+                                  color: Colors.grey, fontSize: width * 0.04),
                             ),
                             SizedBox(
                               width: width,
                               height: isEdit ? 50 : 40,
-                              child: isEdit ?
-                              TextFormField(
-                                controller: _mailController,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  hintText: data.email,
-                                ),
-                              )
-                              : Text(
-                                data.email,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: width * 0.05, color: Colors.black),
-                              ),
+                              child: isEdit
+                                  ? TextFormField(
+                                      controller: _mailController,
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        hintText: data.email,
+                                      ),
+                                    )
+                                  : Text(
+                                      data.email,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: width * 0.05,
+                                          color: Colors.black),
+                                    ),
                             )
                           ],
                         ),
-
-                        SizedBox(height: 5,),
+                        SizedBox(
+                          height: 5,
+                        ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               "Phone Number",
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                              style: TextStyle(
+                                  color: Colors.grey, fontSize: width * 0.04),
                             ),
                             SizedBox(
                               width: width,
                               height: isEdit ? 50 : 40,
-                              child: isEdit ?
-                              TextFormField(
-                                controller: _contactController,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  hintText: data.phone_number.toString(),
-                                ),
-                              ) : Text(
-                                data.phone_number.toString(),
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                    fontSize: width * 0.05, color: Colors.black),
-                              ),
+                              child: isEdit
+                                  ? TextFormField(
+                                      controller: _contactController,
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        hintText: data.phone_number.toString(),
+                                      ),
+                                    )
+                                  : Text(
+                                      data.phone_number.toString(),
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.left,
+                                      style: TextStyle(
+                                          fontSize: width * 0.05,
+                                          color: Colors.black),
+                                    ),
                             )
                           ],
                         ),
-
-                        if (data.role=='supervisor')
+                        if (data.role == 'supervisor')
                           SizedBox.shrink()
-                        else if (data.role=='watch wearer') ...[
-                          SizedBox(height: 5,),
+                        else if (data.role == 'watch wearer') ...[
+                          SizedBox(
+                            height: 5,
+                          ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Gender",
-                                style:
-                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
                               ),
                               SizedBox(
                                 width: width,
                                 height: isEdit ? 50 : 40,
                                 child: isEdit
                                     ? Center(
-                                  child: SizedBox(
-                                    width: width * 0.9,
-                                    child: DropdownButtonFormField<String>(
-                                      value: _selectedGender,
-                                      items: ['Male', 'Female', 'Other']
-                                          .map((String value) {
-                                        return DropdownMenuItem<String>(
-                                          value: value,
-                                          child: Text(value),
-                                        );
-                                      }).toList(),
-                                      onChanged: (String? newValue) {
-                                        setState(() {
-                                          _selectedGender = newValue!;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                )
+                                        child: SizedBox(
+                                          width: width * 0.9,
+                                          child:
+                                              DropdownButtonFormField<String>(
+                                            value: _selectedGender,
+                                            items: ['Male', 'Female', 'Other']
+                                                .map((String value) {
+                                              return DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Text(value),
+                                              );
+                                            }).toList(),
+                                            onChanged: (String? newValue) {
+                                              setState(() {
+                                                _selectedGender = newValue!;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      )
                                     : Text(
-                                  data.gender,
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(fontSize: width * 0.05),
-                                ),
+                                        data.gender,
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
                               )
                             ],
                           ),
-
-                          SizedBox(height: 5,),
+                          SizedBox(
+                            height: 5,
+                          ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Birthday",
-                                style:
-                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
                               ),
                               SizedBox(
                                 width: width,
                                 height: isEdit ? 50 : 40,
                                 child: isEdit
                                     ? TextFormField(
-                                  controller: _birthdayController,
-                                  decoration: InputDecoration(
-                                    suffixIcon: IconButton(
-                                      icon: Icon(Icons.calendar_today),
-                                      onPressed: () => _selectDate(context),
-                                    ),
-                                  ),
-                                  readOnly: true,
-                                )
+                                        controller: _birthdayController,
+                                        decoration: InputDecoration(
+                                          suffixIcon: IconButton(
+                                            icon: Icon(Icons.calendar_today),
+                                            onPressed: () =>
+                                                _selectDate(context),
+                                          ),
+                                        ),
+                                        readOnly: true,
+                                      )
                                     : Text(
-                                  data.dob,
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(fontSize: width * 0.05),
-                                ),
+                                        data.dob,
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
                               )
                             ],
                           ),
-
-                          SizedBox(height: 5,),
+                          SizedBox(
+                            height: 5,
+                          ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Height",
-                                style:
-                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
                               ),
                               SizedBox(
                                 width: width,
                                 height: isEdit ? 50 : 40,
                                 child: isEdit
                                     ? TextFormField(
-                                  controller: _heightController,
-                                  decoration: InputDecoration(
-                                    hintText: data.height.toString(),
-                                  ),
-                                )
+                                        controller: _heightController,
+                                        decoration: InputDecoration(
+                                          hintText: data.height.toString(),
+                                        ),
+                                      )
                                     : Text(
-                                  data.height.toString(),
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(fontSize: width * 0.05),
-                                ),
+                                        data.height.toString(),
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
                               )
                             ],
                           ),
-
-                          SizedBox(height: 5,),
+                          SizedBox(
+                            height: 5,
+                          ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 "Weight",
-                                style:
-                                TextStyle(color: Colors.grey, fontSize: width * 0.04),
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
                               ),
                               SizedBox(
                                 width: width,
                                 height: isEdit ? 50 : 40,
                                 child: isEdit
                                     ? TextFormField(
-                                  controller: _weightController,
-                                  decoration: InputDecoration(
-                                    hintText: data.weight.toString(),
-                                  ),
-                                )
+                                        controller: _weightController,
+                                        decoration: InputDecoration(
+                                          hintText: data.weight.toString(),
+                                        ),
+                                      )
                                     : Text(
-                                  data.weight.toString(),
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(fontSize: width * 0.05),
-                                ),
+                                        data.weight.toString(),
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
+                              )
+                            ],
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Location",
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                        controller: _locationController,
+                                        decoration: InputDecoration(
+                                          suffixIcon: IconButton(
+                                            icon: Icon(Icons.map),
+                                            onPressed: () async {
+                                              final result =
+                                                  await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MapSelectionScreen(
+                                                          defaultLocation:
+                                                              defaultLocation),
+                                                ),
+                                              );
+                                              if (result != null) {
+                                                setState(() {
+                                                  _locationController.text =
+                                                      formatLatLng(result);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        _locationController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                            fontSize: width * 0.05,
+                                            color: Colors.black),
+                                      ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 5,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Minimum KM",
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: width * 0.04),
+                              ),
+                              SizedBox(
+                                width: width,
+                                height: isEdit ? 50 : 40,
+                                child: isEdit
+                                    ? TextFormField(
+                                        controller: _minKmController,
+                                        decoration: InputDecoration(
+                                          hintText:
+                                              data.minimum_km?.toString() ?? '',
+                                        ),
+                                        keyboardType: TextInputType
+                                            .number, // To input numbers
+                                      )
+                                    : Text(
+                                        _minKmController.text,
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            TextStyle(fontSize: width * 0.05),
+                                      ),
                               )
                             ],
                           ),
                         ],
-
-                        SizedBox(height: 5,),
+                        SizedBox(
+                          height: 5,
+                        ),
                         Center(
                             child: Container(
                           width: width * 0.9,
@@ -420,19 +549,45 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                 }
                               }
                               if (!isEdit) {
+                                GeoPoint convertToGeoPoint(String location) {
+                                  RegExp regExp = RegExp(
+                                      r'(\d+\.\d+)° ([NS]), (\d+\.\d+)° ([EW])');
+                                  Match? match = regExp.firstMatch(location);
+
+                                  if (match != null) {
+                                    double latitude =
+                                        double.parse(match.group(1)!);
+                                    if (match.group(2) == 'S')
+                                      latitude = -latitude;
+
+                                    double longitude =
+                                        double.parse(match.group(3)!);
+                                    if (match.group(4) == 'W')
+                                      longitude = -longitude;
+
+                                    return GeoPoint(latitude, longitude);
+                                  }
+
+                                  throw FormatException(
+                                      'Invalid location format');
+                                }
+
+                                GeoPoint geoPoint =
+                                    convertToGeoPoint(_locationController.text);
                                 FirebaseFirestore.instance
                                     .collection("users")
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
                                     .update({
-                                  "phone_number":
-                                      _contactController.text,
-                                  "gender":
-                                      _selectedGender,
+                                  "phone_number": _contactController.text,
+                                  "gender": _selectedGender,
                                   "dob": _birthdayController.text,
                                   "height":
                                       double.parse(_heightController.text),
                                   "weight":
                                       double.parse(_weightController.text),
+                                  "home_location": geoPoint,
+                                  "minimum_km":
+                                      int.parse(_minKmController.text),
                                 });
                                 getData();
                               }

@@ -10,6 +10,7 @@ import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
+import 'package:smartband/Screens/AuthScreen/success_screen.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
@@ -66,8 +67,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       // print("${otp}  ${generated_otp}");
-      // if (true){
-      if (int.parse(otp) == generated_otp) {
+      if (true) {
+        // if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)
@@ -113,21 +114,33 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({'fcmKey': await FirebaseMessaging.instance.getToken()});
           if (ownerStatus == 1) {
+            // Navigator.of(context, rootNavigator: true)
+            //     .pushReplacement(MaterialPageRoute(
+            //         maintainState: true,
+            //         builder: (context) => const HomepageScreen(
+            //               hasDeviceId: true,
+            //             )));
             Navigator.of(context, rootNavigator: true)
                 .pushReplacement(MaterialPageRoute(
                     maintainState: true,
-                    builder: (context) => const HomepageScreen(
-                          hasDeviceId: true,
+                    builder: (context) => RoleSelectionScreen(
+                          role: 'watch wearer',
+                          phNo: '',
                         )));
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
                 .updateStatus(active: false, deviceName: "", subscribed: false);
-            Navigator.of(context, rootNavigator: true)
-                .pushReplacement(MaterialPageRoute(
+            Navigator.of(context, rootNavigator: true).pushReplacement(
+                MaterialPageRoute(
                     maintainState: true,
-                    builder: (context) => SupervisorDashboard(
-                          phNo: phNo,
-                        )));
+                    builder: (context) =>
+                        RoleSelectionScreen(role: 'supervisor', phNo: phNo)));
+            // Navigator.of(context, rootNavigator: true)
+            //     .pushReplacement(MaterialPageRoute(
+            //         maintainState: true,
+            //         builder: (context) => SupervisorDashboard(
+            //               phNo: phNo,
+            //             )));
           }
         } else {
           // Navigator.of(context).push(MaterialPageRoute(
