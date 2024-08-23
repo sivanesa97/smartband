@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
         androidConfig: const FlutterBackgroundAndroidConfig(
           notificationTitle: "Background Service",
           notificationText: "Playing sound in the background",
-          notificationImportance: AndroidNotificationImportance.Default,
+          notificationImportance: AndroidNotificationImportance.max,
           enableWifiLock: true,
         ),
       );

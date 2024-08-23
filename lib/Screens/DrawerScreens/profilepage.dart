@@ -21,15 +21,15 @@ class Profilepage extends ConsumerStatefulWidget {
 
 class _ProfilepageState extends ConsumerState<Profilepage> {
   bool isEdit = false;
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _mailController = TextEditingController();
-  TextEditingController _contactController = TextEditingController();
-  TextEditingController _birthdayController = TextEditingController();
-  TextEditingController _heightController = TextEditingController();
-  TextEditingController _weightController = TextEditingController();
-  TextEditingController _stepsgoalController = TextEditingController();
-  TextEditingController _locationController = TextEditingController();
-  TextEditingController _minKmController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _mailController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _birthdayController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _stepsgoalController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _minKmController = TextEditingController();
 
   String _selectedGender = "";
   DateTime? _selectedDate;
@@ -156,7 +156,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
               return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 15.0),
                   child: Container(
-                    height: height,
+                    // height: height,
                     child: Column(
                       children: [
                         Center(
