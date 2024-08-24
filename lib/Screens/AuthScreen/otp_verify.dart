@@ -76,7 +76,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         // print(phNo);
         var apiData = await BluetoothConnectionService().getApiData(phNo);
         int ownerStatus = 0;
-        int subscriptionStatus = 0;
+        int subscriptionStatus = 1;
         String deviceName = "";
         // print(apiData);
         if (apiData != null) {
