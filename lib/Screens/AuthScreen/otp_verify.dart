@@ -67,8 +67,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       // print("${otp}  ${generated_otp}");
-      if (true) {
-        // if (int.parse(otp) == generated_otp) {
+      // if (true) {
+        if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)
@@ -91,7 +91,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ownerStatus = 1;
               Provider.of<SubscriptionDataProvider>(context, listen: false)
                   .updateStatus(
-                      active: true, deviceName: deviceName, subscribed: true);
+                      active: true, deviceName: deviceName, subscribed: true, phoneNumber: widget.phoneNumber);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Device is not assigned!")));
@@ -133,7 +133,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         subscribe: subscriptionStatus)));
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
-                .updateStatus(active: false, deviceName: "", subscribed: false);
+                .updateStatus(active: false, deviceName: "", subscribed: false, phoneNumber: widget.phoneNumber);
             Navigator.of(context, rootNavigator: true).pushReplacement(
                 MaterialPageRoute(
                     maintainState: true,
@@ -160,7 +160,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             selected_role = "watch wearer";
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
-                .updateStatus(active: false, deviceName: "", subscribed: false);
+                .updateStatus(active: false, deviceName: "", subscribed: false, phoneNumber: widget.phoneNumber);
           }
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => RoleSelectionScreen(
