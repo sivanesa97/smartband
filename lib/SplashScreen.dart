@@ -179,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen>
               .doc(user.uid)
               .get();
           print(data.data());
-          var phoneNumber = data.data()?['phone_number'];
+          var phoneNumber = data.data()?['phone_number'] ?? "";
 
           var apiData =
               await BluetoothConnectionService().getApiData(phoneNumber);
@@ -213,7 +213,7 @@ class _SplashScreenState extends State<SplashScreen>
           if (ownerStatus == 1) {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
                 .updateStatus(
-                    active: true, deviceName: deviceName, subscribed: true);
+                    active: true, deviceName: deviceName, subscribed: true, phoneNumber: phoneNumber);
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => HomepageScreen(hasDeviceId: true),
@@ -222,7 +222,7 @@ class _SplashScreenState extends State<SplashScreen>
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
                 .updateStatus(
-                    active: false, deviceName: "", subscribed: false);
+                    active: false, deviceName: "", subscribed: false, phoneNumber: phoneNumber);
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) => SupervisorDashboard(phNo: phoneNumber),

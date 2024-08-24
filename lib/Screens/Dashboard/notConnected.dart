@@ -179,8 +179,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                   .doc(FirebaseAuth.instance.currentUser!.uid)
                                   .update({
                                 "metrics": {
-                                  "spo2": "168",
-                                  "heart_rate": "200",
+                                  "spo2": "94",
+                                  "heart_rate": "122",
                                   "fall_axis": "-- -- --"
                                 }
                               });
@@ -188,7 +188,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
                                 .where('phone_number',
-                                    isEqualTo: '+94965538193')
+                                    isEqualTo: '+94965538195')
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -295,11 +295,11 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         }
                       }
 
-                      await _handleSOSClick(true);
-                      // setState(() {
-                      //   addDeviceBtn = true;
-                      //   scanForDevices(context);
-                      // });
+                      // await _handleSOSClick(true);
+                      setState(() {
+                        addDeviceBtn = true;
+                        scanForDevices(context);
+                      });
                     },
                     child: Align(
                       alignment: Alignment.center,

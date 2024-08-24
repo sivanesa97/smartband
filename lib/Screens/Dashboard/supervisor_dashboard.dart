@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
@@ -30,6 +31,7 @@ class SupervisorDashboard extends ConsumerStatefulWidget {
 class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String dropdownValue = 'No Users';
   int _selectedIndex = 0;
+  String ownerPhoneNo = "";
 
   @override
   void initState() {
@@ -53,7 +55,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           .where('phone_number', isEqualTo: i)
           .get();
       if (userDoc.docs.isNotEmpty) {
-        relationDetails.add(userDoc.docs.first.data());
+        if (userDoc.docs.first.data()['supervisors'][widget.phNo]['status'] ==
+            'active') {
+          relationDetails.add(userDoc.docs.first.data());
+        }
       }
     }
     return relationDetails;
@@ -112,8 +117,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
   void _showSupervisorDialog(int otp_num) async {
     // String phn = '+94735833006';
-    if (_phNoConn.text != widget.phNo) {
-      String phonetoCheck = _phNoConn.text;
+    if (ownerPhoneNo != widget.phNo) {
+      String phonetoCheck = ownerPhoneNo;
       print(phonetoCheck);
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var ownerSnapshot = await usersCollection
@@ -137,12 +142,16 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
         supervisors[widget.phNo] = {
           'priority': newPriority.toString(),
-          'status': 'inactive',
+          'status': 'active',
         };
 
         await ownerSnapshot.docs.first.reference.update({
           'supervisors': supervisors,
         });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Phone No does not exists!")));
+        return;
       }
 
       var querySnapshot = await usersCollection
@@ -190,7 +199,20 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _selectedRole == "supervisor"
-                        ? TextFormField(
+                        ? IntlPhoneField(
+                            // decoration: InputDecoration(
+                            //   border: const OutlineInputBorder(
+                            //     borderRadius: BorderRadius.all(Radius.circular(30))
+                            //   ),
+                            //   hintText: "Enter your Phone Number",
+                            //   suffixIcon: RegExp(r'^(?!([0-9])\1{9,})(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?[\d\s-]{7,10}$').hasMatch(_phoneController.text) ? Icon(Icons.check, color: Colors.green,) : Icon(Icons.close, color: Colors.red,)
+                            // ),
+                            onChanged: (phone) => {
+                              setState(() {
+                                ownerPhoneNo = phone.completeNumber;
+                              })
+                            },
+                            initialCountryCode: 'LK',
                             controller: _phNoConn,
                             decoration: InputDecoration(
                                 border: const OutlineInputBorder(),
@@ -198,8 +220,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                 suffixIcon: IconButton(
                                     onPressed: () {
                                       sent = true;
-                                      _fetchPhoneDetails(
-                                          _phNoConn.text, otp_num);
+                                      _fetchPhoneDetails(ownerPhoneNo, otp_num);
                                     },
                                     icon:
                                         Icon(sent ? Icons.check : Icons.send))),

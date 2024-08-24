@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
 
 import '../Models/usermodel.dart';
@@ -19,18 +20,21 @@ class ManageAccess extends ConsumerStatefulWidget {
 
 class _ManageAccessState extends ConsumerState<ManageAccess> {
   String? _selectedRole = "supervisor";
+  String supervisorPhoneNo = "";
   final TextEditingController _phoneConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
   final TextEditingController _priorityInputController =
       TextEditingController();
 
-  void _showRoleDialog({String? phoneNumber, String? priority}) {
+  void _showRoleDialog(
+      {String? phoneNumber, String? priority, String? status}) {
     bool sent = false;
+    String activeStatus = status ?? 'active';
     int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
 
     // If editing, pre-fill the phone number and priority fields
     if (phoneNumber != null && priority != null) {
-      _phoneConn.text = phoneNumber;
+      _phoneConn.text = phoneNumber.substring(3, phoneNumber.length);
       _priorityInputController.text = priority;
     }
 
@@ -45,15 +49,21 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextFormField(
+                    IntlPhoneField(
+                      initialCountryCode: 'LK',
                       controller: _phoneConn,
+                      onChanged: (phone) => {
+                        setState(() {
+                          supervisorPhoneNo = phone.completeNumber;
+                        })
+                      },
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: 'Phone Number',
                         suffixIcon: IconButton(
                           onPressed: () {
                             sent = true;
-                            _fetchPhoneDetails(_phoneConn.text, otp_num);
+                            _fetchPhoneDetails(supervisorPhoneNo, otp_num);
                           },
                           icon: Icon(sent ? Icons.check : Icons.send),
                         ),
@@ -75,6 +85,35 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                         labelText: 'Priority',
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            activeStatus == 'active' ? 'Active' : 'Inactive',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: activeStatus == 'active'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                          Switch(
+                            value: activeStatus == 'active',
+                            activeColor: Colors.blue,
+                            onChanged: (bool newValue) async {
+                              setState(() {
+                                activeStatus = newValue ? 'active' : 'inactive';
+                              });
+                              print(newValue);
+                            },
+                          ),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
@@ -88,7 +127,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                 TextButton(
                   child: const Text('OK'),
                   onPressed: () {
-                    _showSupervisorDialog(otp_num);
+                    _showSupervisorDialog(otp_num, activeStatus);
                   },
                 ),
               ],
@@ -99,17 +138,17 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     );
   }
 
-  void _showSupervisorDialog(int otp_num) async {
+  void _showSupervisorDialog(int otp_num, String activeStatus) async {
     // String phn = '+94965538195';
     // if (_phoneConn.text != phn) {
-    if (_phoneConn.text != widget.phNo) {
+    if (supervisorPhoneNo != widget.phNo) {
       // _otpConn.text == otp_num.toString()) {
-      String phonetoCheck = _phoneConn.text;
+      String phonetoCheck = supervisorPhoneNo;
       print(phonetoCheck);
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var ownerSnapshot = await usersCollection
           .where('phone_number', isEqualTo: widget.phNo)
-          .where('role', isEqualTo: 'watch wearer')
+          // .where('role', isEqualTo: 'watch wearer')
           .get();
       // await usersCollection.where('phone_number', isEqualTo: phn).get();
       if (ownerSnapshot.docs.isNotEmpty) {
@@ -122,7 +161,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                 Map<String, dynamic>.from(docData['supervisors']);
             supervisors[phonetoCheck] = {
               'priority': _priorityInputController.text,
-              'status': 'active'
+              'status': activeStatus
             };
 
             await ownerSnapshot.docs.first.reference.update({
@@ -134,7 +173,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
             'supervisors': {
               phonetoCheck: {
                 'priority': _priorityInputController.text,
-                'status': 'active'
+                'status': activeStatus
               }
             }
           }, SetOptions(merge: true));
@@ -156,7 +195,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("Phone number does not exist in the collection.")));
       }
-    } else if (_phoneConn.text == widget.phNo) {
+    } else if (supervisorPhoneNo == widget.phNo) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Please enter a different number")));
     } else {
@@ -166,6 +205,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   }
 
   Stream<List<Map<String, String>>> _fetchRelationDetails(String phNo) {
+    print(phNo);
     return FirebaseFirestore.instance
         .collection('users')
         .where('phone_number', isEqualTo: phNo)
@@ -173,6 +213,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         .snapshots()
         .map((QuerySnapshot query) {
       List<Map<String, String>> supervisorsList = [];
+      // print(query.docs.length);
       for (var doc in query.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -263,34 +304,34 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         child: SafeArea(
           child: Column(
             children: [
-              Row(
-                children: [
-                  SizedBox(width: width * 0.6),
-                  Text(
-                    "Edit",
-                    style: TextStyle(
-                      fontSize: width * 0.04,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: width * 0.04),
-                  Text(
-                    "Delete",
-                    style: TextStyle(
-                      fontSize: width * 0.04,
-                      color: Colors.black,
-                    ),
-                  ),
-                  SizedBox(width: width * 0.04),
-                  Text(
-                    "Status",
-                    style: TextStyle(
-                      fontSize: width * 0.04,
-                      color: Colors.black,
-                    ),
-                  )
-                ],
-              ),
+              // Row(
+              //   children: [
+              //     SizedBox(width: width * 0.6),
+              //     Text(
+              //       "Edit",
+              //       style: TextStyle(
+              //         fontSize: width * 0.04,
+              //         color: Colors.white,
+              //       ),
+              //     ),
+              //     SizedBox(width: width * 0.04),
+              //     Text(
+              //       "Delete",
+              //       style: TextStyle(
+              //         fontSize: width * 0.04,
+              //         color: Colors.black,
+              //       ),
+              //     ),
+              //     SizedBox(width: width * 0.04),
+              //     Text(
+              //       "Status",
+              //       style: TextStyle(
+              //         fontSize: width * 0.04,
+              //         color: Colors.black,
+              //       ),
+              //     )
+              //   ],
+              // ),
               userData.when(
                 data: (data) {
                   return StreamBuilder<List<Map<String, dynamic>>>(
@@ -338,7 +379,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                         ),
                                         SizedBox(width: width * 0.01),
                                         SizedBox(
-                                          width: width * 0.4,
+                                          width: width * 0.45,
                                           child: Text(
                                             phone,
                                             overflow: TextOverflow.ellipsis,
@@ -351,9 +392,13 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                         SizedBox(width: width * 0.05),
                                         GestureDetector(
                                           onTap: () {
+                                            setState(() {
+                                              supervisorPhoneNo = phone;
+                                            });
                                             _showRoleDialog(
                                               phoneNumber: phone,
                                               priority: priority,
+                                              status: status,
                                             );
                                           },
                                           child: const Icon(
@@ -398,55 +443,6 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                           ),
                                         ),
                                         SizedBox(width: width * 0.06),
-                                        Switch(
-                                          value:
-                                              status == 'active' ? true : false,
-                                          activeColor: Colors.blue,
-                                          onChanged: (bool newValue) async {
-                                            setState(() {
-                                              relationDetail['status'] =
-                                                  newValue == true
-                                                      ? 'active'
-                                                      : 'inactive';
-                                            });
-                                            print(newValue);
-                                            var usersCollection =
-                                                FirebaseFirestore.instance
-                                                    .collection("users");
-                                            var ownerSnapshot =
-                                                await usersCollection
-                                                    // .where('phone_number',
-                                                    //     isEqualTo:
-                                                    //         '+94965538195')
-                                                    .where('phone_number',
-                                                        isEqualTo: widget.phNo)
-                                                    .get();
-
-                                            if (ownerSnapshot.docs.isNotEmpty) {
-                                              var docData = ownerSnapshot
-                                                  .docs.first
-                                                  .data();
-                                              if (docData
-                                                  .containsKey('supervisors')) {
-                                                Map<String, dynamic>
-                                                    supervisors =
-                                                    Map<String, dynamic>.from(
-                                                        docData['supervisors']);
-                                                supervisors[phone] = {
-                                                  'priority': priority,
-                                                  'status':
-                                                      relationDetail['status']
-                                                };
-                                                await ownerSnapshot
-                                                    .docs.first.reference
-                                                    .update({
-                                                  'supervisors': supervisors,
-                                                });
-                                              }
-                                            }
-                                          },
-                                        ),
-                                        SizedBox(width: width * 0.06),
                                         // Icon(
                                         //   Icons.toggle_on,
                                         //   color: Colors.green,
@@ -459,6 +455,10 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                               )),
                           GestureDetector(
                             onTap: () {
+                              setState(() {
+                                supervisorPhoneNo = '';
+                                _phoneConn.text = "";
+                              });
                               _showRoleDialog();
                             },
                             child: Container(

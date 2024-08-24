@@ -23,15 +23,15 @@ class Spo2Screen extends ConsumerStatefulWidget {
 class _Spo2ScreenState extends ConsumerState<Spo2Screen> {
   final BluetoothDeviceManager bluetoothDeviceManager =
       BluetoothDeviceManager();
-  Position location_new = const Position(
-      latitude: 12.239842,
-      longitude: 80.247384,
-      timestamp: null,
-      accuracy: 1.0,
-      altitude: 1.0,
-      heading: 1.0,
-      speed: 1.0,
-      speedAccuracy: 1.0);
+  // Position location_new = const Position(
+  //     latitude: 12.239842,
+  //     longitude: 80.247384,
+  //     timestamp: null,
+  //     accuracy: 1.0,
+  //     altitude: 1.0,
+  //     heading: 1.0,
+  //     speed: 1.0,
+  //     speedAccuracy: 1.0);
 
   @override
   void initState() {

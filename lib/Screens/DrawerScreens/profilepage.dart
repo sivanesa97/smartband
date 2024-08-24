@@ -463,7 +463,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "Minimum KM",
+                                "Geo Fencing Limit KM",
                                 style: TextStyle(
                                     color: Colors.grey, fontSize: width * 0.04),
                               ),

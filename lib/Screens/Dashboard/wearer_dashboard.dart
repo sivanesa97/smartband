@@ -129,8 +129,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             .doc(FirebaseAuth.instance.currentUser!.uid)
             .update({
           "metrics": {
-            "spo2": values[2].toString(),
-            "heart_rate": values[1].toString(),
+            "spo2": values[1].toString(),
+            "heart_rate": values[0].toString(),
             "fall_axis": "-- -- --"
           }
         });

@@ -179,7 +179,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           MaterialPageRoute(
                               maintainState: true,
                               builder: (context) =>
-                                  SupervisorDashboard(phNo: widget.phNo)));
+                                  SupervisorDashboard(phNo: subscriptionStatus.phoneNumber)));
                     },
                     child: const ListTile(
                       leading: Icon(
@@ -228,7 +228,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                 .push(MaterialPageRoute(
                                     maintainState: true,
                                     builder: (context) => ManageAccess(
-                                          phNo: widget.phNo,
+                                          phNo: subscriptionStatus.phoneNumber,
                                         )));
                           },
                           child: const ListTile(
@@ -261,7 +261,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           .push(MaterialPageRoute(
                               maintainState: true,
                               builder: (context) => Aboutus(
-                                    phNo: widget.phNo,
+                                    phNo: subscriptionStatus.phoneNumber,
                                   )));
                     },
                     child: const ListTile(
@@ -297,7 +297,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           .push(MaterialPageRoute(
                               maintainState: true,
                               builder: (context) => Reportproblem(
-                                    phNo: widget.phNo,
+                                    phNo: subscriptionStatus.phoneNumber,
                                   )));
                     },
                     child: const ListTile(
