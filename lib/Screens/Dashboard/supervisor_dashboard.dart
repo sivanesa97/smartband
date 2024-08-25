@@ -283,6 +283,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => PhoneSignIn()),
               (Route<dynamic> route) => false);
+          setState(() {
+            _isSubscriptionFetched = true;
+          });
           return;
         }
       } else {
@@ -294,9 +297,15 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => PhoneSignIn()),
             (Route<dynamic> route) => false);
+        setState(() {
+          _isSubscriptionFetched = true;
+        });
         return;
       }
     } else {
+      setState(() {
+        _isSubscriptionFetched = true;
+      });
       print(response.statusCode);
     }
   }
@@ -428,9 +437,15 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
+                setState(() {
+                  _isSubscriptionFetched = false;
+                });
                 return Center(
                     child: CircularProgressIndicator(color: Colors.blueAccent));
               } else if (snapshot.hasError) {
+                setState(() {
+                  _isSubscriptionFetched = false;
+                });
                 return Center(child: Text("Error fetching relation details"));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
