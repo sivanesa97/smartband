@@ -301,8 +301,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({
             "metrics": {
-              "spo2": "94",
-              "heart_rate": "120",
+              "spo2": "168",
+              "heart_rate": "200",
               "fall_axis": "-- -- --"
             }
           });

@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   final String role;
   final String phNo;
   final String deviceId;
   final String status;
-  final int subscribe;
 
   RoleSelectionScreen({
     required this.role,
     required this.phNo,
     required this.deviceId,
     required this.status,
-    required this.subscribe,
   });
 
   @override
@@ -23,15 +24,21 @@ class RoleSelectionScreen extends StatefulWidget {
 }
 
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
-  @override
-  void initState() {
-    super.initState();
+  bool _dialogShown = false;
 
-    // Show alert automatically if subscription status is 1
-    if (widget.subscribe == 1) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final subscriptionStatus = Provider.of<SubscriptionDataProvider>(context);
+
+    if (!subscriptionStatus.isSubscribed &&
+        !_dialogShown &&
+        widget.role == 'watch wearer') {
+      _dialogShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) {
             return AlertDialog(
               contentPadding: EdgeInsets.zero,
@@ -39,19 +46,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Close button at the top-right
                   Align(
                     alignment: Alignment.topRight,
                     child: IconButton(
-                      icon: Icon(Icons.close),
+                      icon: const Icon(Icons.close),
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close the dialog
                       },
                     ),
                   ),
-                  // Title text on the next line
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'Make Sure Your Subscription',
                       textAlign: TextAlign.center,
@@ -61,27 +66,69 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16),
-                  // Content text
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  const SizedBox(height: 16),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'Take the first step towards a healthier and happier life',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 20),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        const url = 'https://longlife.lk/subscription/';
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+                      },
+                      child: const Text(
+                        'Subscribe',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.height * 0.05,
+                          vertical: MediaQuery.of(context).size.width * 0.02,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () async {
+                        const url = 'https://longlife.lk/contact-us/';
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+                      },
+                      child: const Text(
+                        'Need Support?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
-              // actions: [
-              //   TextButton(
-              //     onPressed: () {
-              //       Navigator.of(context).pop();
-              //     },
-              //     child: Text('OK'),
-              //   ),
-              // ],
             );
           },
         );
@@ -113,11 +160,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: EdgeInsets.symmetric(vertical: 20),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Text(
                 person,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -137,11 +184,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   color: Colors.green,
                   size: screenWidth * 0.3,
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
                   'Logged in successfully\nas a $person',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 SizedBox(height: screenHeight * 0.3),
                 ElevatedButton(
@@ -171,7 +218,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               )));
                     }
                   },
-                  child: Text(
+                  child: const Text(
                     'Continue',
                     textAlign: TextAlign.center,
                     style: TextStyle(

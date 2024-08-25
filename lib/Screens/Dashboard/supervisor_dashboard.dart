@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
@@ -31,7 +30,6 @@ class SupervisorDashboard extends ConsumerStatefulWidget {
 class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String dropdownValue = 'No Users';
   int _selectedIndex = 0;
-  String ownerPhoneNo = "";
 
   @override
   void initState() {
@@ -45,6 +43,38 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     });
   }
 
+  // Function to show supervisor dialog and handle OTP verification
+  void _showSupervisorDialog(int otp_num) async {
+    if (_phNoConn.text != widget.phNo) {
+      // _otpConn.text == otp_num.toString()) {
+      String phonetoCheck = _phNoConn.text;
+      var usersCollection = FirebaseFirestore.instance.collection("users");
+      var querySnapshot = await usersCollection
+          .where('phone_number', isEqualTo: widget.phNo)
+          .get();
+
+      final docs1 = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone_number', isEqualTo: phonetoCheck)
+          .get();
+      if (docs1.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Phone Number does not exist in the collection.")));
+      } else if (querySnapshot.docs.isNotEmpty) {
+        await usersCollection
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .update({
+          "relations": FieldValue.arrayUnion([phonetoCheck])
+        });
+
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+    }
+  }
+
   // Function to fetch relation details where current user email is in relations array
   Future<List<Map<String, dynamic>>> _fetchRelationDetails(
       List<String> phoneNumber) async {
@@ -55,10 +85,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           .where('phone_number', isEqualTo: i)
           .get();
       if (userDoc.docs.isNotEmpty) {
-        if (userDoc.docs.first.data()['supervisors'][widget.phNo]['status'] ==
-            'active') {
-          relationDetails.add(userDoc.docs.first.data());
-        }
+        relationDetails.add(userDoc.docs.first.data());
       }
     }
     return relationDetails;
@@ -115,71 +142,6 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     }
   }
 
-  void _showSupervisorDialog(int otp_num) async {
-    // String phn = '+94735833006';
-    if (ownerPhoneNo != widget.phNo) {
-      String phonetoCheck = ownerPhoneNo;
-      print(phonetoCheck);
-      var usersCollection = FirebaseFirestore.instance.collection("users");
-      var ownerSnapshot = await usersCollection
-          .where('phone_number', isEqualTo: phonetoCheck)
-          .where('role', isEqualTo: 'watch wearer')
-          .get();
-
-      if (ownerSnapshot.docs.isNotEmpty) {
-        var docData = ownerSnapshot.docs.first.data();
-        Map<String, dynamic> supervisors =
-            Map<String, dynamic>.from(docData['supervisors'] ?? {});
-
-        int highestPriority = 0;
-        if (supervisors.isNotEmpty) {
-          highestPriority = supervisors.values.map((s) {
-            return int.tryParse(s['priority']) ?? 0;
-          }).reduce((a, b) => a > b ? a : b);
-        }
-
-        int newPriority = highestPriority + 1;
-
-        supervisors[widget.phNo] = {
-          'priority': newPriority.toString(),
-          'status': 'active',
-        };
-
-        await ownerSnapshot.docs.first.reference.update({
-          'supervisors': supervisors,
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Phone No does not exists!")));
-        return;
-      }
-
-      var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: widget.phNo)
-          // .where('phone_number', isEqualTo: phn)
-          .get();
-      if (querySnapshot.docs.isNotEmpty) {
-        var data = querySnapshot.docs.first.data()['relations'];
-        print(data);
-        await querySnapshot.docs.first.reference.update({
-          // "relations": FieldValue.arrayUnion([widget.phNo.toString()])
-          "relations": FieldValue.arrayUnion([phonetoCheck.toString()])
-        });
-
-        Navigator.of(context, rootNavigator: true).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Phone number does not exist in the collection.")));
-      }
-    } else if (_phNoConn.text == widget.phNo) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter a different number")));
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
-    }
-  }
-
   String? _selectedRole = "supervisor";
   final TextEditingController _phNoConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
@@ -199,28 +161,16 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _selectedRole == "supervisor"
-                        ? IntlPhoneField(
-                            // decoration: InputDecoration(
-                            //   border: const OutlineInputBorder(
-                            //     borderRadius: BorderRadius.all(Radius.circular(30))
-                            //   ),
-                            //   hintText: "Enter your Phone Number",
-                            //   suffixIcon: RegExp(r'^(?!([0-9])\1{9,})(\+?\d{1,4}[\s-]?)?(\(?\d{3}\)?[\s-]?)?[\d\s-]{7,10}$').hasMatch(_phoneController.text) ? Icon(Icons.check, color: Colors.green,) : Icon(Icons.close, color: Colors.red,)
-                            // ),
-                            onChanged: (phone) => {
-                              setState(() {
-                                ownerPhoneNo = phone.completeNumber;
-                              })
-                            },
-                            initialCountryCode: 'LK',
+                        ? TextFormField(
                             controller: _phNoConn,
                             decoration: InputDecoration(
-                                border: const OutlineInputBorder(),
+                                border: OutlineInputBorder(),
                                 labelText: 'Phone Number',
                                 suffixIcon: IconButton(
                                     onPressed: () {
                                       sent = true;
-                                      _fetchPhoneDetails(ownerPhoneNo, otp_num);
+                                      _fetchPhoneDetails(
+                                          _phNoConn.text, otp_num);
                                     },
                                     icon:
                                         Icon(sent ? Icons.check : Icons.send))),
@@ -310,49 +260,69 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     final user_data =
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
 
+    final width = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         surfaceTintColor: Colors.white,
         backgroundColor: Colors.white,
-        leading: Builder(
-          builder: (BuildContext context) {
-            return GestureDetector(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 5),
+          child: Builder(
+            builder: (context) => GestureDetector(
               onTap: () {
                 Scaffold.of(context).openDrawer();
               },
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CircleAvatar(
-                  backgroundImage: NetworkImage(
-                    FirebaseAuth.instance.currentUser!.photoURL ??
-                        "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
-                  ),
-                ),
-              ),
-            );
-          },
+              child: const Icon(Icons.menu, size: 30),
+            ),
+          ),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            user_data.when(data: (user) {
-              return HeaderText(user!.name);
-            }, error: (Object error, StackTrace stackTrace) {
-              return HeaderText("User");
-            }, loading: () {
-              return HeaderText("User");
-            }),
+            Row(
+              children: [
+                user_data.when(data: (user) {
+                  return HeaderText(user!.name);
+                }, error: (Object error, StackTrace stackTrace) {
+                  return HeaderText("User");
+                }, loading: () {
+                  return HeaderText("User");
+                }),
+                const Icon(Icons.keyboard_arrow_down),
+              ],
+            ),
             Text(
-              getGreetingMessage(),
+              DateTime.now().hour > 12
+                  ? DateTime.now().hour > 16
+                      ? "Good Evening ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                            2,
+                          )}"
+                      : "Good Afternoon ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                            2,
+                          )}"
+                  : "Good Morning ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
+                        2,
+                      )}",
               style: TextStyle(
-                fontSize: 12,
+                fontSize: width * 0.04,
                 color: Colors.grey[600],
               ),
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.add_circle_outline,
+              size: 30,
+            ),
+            onPressed: () {
+              _showRoleDialog();
+            },
+            tooltip: 'Add User',
+          ),
           GestureDetector(
             onTap: () async {
               Navigator.of(context, rootNavigator: true).push(
@@ -377,11 +347,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
+                return Center(
                     child: CircularProgressIndicator(color: Colors.blueAccent));
               } else if (snapshot.hasError) {
-                return const Center(
-                    child: Text("Error fetching relation details"));
+                return Center(child: Text("Error fetching relation details"));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
                 if (dropdownValue == 'No Users') {
@@ -397,68 +366,84 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                       height: MediaQuery.of(context).size.height * 0.1,
                       width: MediaQuery.of(context).size.width * 0.95,
                       child: Center(
-                        child: DropdownButton<String>(
-                          value: dropdownValue,
-                          isExpanded: true,
-                          itemHeight: 100,
-                          underline: const SizedBox(),
-                          icon: const Icon(Icons.arrow_drop_down_sharp),
-                          style: const TextStyle(color: Colors.white),
-                          onChanged: (String? value) {
-                            setState(() {
-                              dropdownValue = value!;
-                            });
-                          },
-                          items: relationDetails.map<DropdownMenuItem<String>>(
-                              (Map<String, dynamic> relation) {
-                            return DropdownMenuItem<String>(
-                              value: relation['phone_number'].toString(),
-                              child: Padding(
-                                padding: const EdgeInsets.all(5),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: const Color.fromRGBO(0, 83, 188, 1)
-                                        .withOpacity(0.5),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const CircleAvatar(
-                                          radius: 30.0,
-                                          backgroundColor: Colors.transparent,
-                                          child: Icon(
-                                            Icons.account_circle_outlined,
-                                            size: 35,
-                                            color: Colors.white,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButton<String>(
+                                value: dropdownValue,
+                                isExpanded: true,
+                                itemHeight: 100,
+                                underline: const SizedBox(),
+                                icon: const Icon(Icons.arrow_drop_down_sharp),
+                                style: const TextStyle(color: Colors.white),
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    dropdownValue = value!;
+                                  });
+                                },
+                                items: relationDetails
+                                    .map<DropdownMenuItem<String>>(
+                                  (Map<String, dynamic> relation) {
+                                    return DropdownMenuItem<String>(
+                                      value:
+                                          relation['phone_number'].toString(),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(5),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            color: const Color.fromRGBO(
+                                                    0, 83, 188, 1)
+                                                .withOpacity(0.5),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(10),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const CircleAvatar(
+                                                  radius: 30.0,
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  child: Icon(
+                                                    Icons
+                                                        .account_circle_outlined,
+                                                    size: 35,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  relation['name'],
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.05,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                  Icons.stacked_line_chart,
+                                                  size: 50,
+                                                  color: Colors.white,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                        Text(
-                                          relation['name'],
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.05,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const Icon(
-                                          Icons.stacked_line_chart,
-                                          size: 50,
-                                          color: Colors.white,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                      ),
+                                    );
+                                  },
+                                ).toList(),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -479,7 +464,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const SizedBox(
+                                      SizedBox(
                                         height: 16,
                                       ),
                                       Center(
@@ -494,7 +479,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                               // Rounded corners
                                               child: Image.network(
                                                 "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
-                                                fit: BoxFit.cover,
+                                                fit: BoxFit
+                                                    .cover, // Ensure the image covers the container
                                               ),
                                             ),
                                           ),
@@ -560,8 +546,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   },
                                                   child: Container(
                                                     padding:
-                                                        const EdgeInsets.all(
-                                                            5.0),
+                                                        EdgeInsets.all(5.0),
                                                     decoration: BoxDecoration(
                                                         borderRadius:
                                                             BorderRadius
@@ -583,7 +568,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           ),
                                         ],
                                       )),
-                                      const SizedBox(
+                                      SizedBox(
                                         height: 16,
                                       ),
                                       Padding(
@@ -601,8 +586,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: const Color
-                                                            .fromRGBO(
+                                                        color: Color.fromRGBO(
                                                             255, 245, 227, 1),
                                                         shape: RoundedRectangleBorder(
                                                             borderRadius:
@@ -659,8 +643,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: const Color
-                                                            .fromRGBO(
+                                                        color: Color.fromRGBO(
                                                             255, 234, 234, 1),
                                                         shape: RoundedRectangleBorder(
                                                             borderRadius:
@@ -682,7 +665,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                             children: [
                                                               Row(
                                                                 children: [
-                                                                  const Icon(
+                                                                  Icon(
                                                                       Icons
                                                                           .warning,
                                                                       size: 25),
@@ -754,7 +737,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                       ],
                                                                     ),
                                                                   ),
-                                                                  const Text(
+                                                                  Text(
                                                                     "SOS",
                                                                     style: TextStyle(
                                                                         color: Colors
@@ -817,7 +800,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                   ),
                                                                 ],
                                                               ),
-                                                              const SizedBox(
+                                                              SizedBox(
                                                                   height: 8),
                                                               Column(
                                                                 children: [
@@ -827,7 +810,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                         width *
                                                                             0.3,
                                                                   ),
-                                                                  const SizedBox(
+                                                                  SizedBox(
                                                                     height: 10,
                                                                   ),
                                                                   Row(
@@ -897,7 +880,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                   ),
                                                                 ],
                                                               ),
-                                                              const SizedBox(
+                                                              SizedBox(
                                                                   height: 8),
                                                               Stack(
                                                                 alignment:
@@ -921,6 +904,25 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           ],
                                         ),
                                       ),
+                                      SizedBox(
+                                        height: 16,
+                                      ),
+                                      // Center(
+                                      //   child: GestureDetector(
+                                      //     onTap: () {
+                                      //       _showRoleDialog();
+                                      //       print("Adding users");
+                                      //     },
+                                      //     child: Padding(
+                                      //       padding: EdgeInsets.symmetric(
+                                      //           vertical: 10.0),
+                                      //       child: const Text(
+                                      //         "Add users",
+                                      //         style: TextStyle(fontSize: 18),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // )
                                     ],
                                   ),
                                 ),
@@ -930,7 +932,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                               return Text("Error : $error");
                             },
                             loading: () {
-                              return const Center(
+                              return Center(
                                 child: CircularProgressIndicator(
                                     color: Colors.blueAccent),
                               );
@@ -948,9 +950,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                       _showRoleDialog();
                       print("Adding users");
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 10.0),
-                      child: Text(
+                      child: const Text(
                         "No Users found\nAdd users",
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18),
@@ -963,12 +965,12 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           );
         },
         error: (error, stackTrace) {
-          return const Center(
+          return Center(
             child: Text("Error Fetching User details"),
           );
         },
         loading: () {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(color: Colors.blueAccent),
           );
         },
