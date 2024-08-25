@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
@@ -161,6 +163,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   child: InkWell(
                     onTap: () async {
                       Future<void> _handleSOSClick(bool sosClicked) async {
+                        final deviceOwnerData =
+                            Provider.of<OwnerDeviceData>(context, listen: false);
                         setState(() {
                           _isEmergency = true;
                         });
@@ -179,8 +183,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                   .doc(FirebaseAuth.instance.currentUser!.uid)
                                   .update({
                                 "metrics": {
-                                  "spo2": "94",
-                                  "heart_rate": "122",
+                                  "spo2": deviceOwnerData.spo2,
+                                  "heart_rate": deviceOwnerData.heartRate,
                                   "fall_axis": "-- -- --"
                                 }
                               });
@@ -188,7 +192,8 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
                                 .where('phone_number',
-                                    isEqualTo: '+94965538195')
+                                    isEqualTo:
+                                        "+94965538195")
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -210,9 +215,10 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "response": "",
                                 "userUid":
                                     FirebaseAuth.instance.currentUser?.uid,
-                                "heartbeatRate": '93',
-                                "location": "0°N 0°E",
-                                "sfo2": '35',
+                                "heartbeatRate": deviceOwnerData.heartRate,
+                                "location":
+                                    "0°N 0°E",
+                                "spo2": deviceOwnerData.spo2,
                                 "fallDetection": false,
                                 "isManual": true,
                                 "timestamp": FieldValue.serverTimestamp()
@@ -228,9 +234,10 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "isEmergency": true,
                                 "responseStatus": false,
                                 "response": "",
-                                "heartbeatRate": '93',
-                                "location": "0°N 0°E",
-                                "sfo2": '35',
+                                "heartbeatRate": deviceOwnerData.heartRate,
+                                "location":
+                                    "0°N 0°E",
+                                "spo2": deviceOwnerData.spo2,
                                 "fallDetection": false,
                                 "isManual": true,
                                 "timestamp": FieldValue.serverTimestamp()
@@ -247,7 +254,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                     int.parse(b.value['priority'].toString())
                                         .compareTo(int.parse(
                                             a.value['priority'].toString())));
-
+                              print(filteredSupervisors);
                               for (var supervisor in filteredSupervisors) {
                                 send.sendNotification(
                                     supervisor.key,

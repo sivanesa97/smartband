@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
@@ -16,6 +17,7 @@ import 'package:smartband/Screens/HomeScreen/spo2.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
 import 'package:smartband/pushnotifications.dart';
+import 'package:provider/provider.dart' as provider;
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String? device_name;
@@ -280,6 +282,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
   }
 
   Future<void> _handleSOSClick(bool sosClicked) async {
+    
+    final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context, listen: false);
     setState(() {
       _isEmergency = true;
     });
@@ -289,7 +293,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
       }
       print("Attempt ");
       print(attempt);
-      // Position location = await updateLocation();
+      Position location = await updateLocation();
       try {
         if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
           await FirebaseFirestore.instance
@@ -297,15 +301,15 @@ class _EmergencyCardState extends State<EmergencyCard> {
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({
             "metrics": {
-              "spo2": "168",
-              "heart_rate": "200",
+              "spo2": deviceOwnerData.spo2,
+              "heart_rate": deviceOwnerData.heartRate,
               "fall_axis": "-- -- --"
             }
           });
         }
         final data = await FirebaseFirestore.instance
             .collection("users")
-            .where('phone_number', isEqualTo: '+94965538193')
+            .where('phone_number', isEqualTo: widget.user.phone_number.toString())
             .get();
         SendNotification send = SendNotification();
         for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
@@ -325,9 +329,9 @@ class _EmergencyCardState extends State<EmergencyCard> {
             "responseStatus": false,
             "response": "",
             "userUid": FirebaseAuth.instance.currentUser?.uid,
-            "heartbeatRate": '93',
-            "location": "0°N 0°E",
-            "sfo2": '35',
+            "heartbeatRate": deviceOwnerData.heartRate,
+            "location": "${location.latitude}°N ${location.longitude}°E",
+            "spo2": deviceOwnerData.spo2,
             "fallDetection": false,
             "isManual": true,
             "timestamp": FieldValue.serverTimestamp()
@@ -341,9 +345,9 @@ class _EmergencyCardState extends State<EmergencyCard> {
             "isEmergency": true,
             "responseStatus": false,
             "response": "",
-            "heartbeatRate": '93',
-            "location": "0°N 0°E",
-            "sfo2": '35',
+            "heartbeatRate": deviceOwnerData.heartRate,
+            "location": "${location.latitude}°N ${location.longitude}°E",
+            "spo2": deviceOwnerData.spo2,
             "fallDetection": false,
             "isManual": true,
             "timestamp": FieldValue.serverTimestamp()
@@ -359,7 +363,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
 
           for (var supervisor in filteredSupervisors) {
             send.sendNotification(supervisor.key, "Emergency!!",
-                "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
+                "Siva has clicked the SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
             await Future.delayed(Duration(seconds: 30));
             print(
                 "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
