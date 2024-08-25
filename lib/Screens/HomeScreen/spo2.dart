@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
+import 'package:provider/provider.dart' as provider;
 
 class Spo2Screen extends ConsumerStatefulWidget {
   final BluetoothDevice device;
@@ -44,6 +46,7 @@ class _Spo2ScreenState extends ConsumerState<Spo2Screen> {
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
+    final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context);
     return Scaffold(
         backgroundColor: Colors.white,
         body: user_data.when(
@@ -93,7 +96,7 @@ class _Spo2ScreenState extends ConsumerState<Spo2Screen> {
                                   Row(
                                     children: [
                                       Text(
-                                        "25",
+                                        deviceOwnerData.age.toString(),
                                         style: TextStyle(
                                             fontSize: width * 0.1,
                                             color: Colors.white),
@@ -163,7 +166,7 @@ class _Spo2ScreenState extends ConsumerState<Spo2Screen> {
                                   Row(
                                     children: [
                                       Text(
-                                        "98",
+                                        deviceOwnerData.spo2.toString(),
                                         style: TextStyle(fontSize: width * 0.1),
                                       ),
                                       const SizedBox(

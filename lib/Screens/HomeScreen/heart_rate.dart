@@ -2,9 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/bluetooth.dart';
 
 import '../Models/usermodel.dart';
+import 'package:provider/provider.dart' as provider;
 import '../Widgets/drawer.dart';
 
 class HeartrateScreen extends ConsumerStatefulWidget {
@@ -25,6 +27,7 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
   Widget build(BuildContext context) {
     final userData =
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
+    final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context);
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
@@ -81,7 +84,7 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
                                   Row(
                                     children: [
                                       Text(
-                                        "25",
+                                        deviceOwnerData.age.toString(),
                                         style: TextStyle(
                                             fontSize: width * 0.1,
                                             color: Colors.white),
@@ -149,7 +152,7 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
                                   Row(
                                     children: [
                                       Text(
-                                        "67",
+                                        deviceOwnerData.heartRate.toString(),
                                         style: TextStyle(fontSize: width * 0.1),
                                       ),
                                       const SizedBox(

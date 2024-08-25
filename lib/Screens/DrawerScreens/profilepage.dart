@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,6 +12,7 @@ import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/map.dart';
+import 'package:http/http.dart' as http;
 
 class Profilepage extends ConsumerStatefulWidget {
   const Profilepage({super.key});
@@ -501,7 +503,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                             color: Color.fromRGBO(0, 83, 188, 1),
                           ),
                           child: TextButton(
-                            onPressed: () {
+                            onPressed: () async {
                               setState(() {
                                 isEdit = !isEdit;
                               });
@@ -583,6 +585,22 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                       int.parse(_minKmController.text),
                                 });
                                 getData();
+                                final response = await http.post(
+                                Uri.parse("https://snvisualworks.com/public/api/auth/register"),
+                                headers: <String, String>{
+                                  'Content-Type': 'application/json; charset=UTF-8',
+                                },
+                                body: jsonEncode(<String, dynamic>{
+                                  'name': _nameController.text,
+                                  'mobile_number': data.phone_number.toString(),
+                                  'email': _mailController.text,
+                                  'date_of_birth': _birthdayController.text,
+                                  'gender': _selectedGender?.toLowerCase(),
+                                  'height': double.parse(_heightController.text).toInt(),
+                                  'weight': double.parse(_weightController.text).toInt(),
+                                }),
+                              );
+                              print(response.statusCode);
                               }
                             },
                             child: !isEdit

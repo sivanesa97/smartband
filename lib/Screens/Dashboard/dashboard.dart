@@ -123,18 +123,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     status: widget.status),
                 appBar: AppBar(
                   backgroundColor: Colors.white,
-                  leading: GestureDetector(
-                    onTap: () {
-                      Scaffold.of(context).openDrawer();
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.all(10.0),
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(
-                          FirebaseAuth.instance.currentUser!.photoURL ??
-                              "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
-                        ),
+                  leading: Padding(
+                    padding: const EdgeInsets.only(left: 5),
+                    child: Builder(
+                      builder: (context) => GestureDetector(
+                        onTap: () {
+                          Scaffold.of(context).openDrawer();
+                        },
+                        child: const Icon(Icons.menu, size: 30),
                       ),
                     ),
                   ),
