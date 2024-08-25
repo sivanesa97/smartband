@@ -166,10 +166,10 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           },
                           child: const ListTile(
                             leading: Icon(
-                              Icons.upgrade,
+                              Icons.dashboard,
                               color: Colors.black26,
                             ),
-                            title: Text("Dashboard"),
+                            title: Text("My Device Dashboard"),
                           ),
                         )
                       : const SizedBox.shrink(),
@@ -189,6 +189,27 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Monitoring Dashboard"),
                     ),
                   ),
+                  subscriptionStatus.deviceId != "" &&
+                          subscriptionStatus.isSubscribed &&
+                          subscriptionStatus.isActive
+                      ? InkWell(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true)
+                                .push(MaterialPageRoute(
+                                    maintainState: true,
+                                    builder: (context) => ManageAccess(
+                                          phNo: subscriptionStatus.phoneNumber,
+                                        )));
+                          },
+                          child: const ListTile(
+                            leading: Icon(
+                              Icons.supervisor_account,
+                              color: Colors.black26,
+                            ),
+                            title: Text("Manage Access"),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
@@ -219,27 +240,6 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Profile"),
                     ),
                   ),
-                  subscriptionStatus.deviceId != "" &&
-                          subscriptionStatus.isSubscribed &&
-                          subscriptionStatus.isActive
-                      ? InkWell(
-                          onTap: () {
-                            Navigator.of(context, rootNavigator: true)
-                                .push(MaterialPageRoute(
-                                    maintainState: true,
-                                    builder: (context) => ManageAccess(
-                                          phNo: subscriptionStatus.phoneNumber,
-                                        )));
-                          },
-                          child: const ListTile(
-                            leading: Icon(
-                              Icons.supervisor_account,
-                              color: Colors.black26,
-                            ),
-                            title: Text("Manage Access"),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(

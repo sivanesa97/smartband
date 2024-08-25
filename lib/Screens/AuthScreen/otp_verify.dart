@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
@@ -94,6 +95,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       deviceName: deviceName,
                       subscribed: true,
                       phoneNumber: widget.phoneNumber);
+              final deviceOwnerData = Provider.of<OwnerDeviceData>(context);
+              int age = 25;
+              var dob = data.docs.first.data()['dob'];
+              if (dob != null && dob != '') {
+                try {
+                  
+                } catch (e) {
+                  print(e);
+                }
+              }
+              Provider.of<OwnerDeviceData>(context, listen: false).updateStatus(
+                  age: age,
+                  heartRate: deviceOwnerData.heartRate,
+                  spo2: deviceOwnerData.spo2);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Device is not assigned!")));

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
@@ -18,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
+import 'package:provider/provider.dart' as provider;
 
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
@@ -124,6 +126,12 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   void _startTimer(List<String> values) {
     _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
       if (FirebaseAuth.instance.currentUser != null) {
+        final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context);
+        provider.Provider.of<OwnerDeviceData>(context, listen: false)
+            .updateStatus(
+                age: deviceOwnerData.age,
+                heartRate: int.parse(values[0].toString()),
+                spo2: int.parse(values[1].toString()));
         await FirebaseFirestore.instance
             .collection("users")
             .doc(FirebaseAuth.instance.currentUser!.uid)
