@@ -3,12 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart' as intl;
 
 import '../DrawerScreens/profilepage.dart';
 import '../Models/usermodel.dart';
@@ -146,6 +151,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   final TextEditingController _phNoConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
 
+  String status = "";
+  String subscription = "";
+  bool _isSubscriptionFetched = false;
+
   void _showRoleDialog() {
     bool sent = false;
     int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
@@ -208,6 +217,88 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         );
       },
     );
+  }
+
+  Future<void> fetchSubscription(String phno) async {
+    print(phno);
+    final response = await http.post(
+      Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'mobile_number': '$phno',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      intl.DateFormat dateFormat = intl.DateFormat("dd-MM-yyyy");
+      print(data);
+      if (data['status'].toString() != 'active') {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("User not active")));
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => PhoneSignIn()),
+            (Route<dynamic> route) => false);
+        return;
+      }
+
+      DocumentReference docRef = FirebaseFirestore.instance
+          .collection('server_time')
+          .doc('current_time');
+      await docRef.set({'timestamp': FieldValue.serverTimestamp()});
+
+      DocumentSnapshot docSnapshot = await docRef.get();
+      Timestamp serverTimestamp = docSnapshot['timestamp'];
+      DateTime serverDate = serverTimestamp.toDate();
+      if (data['subscription_date'] != null && data['end_date'] != null) {
+        DateTime startDate =
+            DateTime.parse(data['subscription_date'].toString());
+        DateTime endDate = DateTime.parse(data['end_date'].toString());
+        if ((startDate.isAtSameMomentAs(serverDate) ||
+                startDate.isBefore(serverDate)) &&
+            (endDate.isAtSameMomentAs(serverDate) ||
+                endDate.isAfter(serverDate))) {
+          setState(() {
+            status = data['status'].toString();
+            subscription = data['end_date'] == null
+                ? "--"
+                : intl.DateFormat('yyyy-MM-dd')
+                    .format(DateTime.parse(data['end_date']));
+            setState(() {
+              _isSubscriptionFetched = true;
+            });
+            print("Fetched");
+          });
+        } else {
+          final GoogleSignIn googleSignIn = GoogleSignIn();
+          await googleSignIn.signOut();
+          await FirebaseAuth.instance.signOut();
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Subscription To Continue")));
+          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => PhoneSignIn()),
+              (Route<dynamic> route) => false);
+          return;
+        }
+      } else {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Subscribe to Continue!")));
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => PhoneSignIn()),
+            (Route<dynamic> route) => false);
+        return;
+      }
+    } else {
+      print(response.statusCode);
+    }
   }
 
   String getGreetingMessage() {
@@ -294,17 +385,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
               ],
             ),
             Text(
-              DateTime.now().hour > 12
-                  ? DateTime.now().hour > 16
-                      ? "Good Evening ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                            2,
-                          )}"
-                      : "Good Afternoon ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                            2,
-                          )}"
-                  : "Good Morning ${DateTime.now().day.toString().padLeft(2, '0')}/${DateTime.now().month.toString().padLeft(2, '0')}/${DateTime.now().year.toString().substring(
-                        2,
-                      )}",
+              getGreetingMessage(),
               style: TextStyle(
                 fontSize: width * 0.04,
                 color: Colors.grey[600],
@@ -359,7 +440,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                   relation = relationDetails.first;
                 }
                 print("DropDown : ${dropdownValue}");
-
+                if (!_isSubscriptionFetched) {
+                  fetchSubscription(dropdownValue);
+                }
                 return Column(
                   children: [
                     SizedBox(
@@ -571,6 +654,91 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                       SizedBox(
                                         height: 16,
                                       ),
+                                      Center(
+                                        child: Container(
+                                          height: height * 0.07,
+                                          width: width * 0.9,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20.0),
+                                              color: Colors.black),
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 8.0,
+                                                vertical: height * 0.01),
+                                            child: Center(
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  // Column(
+                                                  //   children: [
+                                                  //     Text(
+                                                  //       "Water",
+                                                  //       style: TextStyle(
+                                                  //           color: Colors.white,
+                                                  //           fontSize: width * 0.045),
+                                                  //     ),
+                                                  //     Text(
+                                                  //       "2Litre",
+                                                  //       style: TextStyle(
+                                                  //           color: Colors.white,
+                                                  //           fontSize: width * 0.03),
+                                                  //     ),
+                                                  //   ],
+                                                  // ),
+                                                  // VerticalDivider(
+                                                  //   color: Colors.white,
+                                                  //   thickness: 2,
+                                                  // ),
+                                                  Column(
+                                                    children: [
+                                                      Text(
+                                                        "Status",
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                width * 0.045),
+                                                      ),
+                                                      Text(
+                                                        status.toTitleCase(),
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                width * 0.03),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const VerticalDivider(
+                                                    color: Colors.white,
+                                                    thickness: 2,
+                                                  ),
+                                                  Column(
+                                                    children: [
+                                                      Text(
+                                                        "Subscription",
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                width * 0.045),
+                                                      ),
+                                                      Text(
+                                                        subscription,
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize:
+                                                                width * 0.03),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8.0),
