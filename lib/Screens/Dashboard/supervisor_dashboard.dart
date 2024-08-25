@@ -437,15 +437,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                setState(() {
-                  _isSubscriptionFetched = false;
-                });
                 return Center(
                     child: CircularProgressIndicator(color: Colors.blueAccent));
               } else if (snapshot.hasError) {
-                setState(() {
-                  _isSubscriptionFetched = false;
-                });
                 return Center(child: Text("Error fetching relation details"));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
@@ -476,6 +470,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                 style: const TextStyle(color: Colors.white),
                                 onChanged: (String? value) {
                                   setState(() {
+                                    _isSubscriptionFetched = false;
                                     dropdownValue = value!;
                                   });
                                 },
