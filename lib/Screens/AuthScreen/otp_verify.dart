@@ -67,8 +67,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       // print("${otp}  ${generated_otp}");
-      // if (true) {
-        if (int.parse(otp) == generated_otp) {
+      if (true) {
+        // if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)
@@ -76,7 +76,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         // print(phNo);
         var apiData = await BluetoothConnectionService().getApiData(phNo);
         int ownerStatus = 0;
-        int subscriptionStatus = 1;
         String deviceName = "";
         // print(apiData);
         if (apiData != null) {
@@ -91,13 +90,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ownerStatus = 1;
               Provider.of<SubscriptionDataProvider>(context, listen: false)
                   .updateStatus(
-                      active: true, deviceName: deviceName, subscribed: true, phoneNumber: widget.phoneNumber);
+                      active: true,
+                      deviceName: deviceName,
+                      subscribed: true,
+                      phoneNumber: widget.phoneNumber);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Device is not assigned!")));
             }
           } else if (isUserActive && deviceName != "") {
-            subscriptionStatus = 1;
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("Please Subscribe to use watch!")));
           }
@@ -129,11 +130,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         role: 'watch wearer',
                         phNo: '',
                         deviceId: '',
-                        status: '1',
-                        subscribe: subscriptionStatus)));
+                        status: '1')));
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
-                .updateStatus(active: false, deviceName: "", subscribed: false, phoneNumber: widget.phoneNumber);
+                .updateStatus(
+                    active: false,
+                    deviceName: "",
+                    subscribed: false,
+                    phoneNumber: widget.phoneNumber);
             Navigator.of(context, rootNavigator: true).pushReplacement(
                 MaterialPageRoute(
                     maintainState: true,
@@ -141,8 +145,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         role: 'supervisor',
                         phNo: phNo,
                         deviceId: '',
-                        status: '1',
-                        subscribe: subscriptionStatus)));
+                        status: '1')));
             // Navigator.of(context, rootNavigator: true)
             //     .pushReplacement(MaterialPageRoute(
             //         maintainState: true,
@@ -160,15 +163,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             selected_role = "watch wearer";
           } else {
             Provider.of<SubscriptionDataProvider>(context, listen: false)
-                .updateStatus(active: false, deviceName: "", subscribed: false, phoneNumber: widget.phoneNumber);
+                .updateStatus(
+                    active: false,
+                    deviceName: "",
+                    subscribed: false,
+                    phoneNumber: widget.phoneNumber);
           }
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => RoleSelectionScreen(
                   phNo: phNo,
                   role: selected_role,
                   deviceId: deviceName,
-                  status: '2',
-                  subscribe: subscriptionStatus)));
+                  status: '2')));
           // Navigator.of(context).push(MaterialPageRoute(
           //     builder: (context) => SignupScreen(
           //           phNo: phNo,

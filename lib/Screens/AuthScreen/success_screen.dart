@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
@@ -9,14 +11,12 @@ class RoleSelectionScreen extends StatefulWidget {
   final String phNo;
   final String deviceId;
   final String status;
-  final int subscribe;
 
   RoleSelectionScreen({
     required this.role,
     required this.phNo,
     required this.deviceId,
     required this.status,
-    required this.subscribe,
   });
 
   @override
@@ -24,15 +24,21 @@ class RoleSelectionScreen extends StatefulWidget {
 }
 
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
-  @override
-  void initState() {
-    super.initState();
+  bool _dialogShown = false;
 
-    // Show alert automatically if subscription status is 1
-    if (widget.subscribe == 1) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final subscriptionStatus = Provider.of<SubscriptionDataProvider>(context);
+
+    if (!subscriptionStatus.isSubscribed &&
+        !_dialogShown &&
+        widget.role == 'watch wearer') {
+      _dialogShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) {
             return AlertDialog(
               contentPadding: EdgeInsets.zero,
@@ -45,7 +51,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // Close the dialog
                       },
                     ),
                   ),
