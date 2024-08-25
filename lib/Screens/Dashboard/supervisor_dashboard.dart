@@ -462,6 +462,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                 style: const TextStyle(color: Colors.white),
                                 onChanged: (String? value) {
                                   setState(() {
+                                    _isSubscriptionFetched = false;
                                     dropdownValue = value!;
                                   });
                                 },
