@@ -103,6 +103,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             label: 'History',
           ),
         ];
+        Widget HeaderText(text) {
+          return Text(
+            "Hello ${text}",
+            style: TextStyle(
+              fontSize: MediaQuery.of(context).size.width * 0.050,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          );
+        }
 
         return user == "watch wearer"
             ? Scaffold(
@@ -158,16 +168,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  "Hello ${FirebaseAuth.instance.currentUser?.displayName?.split(' ')[0] ?? 'User'}",
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                            0.055,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
+                                userData.when(data: (user) {
+                                  return HeaderText(user!.name);
+                                }, error:
+                                    (Object error, StackTrace stackTrace) {
+                                  return HeaderText("User");
+                                }, loading: () {
+                                  return HeaderText("User");
+                                }),
                                 const Icon(Icons.keyboard_arrow_down)
                               ],
                             ),

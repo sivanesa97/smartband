@@ -294,6 +294,17 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     ),
   ];
 
+  Widget HeaderText(text) {
+    return Text(
+      "Hello ${text}",
+      style: TextStyle(
+        fontSize: MediaQuery.of(context).size.width * 0.050,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user_data =
@@ -325,15 +336,13 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              // "Hello Bala",
-              "Hello ${FirebaseAuth.instance.currentUser!.displayName?.split(' ')[0].toTitleCase() ?? 'User'}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+            user_data.when(data: (user) {
+              return HeaderText(user!.name);
+            }, error: (Object error, StackTrace stackTrace) {
+              return HeaderText("User");
+            }, loading: () {
+              return HeaderText("User");
+            }),
             Text(
               getGreetingMessage(),
               style: TextStyle(
@@ -964,15 +973,15 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        items: _bottomNavigationBarItems,
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        showUnselectedLabels: false,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-      ),
+      // bottomNavigationBar: BottomNavigationBar(
+      //   backgroundColor: Colors.white,
+      //   items: _bottomNavigationBarItems,
+      //   currentIndex: _selectedIndex,
+      //   selectedItemColor: Colors.black,
+      //   showUnselectedLabels: false,
+      //   onTap: _onItemTapped,
+      //   type: BottomNavigationBarType.fixed,
+      // ),
     );
   }
 }
