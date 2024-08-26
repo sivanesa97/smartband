@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart' as provider;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
@@ -136,7 +137,9 @@ void main() async {
     child: provider.MultiProvider(
       providers: [
         provider.ChangeNotifierProvider(
-            create: (_) => SubscriptionDataProvider())
+            create: (_) => SubscriptionDataProvider()),
+        provider.ChangeNotifierProvider(
+            create: (_) => OwnerDeviceData())
       ],
       child: MaterialApp(
         home: SplashScreen(),

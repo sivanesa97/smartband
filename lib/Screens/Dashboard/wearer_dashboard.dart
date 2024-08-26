@@ -126,7 +126,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   void _startTimer(List<String> values) {
     _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
       if (FirebaseAuth.instance.currentUser != null) {
-        final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context);
+        final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context, listen: false);
         provider.Provider.of<OwnerDeviceData>(context, listen: false)
             .updateStatus(
                 age: deviceOwnerData.age,
@@ -171,6 +171,9 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => PhoneSignIn()),
             (Route<dynamic> route) => false);
+        setState(() {
+          _isSubscriptionFetched = true;
+        });
         return;
       }
 
@@ -192,9 +195,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 endDate.isAfter(serverDate))) {
           setState(() {
             status = data['status'].toString();
-            subscription = data['subscription_period'] == null
+            subscription = data['end_date'] == null
                 ? "--"
-                : "${data['subscription_period'].toString()} Months";
+                : intl.DateFormat('yyyy-MM-dd')
+                    .format(DateTime.parse(data['end_date']));
             setState(() {
               _isSubscriptionFetched = true;
             });
@@ -209,6 +213,9 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
           Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => PhoneSignIn()),
               (Route<dynamic> route) => false);
+          setState(() {
+            _isSubscriptionFetched = true;
+          });
           return;
         }
       } else {
@@ -220,9 +227,15 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => PhoneSignIn()),
             (Route<dynamic> route) => false);
+        setState(() {
+          _isSubscriptionFetched = true;
+        });
         return;
       }
     } else {
+      setState(() {
+        _isSubscriptionFetched = true;
+      });
       print(response.statusCode);
     }
   }

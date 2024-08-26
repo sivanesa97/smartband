@@ -656,90 +656,102 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                       SizedBox(
                                         height: 16,
                                       ),
-                                      Center(
-                                        child: Container(
-                                          height: height * 0.07,
-                                          width: width * 0.9,
-                                          decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(20.0),
-                                              color: Colors.black),
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 8.0,
-                                                vertical: height * 0.01),
-                                            child: Center(
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                children: [
-                                                  // Column(
-                                                  //   children: [
-                                                  //     Text(
-                                                  //       "Water",
-                                                  //       style: TextStyle(
-                                                  //           color: Colors.white,
-                                                  //           fontSize: width * 0.045),
-                                                  //     ),
-                                                  //     Text(
-                                                  //       "2Litre",
-                                                  //       style: TextStyle(
-                                                  //           color: Colors.white,
-                                                  //           fontSize: width * 0.03),
-                                                  //     ),
-                                                  //   ],
-                                                  // ),
-                                                  // VerticalDivider(
-                                                  //   color: Colors.white,
-                                                  //   thickness: 2,
-                                                  // ),
-                                                  Column(
-                                                    children: [
-                                                      Text(
-                                                        "Status",
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize:
-                                                                width * 0.045),
-                                                      ),
-                                                      Text(
-                                                        status.toTitleCase(),
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize:
-                                                                width * 0.03),
-                                                      ),
-                                                    ],
+                                      _isSubscriptionFetched
+                                          ? Center(
+                                              child: Container(
+                                                height: height * 0.07,
+                                                width: width * 0.9,
+                                                decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20.0),
+                                                    color: Colors.black),
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 8.0,
+                                                      vertical: height * 0.01),
+                                                  child: Center(
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        // Column(
+                                                        //   children: [
+                                                        //     Text(
+                                                        //       "Water",
+                                                        //       style: TextStyle(
+                                                        //           color: Colors.white,
+                                                        //           fontSize: width * 0.045),
+                                                        //     ),
+                                                        //     Text(
+                                                        //       "2Litre",
+                                                        //       style: TextStyle(
+                                                        //           color: Colors.white,
+                                                        //           fontSize: width * 0.03),
+                                                        //     ),
+                                                        //   ],
+                                                        // ),
+                                                        // VerticalDivider(
+                                                        //   color: Colors.white,
+                                                        //   thickness: 2,
+                                                        // ),
+                                                        Column(
+                                                          children: [
+                                                            Text(
+                                                              "Status",
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.045),
+                                                            ),
+                                                            Text(
+                                                              status
+                                                                  .toTitleCase(),
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const VerticalDivider(
+                                                          color: Colors.white,
+                                                          thickness: 2,
+                                                        ),
+                                                        Column(
+                                                          children: [
+                                                            Text(
+                                                              "Subscription",
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.045),
+                                                            ),
+                                                            Text(
+                                                              subscription,
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize:
+                                                                      width *
+                                                                          0.03),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                  const VerticalDivider(
-                                                    color: Colors.white,
-                                                    thickness: 2,
-                                                  ),
-                                                  Column(
-                                                    children: [
-                                                      Text(
-                                                        "Subscription",
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize:
-                                                                width * 0.045),
-                                                      ),
-                                                      Text(
-                                                        subscription,
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize:
-                                                                width * 0.03),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                                            )
+                                          : const SizedBox.shrink(),
                                       const SizedBox(height: 16),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(

@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
@@ -95,12 +96,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       deviceName: deviceName,
                       subscribed: true,
                       phoneNumber: widget.phoneNumber);
-              final deviceOwnerData = Provider.of<OwnerDeviceData>(context);
-              int age = 25;
+              final deviceOwnerData = Provider.of<OwnerDeviceData>(context, listen: false);
+              int age = 0;
               var dob = data.docs.first.data()['dob'];
               if (dob != null && dob != '') {
                 try {
-                  
+                  DateTime birthdate =
+                      DateFormat("yyyy-MM-dd").parse(dob.toString());
+                  DateTime currentDate = DateTime.now();
+                  age = currentDate.year - birthdate.year;
+                  if (currentDate.month < birthdate.month ||
+                      (currentDate.month == birthdate.month &&
+                          currentDate.day < birthdate.day)) {
+                    age--;
+                  }
                 } catch (e) {
                   print(e);
                 }
