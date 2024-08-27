@@ -483,7 +483,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                           children: [
                             Expanded(
                               child: DropdownButton<String>(
-                                value: dropdownValue,
+                                value: dropdownValue.toString(),
                                 isExpanded: true,
                                 itemHeight: 100,
                                 underline: const SizedBox(),
@@ -837,9 +837,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                               Center(
                                                                 child:
                                                                     Image.asset(
-                                                                  data.first.metrics[
-                                                                              'fall_axis'] ==
-                                                                          '1'
+                                                                  (data.first.metrics['fall_axis']
+                                                                              ?.toString() ==
+                                                                          '1')
                                                                       ? "assets/fallaxis.png"
                                                                       : "assets/fallaxis0.png",
                                                                   height:
@@ -1030,13 +1030,19 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                             .center,
                                                                     children: [
                                                                       Text(
-                                                                        data.first
-                                                                            .metrics['heart_rate'],
+                                                                        (data.first.metrics['heart_rate'] ??
+                                                                                '')
+                                                                            .toString(),
                                                                         style: TextStyle(
                                                                             fontSize: width *
                                                                                 0.07,
-                                                                            fontWeight:
-                                                                                FontWeight.bold),
+                                                                            fontWeight: FontWeight
+                                                                                .bold,
+                                                                            color: Color.fromRGBO(
+                                                                                0,
+                                                                                83,
+                                                                                188,
+                                                                                1)),
                                                                       ),
                                                                       Text(
                                                                         " bpm",

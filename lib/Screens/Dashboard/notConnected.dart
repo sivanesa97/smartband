@@ -193,7 +193,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
                                 .where('phone_number',
-                                    isEqualTo: "+94965538195")
+                                    isEqualTo: "+94758543728")
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -264,7 +264,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                       content: Text(
-                                          "Sent Alert to ${i.data()['name']}")),
+                                          "Sent Alert to ${supervisor.key}")),
                                 );
                                 FirebaseFirestore.instance
                                     .collection("emergency_alerts")
@@ -286,10 +286,10 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                     );
                                   }
                                 });
-                                if (!_isEmergency) {
-                                  break;
-                                }
                                 await Future.delayed(Duration(seconds: 30));
+                              }
+                              if (!_isEmergency) {
+                                break;
                               }
                             }
 
@@ -304,11 +304,11 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         }
                       }
 
-                      // await _handleSOSClick(true);
-                      setState(() {
-                        addDeviceBtn = true;
-                        scanForDevices(context);
-                      });
+                      await _handleSOSClick(true);
+                      // setState(() {
+                      //   addDeviceBtn = true;
+                      //   scanForDevices(context);
+                      // });
                     },
                     child: Align(
                       alignment: Alignment.center,

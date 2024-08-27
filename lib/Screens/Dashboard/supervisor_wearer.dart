@@ -728,8 +728,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                               .center,
                                                                       children: [
                                                                         Text(
-                                                                          data.first
-                                                                              .metrics['heart_rate']
+                                                                          (data.first.metrics['heart_rate'] ?? '')
                                                                               .toString(),
                                                                           style: TextStyle(
                                                                               fontSize: width * 0.07,
@@ -800,7 +799,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                                     Center(
                                                                         child: SpO2Gauge(
                                                                             percentage: data.first.metrics['spo2'] != null
-                                                                                ? int.parse(data.first.metrics['spo2'].toString())
+                                                                                ? (data.first.metrics['spo2'] is String ? int.parse(data.first.metrics['spo2']) : data.first.metrics['spo2'] as int)
                                                                                 : 25))
                                                                   ],
                                                                 ),
