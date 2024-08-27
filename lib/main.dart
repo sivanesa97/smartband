@@ -74,12 +74,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void handleNotificationClick(RemoteMessage message) {
-  // final initialMessage = message.data;
-  // if (initialMessage.containsKey('uid')) {
-  // Perform any additional navigation if needed
-  // For example, you could use the navigatorKey to navigate to a different screen
   navigatorKey.currentState?.pushNamed('/sos');
-  // }
 }
 
 void main() async {
@@ -138,8 +133,7 @@ void main() async {
       providers: [
         provider.ChangeNotifierProvider(
             create: (_) => SubscriptionDataProvider()),
-        provider.ChangeNotifierProvider(
-            create: (_) => OwnerDeviceData())
+        provider.ChangeNotifierProvider(create: (_) => OwnerDeviceData())
       ],
       child: MaterialApp(
         home: SplashScreen(),

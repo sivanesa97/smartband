@@ -83,7 +83,7 @@ class _SOSPageState extends State<SOSPage> {
       try {
         DocumentSnapshot doc = await FirebaseFirestore.instance
             .collection("emergency_alerts")
-            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .doc(currentUser.uid)
             .get();
         if (doc.exists) {
           await FirebaseFirestore.instance

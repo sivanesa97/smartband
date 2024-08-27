@@ -293,7 +293,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
       }
       print("Attempt ");
       print(attempt);
-      Position location = await updateLocation();
+      // Position location = await updateLocation();
       try {
         if (FirebaseAuth.instance.currentUser!.uid.isNotEmpty) {
           await FirebaseFirestore.instance
@@ -312,6 +312,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
             .where('phone_number',
                 isEqualTo: widget.user.phone_number.toString())
             .get();
+        Position location = await updateLocation();
         SendNotification send = SendNotification();
         for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
           print(i);
@@ -322,38 +323,6 @@ class _EmergencyCardState extends State<EmergencyCard> {
           print("Email : ${i.data()['email']}");
           print("Inside SOS Click");
 
-          await FirebaseFirestore.instance
-              .collection("emergency_alerts")
-              .doc(i.id)
-              .set({
-            "isEmergency": true,
-            "responseStatus": false,
-            "response": "",
-            "userUid": FirebaseAuth.instance.currentUser?.uid,
-            "heartbeatRate": deviceOwnerData.heartRate,
-            "location": "${location.latitude}°N ${location.longitude}°E",
-            "spo2": deviceOwnerData.spo2,
-            "fallDetection": false,
-            "isManual": true,
-            "timestamp": FieldValue.serverTimestamp()
-          }, SetOptions(merge: true));
-
-          await FirebaseFirestore.instance
-              .collection("emergency_alerts")
-              .doc(i.id)
-              .collection(FirebaseAuth.instance.currentUser?.uid ?? "public")
-              .add({
-            "isEmergency": true,
-            "responseStatus": false,
-            "response": "",
-            "heartbeatRate": deviceOwnerData.heartRate,
-            "location": "${location.latitude}°N ${location.longitude}°E",
-            "spo2": deviceOwnerData.spo2,
-            "fallDetection": false,
-            "isManual": true,
-            "timestamp": FieldValue.serverTimestamp()
-          });
-
           Map<String, Map<String, dynamic>> supervisors =
               Map<String, Map<String, dynamic>>.from(i.data()['supervisors']);
           var filteredSupervisors = supervisors.entries
@@ -363,34 +332,71 @@ class _EmergencyCardState extends State<EmergencyCard> {
                 .compareTo(int.parse(a.value['priority'].toString())));
 
           for (var supervisor in filteredSupervisors) {
+            if (!_isEmergency) {
+              break;
+            }
+            final sup = await FirebaseFirestore.instance
+                .collection("users")
+                .where('phone_number', isEqualTo: supervisor.key)
+                .get();
+            await FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .set({
+              "isEmergency": true,
+              "responseStatus": false,
+              "response": "",
+              "userUid": FirebaseAuth.instance.currentUser?.uid,
+              "heartbeatRate": deviceOwnerData.heartRate,
+              "location": "0°N 0°E",
+              "spo2": deviceOwnerData.spo2,
+              "fallDetection": false,
+              "isManual": true,
+              "timestamp": FieldValue.serverTimestamp()
+            }, SetOptions(merge: true));
+
+            await FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .collection(sup.docs.first.id)
+                .add({
+              "isEmergency": true,
+              "responseStatus": false,
+              "response": "",
+              "heartbeatRate": deviceOwnerData.heartRate,
+              "location": "0°N 0°E",
+              "spo2": deviceOwnerData.spo2,
+              "fallDetection": false,
+              "isManual": true,
+              "timestamp": FieldValue.serverTimestamp()
+            });
             send.sendNotification(supervisor.key, "Emergency!!",
                 "Siva has clicked the SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
 
             print(
                 "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Sent Alert to ${supervisor.key}")),
+            );
             await Future.delayed(Duration(seconds: 30));
+            FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .snapshots()
+                .listen((DocumentSnapshot doc) {
+              if (doc.exists && doc["responseStatus"] == true) {
+                String responderName = i.data()['name'] ?? "User";
+                setState(() {
+                  _isEmergency = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("$responderName Responded"),
+                  ),
+                );
+              }
+            });
           }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Sent Alert to ${i.data()['name']}")),
-          );
-          FirebaseFirestore.instance
-              .collection("emergency_alerts")
-              .doc(i.id)
-              .snapshots()
-              .listen((DocumentSnapshot doc) {
-            if (doc.exists && doc["responseStatus"] == true) {
-              String responderName = i.data()['name'] ?? "User";
-              setState(() {
-                _isEmergency = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("$responderName Responded"),
-                ),
-              );
-            }
-          });
         }
 
         if (attempt == 3) {
