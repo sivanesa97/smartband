@@ -282,8 +282,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
   }
 
   Future<void> _handleSOSClick(bool sosClicked) async {
-    
-    final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context, listen: false);
+    final deviceOwnerData =
+        provider.Provider.of<OwnerDeviceData>(context, listen: false);
     setState(() {
       _isEmergency = true;
     });
@@ -309,7 +309,8 @@ class _EmergencyCardState extends State<EmergencyCard> {
         }
         final data = await FirebaseFirestore.instance
             .collection("users")
-            .where('phone_number', isEqualTo: widget.user.phone_number.toString())
+            .where('phone_number',
+                isEqualTo: widget.user.phone_number.toString())
             .get();
         SendNotification send = SendNotification();
         for (QueryDocumentSnapshot<Map<String, dynamic>> i in data.docs) {
@@ -364,9 +365,10 @@ class _EmergencyCardState extends State<EmergencyCard> {
           for (var supervisor in filteredSupervisors) {
             send.sendNotification(supervisor.key, "Emergency!!",
                 "Siva has clicked the SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
-            await Future.delayed(Duration(seconds: 30));
+
             print(
                 "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+            await Future.delayed(Duration(seconds: 30));
           }
 
           ScaffoldMessenger.of(context).showSnackBar(

@@ -163,8 +163,9 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                   child: InkWell(
                     onTap: () async {
                       Future<void> _handleSOSClick(bool sosClicked) async {
-                        final deviceOwnerData =
-                            Provider.of<OwnerDeviceData>(context, listen: false);
+                        final deviceOwnerData = Provider.of<OwnerDeviceData>(
+                            context,
+                            listen: false);
                         setState(() {
                           _isEmergency = true;
                         });
@@ -192,8 +193,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
                                 .where('phone_number',
-                                    isEqualTo:
-                                        "+94965538195")
+                                    isEqualTo: "+94965538195")
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -216,8 +216,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "userUid":
                                     FirebaseAuth.instance.currentUser?.uid,
                                 "heartbeatRate": deviceOwnerData.heartRate,
-                                "location":
-                                    "0°N 0°E",
+                                "location": "0°N 0°E",
                                 "spo2": deviceOwnerData.spo2,
                                 "fallDetection": false,
                                 "isManual": true,
@@ -235,8 +234,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                 "responseStatus": false,
                                 "response": "",
                                 "heartbeatRate": deviceOwnerData.heartRate,
-                                "location":
-                                    "0°N 0°E",
+                                "location": "0°N 0°E",
                                 "spo2": deviceOwnerData.spo2,
                                 "fallDetection": false,
                                 "isManual": true,
@@ -254,41 +252,45 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                                     int.parse(b.value['priority'].toString())
                                         .compareTo(int.parse(
                                             a.value['priority'].toString())));
-                              print(filteredSupervisors);
+
                               for (var supervisor in filteredSupervisors) {
                                 send.sendNotification(
                                     supervisor.key,
                                     "Emergency!!",
                                     "Siva has clicked the SOS Button from 0°N 0°E. Please respond");
-                                await Future.delayed(Duration(seconds: 30));
+
                                 print(
                                     "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
-                              }
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "Sent Alert to ${i.data()['name']}")),
-                              );
-                              FirebaseFirestore.instance
-                                  .collection("emergency_alerts")
-                                  .doc(i.id)
-                                  .snapshots()
-                                  .listen((DocumentSnapshot doc) {
-                                if (doc.exists &&
-                                    doc["responseStatus"] == true) {
-                                  String responderName =
-                                      i.data()['name'] ?? "User";
-                                  setState(() {
-                                    _isEmergency = false;
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("$responderName Responded"),
-                                    ),
-                                  );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Sent Alert to ${i.data()['name']}")),
+                                );
+                                FirebaseFirestore.instance
+                                    .collection("emergency_alerts")
+                                    .doc(i.id)
+                                    .snapshots()
+                                    .listen((DocumentSnapshot doc) {
+                                  if (doc.exists &&
+                                      doc["responseStatus"] == true) {
+                                    String responderName =
+                                        i.data()['name'] ?? "User";
+                                    setState(() {
+                                      _isEmergency = false;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text("$responderName Responded"),
+                                      ),
+                                    );
+                                  }
+                                });
+                                if (!_isEmergency) {
+                                  break;
                                 }
-                              });
+                                await Future.delayed(Duration(seconds: 30));
+                              }
                             }
 
                             if (attempt == 3) {

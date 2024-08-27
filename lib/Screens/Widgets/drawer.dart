@@ -100,7 +100,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                   alignment: Alignment.center,
                                   child: Image.asset(
                                     "assets/watch.png",
-                                    width: width * 0.3,
+                                    width: width * 0.2,
                                     height: height * 0.2,
                                     fit: BoxFit.fitWidth,
                                   ),
@@ -178,8 +178,8 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       Navigator.of(context, rootNavigator: true).push(
                           MaterialPageRoute(
                               maintainState: true,
-                              builder: (context) =>
-                                  SupervisorDashboard(phNo: subscriptionStatus.phoneNumber)));
+                              builder: (context) => SupervisorDashboard(
+                                  phNo: subscriptionStatus.phoneNumber)));
                     },
                     child: const ListTile(
                       leading: Icon(

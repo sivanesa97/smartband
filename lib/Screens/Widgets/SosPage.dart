@@ -192,7 +192,6 @@ class _SOSPageState extends State<SOSPage> {
                     print("closing overlay");
                     handleUpdate();
                     FlutterOverlayWindow.closeOverlay();
-
                     stopSound();
                   },
                   style: ElevatedButton.styleFrom(
@@ -211,29 +210,29 @@ class _SOSPageState extends State<SOSPage> {
                   ),
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    print("closing overlay");
-                    FlutterOverlayWindow.closeOverlay();
-                    stopSound();
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  ),
-                  child: const Text(
-                    'Skip For Now',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     print("closing overlay");
+                //     FlutterOverlayWindow.closeOverlay();
+                //     stopSound();
+                //     Navigator.pop(context);
+                //   },
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: Colors.red,
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(30),
+                //     ),
+                //     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                //   ),
+                //   child: const Text(
+                //     'Skip For Now',
+                //     style: TextStyle(
+                //       fontSize: 18,
+                //       color: Colors.white,
+                //     ),
+                //   ),
+                // ),
+                // SizedBox(height: 20),
               ],
             ),
           )

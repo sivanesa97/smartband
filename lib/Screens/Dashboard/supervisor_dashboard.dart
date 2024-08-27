@@ -48,38 +48,6 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
     });
   }
 
-  // Function to show supervisor dialog and handle OTP verification
-  void _showSupervisorDialog(int otp_num) async {
-    if (_phNoConn.text != widget.phNo) {
-      // _otpConn.text == otp_num.toString()) {
-      String phonetoCheck = _phNoConn.text;
-      var usersCollection = FirebaseFirestore.instance.collection("users");
-      var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: widget.phNo)
-          .get();
-
-      final docs1 = await FirebaseFirestore.instance
-          .collection('users')
-          .where('phone_number', isEqualTo: phonetoCheck)
-          .get();
-      if (docs1.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Phone Number does not exist in the collection.")));
-      } else if (querySnapshot.docs.isNotEmpty) {
-        await usersCollection
-            .doc(FirebaseAuth.instance.currentUser!.uid)
-            .update({
-          "relations": FieldValue.arrayUnion([phonetoCheck])
-        });
-
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
-    }
-  }
-
   // Function to fetch relation details where current user email is in relations array
   Future<List<Map<String, dynamic>>> _fetchRelationDetails(
       List<String> phoneNumber) async {
@@ -154,6 +122,67 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String status = "";
   String subscription = "";
   bool _isSubscriptionFetched = false;
+
+  void _showSupervisorDialog(int otp_num) async {
+    // String phn = '+94735833006';
+    if (_phNoConn.text != widget.phNo) {
+      String phonetoCheck = _phNoConn.text;
+      print(phonetoCheck);
+      var usersCollection = FirebaseFirestore.instance.collection("users");
+      var ownerSnapshot = await usersCollection
+          .where('phone_number', isEqualTo: phonetoCheck)
+          .where('role', isEqualTo: 'watch wearer')
+          .get();
+
+      if (ownerSnapshot.docs.isNotEmpty) {
+        var docData = ownerSnapshot.docs.first.data();
+        Map<String, dynamic> supervisors =
+            Map<String, dynamic>.from(docData['supervisors'] ?? {});
+
+        int highestPriority = 0;
+        if (supervisors.isNotEmpty) {
+          highestPriority = supervisors.values.map((s) {
+            return int.tryParse(s['priority']) ?? 0;
+          }).reduce((a, b) => a > b ? a : b);
+        }
+
+        int newPriority = highestPriority + 1;
+
+        supervisors[widget.phNo] = {
+          'priority': newPriority.toString(),
+          'status': 'inactive',
+        };
+
+        await ownerSnapshot.docs.first.reference.update({
+          'supervisors': supervisors,
+        });
+      }
+
+      var querySnapshot = await usersCollection
+          .where('phone_number', isEqualTo: widget.phNo)
+          // .where('phone_number', isEqualTo: phn)
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        var data = querySnapshot.docs.first.data()['relations'];
+        print(data);
+        await querySnapshot.docs.first.reference.update({
+          // "relations": FieldValue.arrayUnion([widget.phNo.toString()])
+          "relations": FieldValue.arrayUnion([phonetoCheck.toString()])
+        });
+
+        Navigator.of(context, rootNavigator: true).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Phone number does not exist in the collection.")));
+      }
+    } else if (_phNoConn.text == widget.phNo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter a different number")));
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+    }
+  }
 
   void _showRoleDialog() {
     bool sent = false;

@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:http/http.dart' as http;
@@ -157,6 +159,13 @@ class _SignupScreenState extends State<SignupScreen> {
             print(response.statusCode);
           }
           print("third one");
+          // final deviceOwnerData =
+          //     Provider.of<OwnerDeviceData>(context, listen: false);
+
+          // Provider.of<OwnerDeviceData>(context, listen: false).updateStatus(
+          //     age: _dateOfBirth.text,
+          //     heartRate: deviceOwnerData.heartRate,
+          //     spo2: deviceOwnerData.spo2);
 
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Account created successfully")));

@@ -97,9 +97,9 @@ class BluetoothConnectionService {
         final data = json.decode(response.body) as Map<String, dynamic>;
         if (data['status'].toString() == 'active') {
           isUserActive = true;
-          if (data['device_id'] != null) {
-            deviceName = data['device_id'].toString();
-          }
+        }
+        if (data['device_id'] != null) {
+          deviceName = data['device_id'].toString();
         }
         DocumentReference docRef = FirebaseFirestore.instance
             .collection('server_time')

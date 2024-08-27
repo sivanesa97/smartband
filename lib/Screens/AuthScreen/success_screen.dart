@@ -30,7 +30,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final subscriptionStatus = Provider.of<SubscriptionDataProvider>(context);
-
+    print(widget.role);
     if (!subscriptionStatus.isSubscribed &&
         !_dialogShown &&
         widget.role == 'watch wearer') {
@@ -46,15 +46,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                  ),
+                  // Align(
+                  //   alignment: Alignment.topRight,
+                  //   child: IconButton(
+                  //     icon: const Icon(Icons.close),
+                  //     onPressed: () {
+                  //       Navigator.of(context).pop(); // Close the dialog
+                  //     },
+                  //   ),
+                  // ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
@@ -143,6 +143,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final screenHeight = screenSize.height;
     final person =
         widget.role == 'supervisor' ? 'Monitoring Person' : 'Device Owner';
+    final subscriptionStatus = Provider.of<SubscriptionDataProvider>(context);
 
     return Scaffold(
       body: Stack(
@@ -191,49 +192,50 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 SizedBox(height: screenHeight * 0.3),
-                ElevatedButton(
-                  onPressed: () {
-                    if (widget.status == '1') {
-                      if (widget.role == 'supervisor') {
-                        Navigator.of(context, rootNavigator: true)
-                            .pushReplacement(MaterialPageRoute(
-                                maintainState: true,
-                                builder: (context) => SupervisorDashboard(
-                                      phNo: widget.phNo,
-                                    )));
+                if (widget.role == 'supervisor' || subscriptionStatus.isActive)
+                  ElevatedButton(
+                    onPressed: () {
+                      if (widget.status == '1') {
+                        if (widget.role == 'supervisor') {
+                          Navigator.of(context, rootNavigator: true)
+                              .pushReplacement(MaterialPageRoute(
+                                  maintainState: true,
+                                  builder: (context) => SupervisorDashboard(
+                                        phNo: widget.phNo,
+                                      )));
+                        } else {
+                          Navigator.of(context, rootNavigator: true)
+                              .pushReplacement(MaterialPageRoute(
+                                  maintainState: true,
+                                  builder: (context) => const HomepageScreen(
+                                        hasDeviceId: true,
+                                      )));
+                        }
                       } else {
-                        Navigator.of(context, rootNavigator: true)
-                            .pushReplacement(MaterialPageRoute(
-                                maintainState: true,
-                                builder: (context) => const HomepageScreen(
-                                      hasDeviceId: true,
-                                    )));
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => SignupScreen(
+                                  phNo: widget.phNo,
+                                  role: widget.role,
+                                  deviceId: widget.deviceId,
+                                )));
                       }
-                    } else {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => SignupScreen(
-                                phNo: widget.phNo,
-                                role: widget.role,
-                                deviceId: widget.deviceId,
-                              )));
-                    }
-                  },
-                  child: const Text(
-                    'Continue',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    },
+                    child: const Text(
+                      'Continue',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: screenHeight * 0.15,
+                          vertical: screenWidth * 0.03),
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.symmetric(
-                        horizontal: screenHeight * 0.15,
-                        vertical: screenWidth * 0.03),
-                  ),
-                ),
               ],
             ),
           ),

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
@@ -68,18 +69,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             .showSnackBar(const SnackBar(content: Text("Enter OTP!")));
         return;
       }
-      // print("${otp}  ${generated_otp}");
+      print("${otp}  ${generated_otp}");
       if (true) {
         // if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)
             .get();
-        // print(phNo);
         var apiData = await BluetoothConnectionService().getApiData(phNo);
+        final prefs = await SharedPreferences.getInstance();
         int ownerStatus = 0;
         String deviceName = "";
-        // print(apiData);
         if (apiData != null) {
           deviceName = apiData['deviceName'];
           if (deviceName == "null") {
@@ -96,24 +96,28 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       deviceName: deviceName,
                       subscribed: true,
                       phoneNumber: widget.phoneNumber);
-              final deviceOwnerData = Provider.of<OwnerDeviceData>(context, listen: false);
+              final deviceOwnerData =
+                  Provider.of<OwnerDeviceData>(context, listen: false);
               int age = 0;
-              var dob = data.docs.first.data()['dob'];
-              if (dob != null && dob != '') {
-                try {
-                  DateTime birthdate =
-                      DateFormat("yyyy-MM-dd").parse(dob.toString());
-                  DateTime currentDate = DateTime.now();
-                  age = currentDate.year - birthdate.year;
-                  if (currentDate.month < birthdate.month ||
-                      (currentDate.month == birthdate.month &&
-                          currentDate.day < birthdate.day)) {
-                    age--;
+              if (data.docs.isNotEmpty) {
+                var dob = data.docs.first.data()['dob'];
+                if (dob != null && dob != '') {
+                  try {
+                    DateTime birthdate =
+                        DateFormat("yyyy-MM-dd").parse(dob.toString());
+                    DateTime currentDate = DateTime.now();
+                    age = currentDate.year - birthdate.year;
+                    if (currentDate.month < birthdate.month ||
+                        (currentDate.month == birthdate.month &&
+                            currentDate.day < birthdate.day)) {
+                      age--;
+                    }
+                  } catch (e) {
+                    print(e);
                   }
-                } catch (e) {
-                  print(e);
                 }
               }
+              print(age);
               Provider.of<OwnerDeviceData>(context, listen: false).updateStatus(
                   age: age,
                   heartRate: deviceOwnerData.heartRate,
@@ -125,12 +129,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           } else if (isUserActive && deviceName != "") {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("Please Subscribe to use watch!")));
+          } else if (deviceName != "") {
+            ownerStatus = 1;
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("API Issue! Contact Tech Support!")));
         }
-        print(apiData);
+        print('sdnflswm');
+        prefs.setInt('ownerStatus', ownerStatus);
         if (data.docs.isNotEmpty) {
           final email = data.docs.first.data()['email'];
           await FirebaseAuth.instance
@@ -141,12 +148,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({'fcmKey': await FirebaseMessaging.instance.getToken()});
           if (ownerStatus == 1) {
-            // Navigator.of(context, rootNavigator: true)
-            //     .pushReplacement(MaterialPageRoute(
-            //         maintainState: true,
-            //         builder: (context) => const HomepageScreen(
-            //               hasDeviceId: true,
-            //             )));
             Navigator.of(context, rootNavigator: true).pushReplacement(
                 MaterialPageRoute(
                     maintainState: true,
@@ -170,18 +171,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         phNo: phNo,
                         deviceId: '',
                         status: '1')));
-            // Navigator.of(context, rootNavigator: true)
-            //     .pushReplacement(MaterialPageRoute(
-            //         maintainState: true,
-            //         builder: (context) => SupervisorDashboard(
-            //               phNo: phNo,
-            //             )));
           }
         } else {
-          // Navigator.of(context).push(MaterialPageRoute(
-          //     builder: (context) => HomePage(
-          //           phNo: widget.phoneNumber,
-          //         )));
           String selected_role = "supervisor";
           if (ownerStatus == 1) {
             selected_role = "watch wearer";
@@ -199,16 +190,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   role: selected_role,
                   deviceId: deviceName,
                   status: '2')));
-          // Navigator.of(context).push(MaterialPageRoute(
-          //     builder: (context) => SignupScreen(
-          //           phNo: phNo,
-          //           role: selected_role,
-          //           deviceId: deviceName,
-          //         )));
         }
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Invalid OTP!")));
       }
     } catch (e) {
       print('Failed to sign in: $e');
