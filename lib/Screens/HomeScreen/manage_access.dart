@@ -58,7 +58,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                         })
                       },
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         labelText: 'Phone Number',
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -87,7 +87,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                     ),
                     const SizedBox(height: 16),
                     Padding(
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -274,7 +274,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
           onTap: () {
             Navigator.of(context).pop();
           },
-          child: Icon(
+          child: const Icon(
             Icons.arrow_back,
             color: Colors.black,
           ),
@@ -291,7 +291,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
           ),
         ),
         actions: [
-          Padding(
+          const Padding(
             padding: EdgeInsets.only(right: 20),
             child: Icon(
               Icons.add,
@@ -338,7 +338,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                     stream: _fetchRelationDetails(widget.phNo.toString()),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(
+                        return const CircularProgressIndicator(
                           color: Color.fromRGBO(0, 83, 188, 1),
                         );
                       } else if (snapshot.hasError) {
@@ -358,9 +358,9 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                   final status = relationDetail['status']!;
 
                                   return Container(
-                                    padding: EdgeInsets.only(
+                                    padding: const EdgeInsets.only(
                                         left: 10.0, top: 10.0, bottom: 10.0),
-                                    margin: EdgeInsets.symmetric(
+                                    margin: const EdgeInsets.symmetric(
                                         horizontal: 15.0, vertical: 5.0),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
@@ -372,8 +372,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                           backgroundColor: Colors.white,
                                           child: Icon(
                                             Icons.account_circle,
-                                            color:
-                                                Color.fromRGBO(0, 83, 188, 1),
+                                            color: const Color.fromRGBO(
+                                                0, 83, 188, 1),
                                             size: width * 0.1,
                                           ),
                                         ),
@@ -383,7 +383,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                           child: Text(
                                             phone,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               color: Colors.black,
                                               fontSize: 18,
                                             ),
@@ -408,40 +408,101 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                         ),
                                         SizedBox(width: width * 0.05),
                                         GestureDetector(
-                                          onTap: () async {
-                                            final data = await FirebaseFirestore
-                                                .instance
-                                                .collection('users')
-                                                // .where('phone_number',
-                                                //     isEqualTo: '+94965538195')
-                                                .where('phone_number',
-                                                    isEqualTo: widget.phNo)
-                                                .get();
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                    "Are You Sure!",
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                  content: const Text(
+                                                      "you want to Delete this member?"),
+                                                  actions: [
+                                                    OutlinedButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                      style: OutlinedButton
+                                                          .styleFrom(
+                                                        side: const BorderSide(
+                                                            color: Colors.blue),
+                                                      ),
+                                                      child: const Text(
+                                                        "Cancel",
+                                                        style: TextStyle(
+                                                            color: Colors.blue),
+                                                      ),
+                                                    ),
+                                                    // Delete Button
+                                                    OutlinedButton(
+                                                      onPressed: () async {
+                                                        final data =
+                                                            await FirebaseFirestore
+                                                                .instance
+                                                                .collection(
+                                                                    'users')
+                                                                .where(
+                                                                    'phone_number',
+                                                                    isEqualTo:
+                                                                        widget
+                                                                            .phNo)
+                                                                .get();
 
-                                            if (data.docs.isNotEmpty) {
-                                              var docRef =
-                                                  data.docs.first.reference;
-                                              var docData =
-                                                  data.docs.first.data();
+                                                        if (data
+                                                            .docs.isNotEmpty) {
+                                                          var docRef = data.docs
+                                                              .first.reference;
+                                                          var docData = data
+                                                              .docs.first
+                                                              .data();
 
-                                              if (docData
-                                                  .containsKey('supervisors')) {
-                                                Map<String, dynamic>
-                                                    supervisors =
-                                                    Map<String, dynamic>.from(
-                                                        docData['supervisors']);
-                                                supervisors.remove(phone);
-                                                await docRef.update({
-                                                  'supervisors': supervisors,
-                                                });
-                                              }
-                                            }
+                                                          if (docData.containsKey(
+                                                              'supervisors')) {
+                                                            Map<String, dynamic>
+                                                                supervisors =
+                                                                Map<String,
+                                                                        dynamic>.from(
+                                                                    docData[
+                                                                        'supervisors']);
+                                                            supervisors
+                                                                .remove(phone);
+                                                            await docRef
+                                                                .update({
+                                                              'supervisors':
+                                                                  supervisors,
+                                                            });
+                                                          }
+                                                        }
+
+                                                        Navigator.of(context)
+                                                            .pop(); // Close the dialog after deletion
+                                                      },
+                                                      style: OutlinedButton
+                                                          .styleFrom(
+                                                        side: const BorderSide(
+                                                            color: Colors
+                                                                .red), // Red border
+                                                      ),
+                                                      child: const Text(
+                                                        "Delete",
+                                                        style: TextStyle(
+                                                            color: Colors.red),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
                                           },
-                                          child: Icon(
+                                          child: const Icon(
                                             Icons.delete,
                                             color: Colors.red,
                                           ),
                                         ),
+
                                         SizedBox(width: width * 0.06),
                                         // Icon(
                                         //   Icons.toggle_on,
@@ -465,7 +526,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                               width: width * 0.9,
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               decoration: BoxDecoration(
-                                  color: Color.fromRGBO(0, 83, 188, 1),
+                                  color: const Color.fromRGBO(0, 83, 188, 1),
                                   borderRadius: BorderRadius.circular(30)),
                               child: Text(
                                 "Add Members",
@@ -485,7 +546,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                   return Center(child: Text("Error: $error"));
                 },
                 loading: () {
-                  return CircularProgressIndicator(
+                  return const CircularProgressIndicator(
                     color: Color.fromRGBO(0, 83, 188, 1),
                   );
                 },

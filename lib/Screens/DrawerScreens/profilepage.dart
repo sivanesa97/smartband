@@ -30,8 +30,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _stepsgoalController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _minKmController = TextEditingController();
 
   String _selectedGender = "";
   DateTime? _selectedDate;
@@ -87,15 +85,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
             _heightController.text = data1['height'].toString() ?? '';
             _weightController.text = data1['weight'].toString() ?? '';
             _stepsgoalController.text = data1['steps_goal'].toString();
-            _minKmController.text = (data1?['minimum_km'] ?? 0).toString();
-            if (data1['home_location'] is GeoPoint) {
-              GeoPoint geoPoint = data1['home_location'];
-              _locationController.text =
-                  formatLatLng(LatLng(geoPoint.latitude, geoPoint.longitude));
-              defaultLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
-            } else {
-              _locationController.text = data1['home_location'] ?? '';
-            }
           });
         } else {
           print('Document does not exist');
@@ -404,93 +393,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                               )
                             ],
                           ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Location",
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: width * 0.04),
-                              ),
-                              SizedBox(
-                                width: width,
-                                height: isEdit ? 50 : 40,
-                                child: isEdit
-                                    ? TextFormField(
-                                        controller: _locationController,
-                                        decoration: InputDecoration(
-                                          suffixIcon: IconButton(
-                                            icon: Icon(Icons.map),
-                                            onPressed: () async {
-                                              final result =
-                                                  await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      MapSelectionScreen(
-                                                          defaultLocation:
-                                                              defaultLocation),
-                                                ),
-                                              );
-                                              if (result != null) {
-                                                setState(() {
-                                                  _locationController.text =
-                                                      formatLatLng(result);
-                                                });
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                      )
-                                    : Text(
-                                        _locationController.text,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.left,
-                                        style: TextStyle(
-                                            fontSize: width * 0.05,
-                                            color: Colors.black),
-                                      ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 5,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Geo Fencing Limit KM",
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: width * 0.04),
-                              ),
-                              SizedBox(
-                                width: width,
-                                height: isEdit ? 50 : 40,
-                                child: isEdit
-                                    ? TextFormField(
-                                        controller: _minKmController,
-                                        decoration: InputDecoration(
-                                          hintText:
-                                              data.minimum_km?.toString() ?? '',
-                                        ),
-                                        keyboardType: TextInputType
-                                            .number, // To input numbers
-                                      )
-                                    : Text(
-                                        _minKmController.text,
-                                        textAlign: TextAlign.left,
-                                        style:
-                                            TextStyle(fontSize: width * 0.05),
-                                      ),
-                              )
-                            ],
-                          ),
                         ],
                         SizedBox(
                           height: 5,
@@ -543,31 +445,6 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                 }
                               }
                               if (!isEdit) {
-                                GeoPoint convertToGeoPoint(String location) {
-                                  RegExp regExp = RegExp(
-                                      r'(\d+\.\d+)° ([NS]), (\d+\.\d+)° ([EW])');
-                                  Match? match = regExp.firstMatch(location);
-
-                                  if (match != null) {
-                                    double latitude =
-                                        double.parse(match.group(1)!);
-                                    if (match.group(2) == 'S')
-                                      latitude = -latitude;
-
-                                    double longitude =
-                                        double.parse(match.group(3)!);
-                                    if (match.group(4) == 'W')
-                                      longitude = -longitude;
-
-                                    return GeoPoint(latitude, longitude);
-                                  }
-
-                                  throw FormatException(
-                                      'Invalid location format');
-                                }
-
-                                GeoPoint geoPoint =
-                                    convertToGeoPoint(_locationController.text);
                                 FirebaseFirestore.instance
                                     .collection("users")
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -580,27 +457,31 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                       double.parse(_heightController.text),
                                   "weight":
                                       double.parse(_weightController.text),
-                                  "home_location": geoPoint,
-                                  "minimum_km":
-                                      int.parse(_minKmController.text),
                                 });
                                 getData();
                                 final response = await http.post(
-                                Uri.parse("https://snvisualworks.com/public/api/auth/register"),
-                                headers: <String, String>{
-                                  'Content-Type': 'application/json; charset=UTF-8',
-                                },
-                                body: jsonEncode(<String, dynamic>{
-                                  'name': _nameController.text,
-                                  'mobile_number': data.phone_number.toString(),
-                                  'email': _mailController.text,
-                                  'date_of_birth': _birthdayController.text,
-                                  'gender': _selectedGender?.toLowerCase(),
-                                  'height': double.parse(_heightController.text).toInt(),
-                                  'weight': double.parse(_weightController.text).toInt(),
-                                }),
-                              );
-                              print(response.statusCode);
+                                  Uri.parse(
+                                      "https://snvisualworks.com/public/api/auth/register"),
+                                  headers: <String, String>{
+                                    'Content-Type':
+                                        'application/json; charset=UTF-8',
+                                  },
+                                  body: jsonEncode(<String, dynamic>{
+                                    'name': _nameController.text,
+                                    'mobile_number':
+                                        data.phone_number.toString(),
+                                    'email': _mailController.text,
+                                    'date_of_birth': _birthdayController.text,
+                                    'gender': _selectedGender?.toLowerCase(),
+                                    'height':
+                                        double.parse(_heightController.text)
+                                            .toInt(),
+                                    'weight':
+                                        double.parse(_weightController.text)
+                                            .toInt(),
+                                  }),
+                                );
+                                print(response.statusCode);
                               }
                             },
                             child: !isEdit

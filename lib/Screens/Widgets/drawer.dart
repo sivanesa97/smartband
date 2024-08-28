@@ -9,6 +9,7 @@ import 'package:smartband/Screens/Dashboard/dashboard.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
+import 'package:smartband/Screens/DrawerScreens/geoFencing.dart';
 import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
 import 'package:smartband/Screens/DrawerScreens/profilepage.dart';
 import 'package:smartband/Screens/DrawerScreens/reportproblem.dart';
@@ -125,31 +126,75 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       ? Padding(
                           padding: const EdgeInsets.all(10.0),
                           child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  print(
-                                      "Disconnect : ${bluetoothDeviceManager.connectedDevices}");
-                                  bluetoothDeviceManager.disconnectFromDevice();
-                                  bluetoothDeviceManager.connectedDevices = [];
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 10.0),
-                                width: width * 0.4,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15.0),
-                                    color: Colors.white,
-                                    border: Border.all(
-                                        color: Color.fromRGBO(0, 83, 188, 1),
-                                        width: 3)),
-                                child: Text(
-                                  "Remove",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Color.fromRGBO(0, 83, 188, 1),
-                                  ),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      "Are You Sure!",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    content: Text(
+                                        "you want to remove access to your device?"),
+                                    actions: [
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: Colors.blue),
+                                        ),
+                                        child: Text(
+                                          "Cancel",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            print(
+                                                "Disconnect : ${bluetoothDeviceManager.connectedDevices}");
+                                            bluetoothDeviceManager
+                                                .disconnectFromDevice();
+                                            bluetoothDeviceManager
+                                                .connectedDevices = [];
+                                          });
+                                          Navigator.of(context).pop();
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: Colors.red),
+                                        ),
+                                        child: Text(
+                                          "Delete",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 10.0),
+                              width: width * 0.4,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15.0),
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: Color.fromRGBO(0, 83, 188, 1),
+                                  width: 3,
                                 ),
-                              )),
+                              ),
+                              child: Text(
+                                "Remove",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color.fromRGBO(0, 83, 188, 1),
+                                ),
+                              ),
+                            ),
+                          ),
                         )
                       : SizedBox.shrink(),
                   subscriptionStatus.deviceId != "" &&
@@ -215,21 +260,6 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       Navigator.of(context, rootNavigator: true).push(
                           MaterialPageRoute(
                               maintainState: true,
-                              builder: (context) => const ComingSoon()));
-                    },
-                    child: const ListTile(
-                      leading: Icon(
-                        Icons.alarm,
-                        color: Colors.black26,
-                      ),
-                      title: Text("Alarm"),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
-                              maintainState: true,
                               builder: (context) => const Profilepage()));
                     },
                     child: const ListTile(
@@ -238,6 +268,36 @@ class _DrawerScreenState extends State<DrawerScreen> {
                         color: Colors.black26,
                       ),
                       title: Text("Profile"),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const GeoFencing()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.info_outline,
+                        color: Colors.black26,
+                      ),
+                      title: Text("GeoFencing"),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                              maintainState: true,
+                              builder: (context) => const ComingSoon()));
+                    },
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.alarm,
+                        color: Colors.black26,
+                      ),
+                      title: Text("Alarm"),
                     ),
                   ),
                   InkWell(

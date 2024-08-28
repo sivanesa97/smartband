@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -204,7 +203,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                               })
                             },
                             decoration: InputDecoration(
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
                               labelText: 'Phone Number',
                               suffixIcon: IconButton(
                                 onPressed: () {
@@ -460,10 +459,11 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
+                return const Center(
                     child: CircularProgressIndicator(color: Colors.blueAccent));
               } else if (snapshot.hasError) {
-                return Center(child: Text("Error fetching relation details"));
+                return const Center(
+                    child: Text("Error fetching relation details"));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 List<Map<String, dynamic>> relationDetails = snapshot.data!;
                 if (dropdownValue == 'No Users') {
@@ -581,7 +581,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 16,
                                       ),
                                       Center(
@@ -663,7 +663,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   },
                                                   child: Container(
                                                     padding:
-                                                        EdgeInsets.all(5.0),
+                                                        const EdgeInsets.all(
+                                                            5.0),
                                                     decoration: BoxDecoration(
                                                         borderRadius:
                                                             BorderRadius
@@ -685,7 +686,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           ),
                                         ],
                                       )),
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 16,
                                       ),
                                       _isSubscriptionFetched
@@ -800,7 +801,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: Color.fromRGBO(
+                                                        color: const Color
+                                                            .fromRGBO(
                                                             255, 245, 227, 1),
                                                         shape: RoundedRectangleBorder(
                                                             borderRadius:
@@ -857,7 +859,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                   Expanded(
                                                       flex: 2,
                                                       child: Card(
-                                                        color: Color.fromRGBO(
+                                                        color: const Color
+                                                            .fromRGBO(
                                                             255, 234, 234, 1),
                                                         shape: RoundedRectangleBorder(
                                                             borderRadius:
@@ -879,7 +882,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                             children: [
                                                               Row(
                                                                 children: [
-                                                                  Icon(
+                                                                  const Icon(
                                                                       Icons
                                                                           .warning,
                                                                       size: 25),
@@ -951,7 +954,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                       ],
                                                                     ),
                                                                   ),
-                                                                  Text(
+                                                                  const Text(
                                                                     "SOS",
                                                                     style: TextStyle(
                                                                         color: Colors
@@ -1014,7 +1017,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(
+                                                              const SizedBox(
                                                                   height: 8),
                                                               Column(
                                                                 children: [
@@ -1024,7 +1027,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                         width *
                                                                             0.3,
                                                                   ),
-                                                                  SizedBox(
+                                                                  const SizedBox(
                                                                     height: 10,
                                                                   ),
                                                                   Row(
@@ -1041,7 +1044,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                                 0.07,
                                                                             fontWeight: FontWeight
                                                                                 .bold,
-                                                                            color: Color.fromRGBO(
+                                                                            color: const Color.fromRGBO(
                                                                                 0,
                                                                                 83,
                                                                                 188,
@@ -1100,7 +1103,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                   ),
                                                                 ],
                                                               ),
-                                                              SizedBox(
+                                                              const SizedBox(
                                                                   height: 8),
                                                               Stack(
                                                                 alignment:
@@ -1124,7 +1127,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                           ],
                                         ),
                                       ),
-                                      SizedBox(
+                                      const SizedBox(
                                         height: 16,
                                       ),
                                       // Center(
@@ -1152,7 +1155,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                               return Text("Error : $error");
                             },
                             loading: () {
-                              return Center(
+                              return const Center(
                                 child: CircularProgressIndicator(
                                     color: Colors.blueAccent),
                               );
@@ -1169,17 +1172,14 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset(
-                        'assets/user.png', // replace with your image path
-                        width: width * 1, // adjust the width as needed
-                        height: width * 1, // adjust the height as needed
+                        'assets/user.png',
+                        width: width * 1,
+                        height: width * 1,
                       ),
                       const SizedBox(height: 20),
-
-                      // Add Users Button
                       GestureDetector(
                         onTap: () {
                           _showRoleDialog();
-                          print("Adding users");
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -1206,12 +1206,12 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
           );
         },
         error: (error, stackTrace) {
-          return Center(
+          return const Center(
             child: Text("Error Fetching User details"),
           );
         },
         loading: () {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(color: Colors.blueAccent),
           );
         },
