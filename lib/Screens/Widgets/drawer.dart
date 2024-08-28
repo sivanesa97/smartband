@@ -111,13 +111,28 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           : subscriptionStatus.deviceId != "" &&
                                   subscriptionStatus.isSubscribed &&
                                   subscriptionStatus.isActive
-                              ? Text(
-                                  "You have not connected a device",
-                                  maxLines: 2,
-                                  style: TextStyle(
-                                      fontSize: width * 0.05,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "You have not connected a device",
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          fontSize: width * 0.05,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Image.asset(
+                                        "assets/watch.png",
+                                        width: width * 0.2,
+                                        height: height * 0.2,
+                                        fit: BoxFit.fitWidth,
+                                      ),
+                                    ),
+                                  ],
                                 )
                               : SizedBox.shrink(),
                     ),

@@ -785,6 +785,37 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                               ),
                                             )
                                           : const SizedBox.shrink(),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20.0),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              "For You, ",
+                                              style: TextStyle(
+                                                  fontSize: width * 0.06),
+                                            ),
+                                            SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () {
+                                                final Uri phoneUri = Uri(
+                                                  scheme: 'tel',
+                                                  path: dropdownValue,
+                                                );
+                                                launchUrl(phoneUri);
+                                              },
+                                              child: Icon(
+                                                Icons.call,
+                                                color: Colors
+                                                    .green, // You can change the color as needed
+                                                size: width *
+                                                    0.07, // Adjust the size according to your design
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
                                       const SizedBox(height: 16),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(

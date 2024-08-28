@@ -8,9 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:smartband/Screens/Dashboard/connected.dart';
 import 'package:http/http.dart' as http;
 
-import 'Screens/Dashboard/dashboard.dart';
-import 'Screens/InstructionsScreen/instructions.dart';
-
 class BluetoothDeviceManager {
   static final BluetoothDeviceManager _instance =
       BluetoothDeviceManager._internal();
@@ -119,8 +116,8 @@ class BluetoothDeviceManager {
           .get();
       var phoneNumber = data.data()?["phone_number"];
       if (phoneNumber == null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Invalid Mobile Number!")));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Invalid Mobile Number!")));
         return;
       }
       final response = await http.post(
