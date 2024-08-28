@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -198,19 +199,25 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                     ),
                     const SizedBox(height: 16),
                     _selectedRole == "supervisor"
-                        ? TextFormField(
+                        ? IntlPhoneField(
+                            initialCountryCode: 'LK',
                             controller: _phoneConn,
+                            onChanged: (phone) => {
+                              setState(() {
+                                _phoneConn.text = phone.completeNumber;
+                              })
+                            },
                             decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Phone Number',
-                                suffixIcon: IconButton(
-                                    onPressed: () {
-                                      sent = true;
-                                      _fetchPhoneDetails(
-                                          _phoneConn.text, otp_num);
-                                    },
-                                    icon:
-                                        Icon(sent ? Icons.check : Icons.send))),
+                              border: OutlineInputBorder(),
+                              labelText: 'Phone Number',
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  sent = true;
+                                  _fetchPhoneDetails(_phoneConn.text, otp_num);
+                                },
+                                icon: Icon(sent ? Icons.check : Icons.send),
+                              ),
+                            ),
                           )
                         : const SizedBox.shrink(),
                     const SizedBox(height: 16),

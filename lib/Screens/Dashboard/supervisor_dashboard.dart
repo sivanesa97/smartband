@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
@@ -199,19 +200,25 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _selectedRole == "supervisor"
-                        ? TextFormField(
+                        ? IntlPhoneField(
+                            initialCountryCode: 'LK',
                             controller: _phNoConn,
+                            onChanged: (phone) => {
+                              setState(() {
+                                _phNoConn.text = phone.completeNumber;
+                              })
+                            },
                             decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'Phone Number',
-                                suffixIcon: IconButton(
-                                    onPressed: () {
-                                      sent = true;
-                                      _fetchPhoneDetails(
-                                          _phNoConn.text, otp_num);
-                                    },
-                                    icon:
-                                        Icon(sent ? Icons.check : Icons.send))),
+                              border: OutlineInputBorder(),
+                              labelText: 'Phone Number',
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  sent = true;
+                                  _fetchPhoneDetails(_phNoConn.text, otp_num);
+                                },
+                                icon: Icon(sent ? Icons.check : Icons.send),
+                              ),
+                            ),
                           )
                         : const SizedBox.shrink(),
                     const SizedBox(height: 16),
