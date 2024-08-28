@@ -319,19 +319,23 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   @override
-  Future<void> initState() async {
+  void initState() {
     // TODO: implement initState
     super.initState();
     // _phone_number.text = widget.phNo.substring(3, widget.phNo.length);
     _phone_number.text = widget.phNo;
-    final datas = await FirebaseFirestore.instance
+    _loadState();
+  }
+
+  Future<void> _loadState() async {
+    var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where("phone_number", isEqualTo: widget.phNo)
+        .where('phone_number', isEqualTo: widget.phNo)
         .where('role', isEqualTo: 'supervisor')
         .get();
-    if (datas.docs.isNotEmpty) {
-      _emailId.text = datas.docs.first.data()['email'];
-      _username.text = datas.docs.first.data()['name'];
+    if (userDoc.docs.isNotEmpty) {
+      _emailId.text = userDoc.docs.first.data()['email'];
+      _username.text = userDoc.docs.first.data()['name'];
     }
   }
 

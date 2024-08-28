@@ -426,9 +426,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.add_circle_outline,
-              size: 30,
+            icon: Container(
+              width: 30,
+              height: 30,
+              child: Image.asset('assets/profile_icon.png'),
             ),
             onPressed: () {
               _showRoleDialog();
@@ -1164,19 +1165,40 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                 );
               } else {
                 return Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      _showRoleDialog();
-                      print("Adding users");
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10.0),
-                      child: const Text(
-                        "No Users found\nAdd users",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 18),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/user.png', // replace with your image path
+                        width: width * 1, // adjust the width as needed
+                        height: width * 1, // adjust the height as needed
                       ),
-                    ),
+                      const SizedBox(height: 20),
+
+                      // Add Users Button
+                      GestureDetector(
+                        onTap: () {
+                          _showRoleDialog();
+                          print("Adding users");
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              vertical: width * 0.02, horizontal: width * 0.2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(5.0),
+                          ),
+                          child: const Text(
+                            "Add Users",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }

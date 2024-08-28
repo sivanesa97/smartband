@@ -72,7 +72,6 @@ flutter:
     - assets/phone.png
     - assets/heart_rate.png
     - assets/heart_rate_icon.png
-    - assets/profile_icon.png
     - assets/spo2_icon.png
     - assets/heart_rate_1.png
     - assets/otp_page.png
@@ -81,3 +80,4 @@ flutter:
     - assets/monitoring_person_background.png
     - assets/image230.png
     - assets/image231.png
+    - assets/user.png
