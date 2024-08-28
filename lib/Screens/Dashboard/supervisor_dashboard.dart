@@ -7,8 +7,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
-import 'package:smartband/Screens/HomeScreen/settings.dart';
-import 'package:smartband/Screens/Widgets/drawer_supervisor.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
@@ -18,12 +16,9 @@ import 'package:intl/intl.dart' as intl;
 
 import '../DrawerScreens/profilepage.dart';
 import '../Models/usermodel.dart';
-import '../Widgets/appBarProfile.dart';
 import '../Widgets/drawer.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'dart:math';
-
-import 'dashboard.dart';
 
 class SupervisorDashboard extends ConsumerStatefulWidget {
   String phNo;

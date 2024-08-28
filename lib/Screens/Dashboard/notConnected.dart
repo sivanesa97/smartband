@@ -306,11 +306,11 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         }
                       }
 
-                      await _handleSOSClick(true);
-                      // setState(() {
-                      //   addDeviceBtn = true;
-                      //   scanForDevices(context);
-                      // });
+                      // await _handleSOSClick(true);
+                      setState(() {
+                        addDeviceBtn = true;
+                        scanForDevices(context);
+                      });
                     },
                     child: Align(
                       alignment: Alignment.center,

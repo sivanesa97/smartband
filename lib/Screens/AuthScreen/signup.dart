@@ -327,6 +327,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final datas = await FirebaseFirestore.instance
         .collection('users')
         .where("phone_number", isEqualTo: widget.phNo)
+        .where('role', isEqualTo: 'supervisor')
         .get();
     if (datas.docs.isNotEmpty) {
       _emailId.text = datas.docs.first.data()['email'];
