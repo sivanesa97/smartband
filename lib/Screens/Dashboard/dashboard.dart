@@ -200,18 +200,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       Row(
                         children: [
-                          GestureDetector(
-                            child: Image.asset(
-                              "assets/profile_icon.png",
-                              width: 25,
-                              height: 25,
-                            ),
-                            onTap: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) =>
-                                      HomePage(phNo: widget.phNo)));
-                            },
-                          ),
+                          // GestureDetector(
+                          //   child: Image.asset(
+                          //     "assets/profile_icon.png",
+                          //     width: 25,
+                          //     height: 25,
+                          //   ),
+                          //   onTap: () {
+                          //     Navigator.of(context).push(MaterialPageRoute(
+                          //         builder: (context) =>
+                          //             HomePage(phNo: widget.phNo)));
+                          //   },
+                          // ),
                           const SizedBox(
                             width: 10,
                           ),

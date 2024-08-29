@@ -162,7 +162,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                         ),
                                         child: Text(
                                           "Cancel",
-                                          style: TextStyle(color: Colors.white),
+                                          style: TextStyle(color: Colors.black),
                                         ),
                                       ),
                                       OutlinedButton(
@@ -182,7 +182,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                         ),
                                         child: Text(
                                           "Delete",
-                                          style: TextStyle(color: Colors.white),
+                                          style: TextStyle(color: Colors.black),
                                         ),
                                       ),
                                     ],
@@ -285,21 +285,25 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       title: Text("Profile"),
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
-                              maintainState: true,
-                              builder: (context) => const GeoFencing()));
-                    },
-                    child: const ListTile(
-                      leading: Icon(
-                        Icons.info_outline,
-                        color: Colors.black26,
-                      ),
-                      title: Text("GeoFencing"),
-                    ),
-                  ),
+                  subscriptionStatus.deviceId != "" &&
+                          subscriptionStatus.isSubscribed &&
+                          subscriptionStatus.isActive
+                      ? InkWell(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                    maintainState: true,
+                                    builder: (context) => const GeoFencing()));
+                          },
+                          child: const ListTile(
+                            leading: Icon(
+                              Icons.info_outline,
+                              color: Colors.black26,
+                            ),
+                            title: Text("GeoFencing"),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                   InkWell(
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(

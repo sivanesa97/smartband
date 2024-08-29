@@ -147,13 +147,10 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
       body: !addDeviceBtn
           ? Column(
               children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
-                  child: Text(
-                    "You have not linked a device",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: height * 0.035),
-                  ),
+                Image.asset(
+                  'assets/user.png',
+                  width: width * 1,
+                  height: width * 1,
                 ),
                 SizedBox(
                   height: height * 0.1,

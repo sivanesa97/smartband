@@ -30,6 +30,7 @@ class SupervisorDashboard extends ConsumerStatefulWidget {
 class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
   String dropdownValue = 'No Users';
   int _selectedIndex = 0;
+  String PhoneNo = "";
 
   @override
   void initState() {
@@ -120,8 +121,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
   void _showSupervisorDialog(int otp_num) async {
     // String phn = '+94735833006';
-    if (_phNoConn.text != widget.phNo) {
-      String phonetoCheck = _phNoConn.text;
+    if (PhoneNo != widget.phNo) {
+      String phonetoCheck = PhoneNo;
       print(phonetoCheck);
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var ownerSnapshot = await usersCollection
@@ -199,7 +200,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                             controller: _phNoConn,
                             onChanged: (phone) => {
                               setState(() {
-                                _phNoConn.text = phone.completeNumber;
+                                PhoneNo = phone.completeNumber;
                               })
                             },
                             decoration: InputDecoration(
@@ -208,7 +209,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                               suffixIcon: IconButton(
                                 onPressed: () {
                                   sent = true;
-                                  _fetchPhoneDetails(_phNoConn.text, otp_num);
+                                  _fetchPhoneDetails(PhoneNo, otp_num);
                                 },
                                 icon: Icon(sent ? Icons.check : Icons.send),
                               ),

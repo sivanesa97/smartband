@@ -105,6 +105,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
   }
 
   String? _selectedRole = "supervisor";
+  String PhoneNo = "";
   final TextEditingController _phoneConn = TextEditingController();
   final TextEditingController _otpConn = TextEditingController();
 
@@ -196,8 +197,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
 
   void _showSupervisorDialog(int otp_num) async {
     // String phn = '+94735833006';
-    if (_phoneConn.text != widget.phno) {
-      String phonetoCheck = _phoneConn.text;
+    if (PhoneNo != widget.phno) {
+      String phonetoCheck = PhoneNo;
       print(phonetoCheck);
       var usersCollection = FirebaseFirestore.instance.collection("users");
       var ownerSnapshot = await usersCollection
@@ -295,7 +296,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                             controller: _phoneConn,
                             onChanged: (phone) => {
                               setState(() {
-                                _phoneConn.text = phone.completeNumber;
+                                PhoneNo = phone.completeNumber;
                               })
                             },
                             decoration: InputDecoration(
@@ -304,7 +305,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                               suffixIcon: IconButton(
                                 onPressed: () {
                                   sent = true;
-                                  _fetchPhoneDetails(_phoneConn.text, otp_num);
+                                  _fetchPhoneDetails(PhoneNo, otp_num);
                                 },
                                 icon: Icon(sent ? Icons.check : Icons.send),
                               ),
