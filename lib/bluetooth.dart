@@ -138,7 +138,8 @@ class BluetoothDeviceManager {
         print(response.statusCode);
       }
 
-      if (deviceName.isEmpty || deviceName == device.platformName) {
+      // if (deviceName.isEmpty || deviceName == device.platformName) {
+      if (deviceName == device.platformName) {
         // if (true) {
         await device.connect();
         // Navigator.of(context).push(
