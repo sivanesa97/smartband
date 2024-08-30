@@ -148,7 +148,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
           ? Column(
               children: [
                 Image.asset(
-                  'assets/user.png',
+                  'assets/watch.png',
                   width: width * 1,
                   height: width * 1,
                 ),

@@ -1,31 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 
-import 'package:audio_session/audio_session.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart' as provider;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
-import 'package:smartband/Screens/AuthScreen/signin.dart';
-import 'package:smartband/Screens/AuthScreen/signup.dart';
-import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
-import 'package:smartband/Screens/HomeScreen/homepage.dart';
 import 'package:smartband/Screens/Widgets/SosPage.dart';
 import 'package:smartband/SplashScreen.dart';
-import 'package:smartband/bluetooth_connection_service.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:http/http.dart' as http;
 

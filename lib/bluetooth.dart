@@ -131,19 +131,21 @@ class BluetoothDeviceManager {
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        if (data['status'].toString() == 'active' && data['deviceId'] != null) {
+        if (data['status'].toString() == 'active' &&
+            data['deviceId'].toString().isNotEmpty) {
           deviceName = data['device_id'].toString();
         }
       } else {
         print(response.statusCode);
       }
 
-      if (deviceName.isEmpty || deviceName == device.platformName) {
+      if (deviceName == device.platformName) {
         // if (true) {
         await device.connect();
         // Navigator.of(context).push(
         //   MaterialPageRoute(builder: (context) => DashboardScreen(device_name: device.platformName, mac_address: device.remoteId.toString(), device: device))
         // );
+
         connectedDevices.add(device);
         connectedDevicesController
             .add(connectedDevices); // Update connected devices list

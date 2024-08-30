@@ -141,63 +141,65 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   void _showSupervisorDialog(int otp_num, String activeStatus) async {
     // String phn = '+94965538195';
     // if (_phoneConn.text != phn) {
-    if (supervisorPhoneNo != widget.phNo) {
-      // _otpConn.text == otp_num.toString()) {
-      String phonetoCheck = supervisorPhoneNo;
-      print(phonetoCheck);
-      var usersCollection = FirebaseFirestore.instance.collection("users");
-      var ownerSnapshot = await usersCollection
-          .where('phone_number', isEqualTo: widget.phNo)
-          // .where('role', isEqualTo: 'watch wearer')
-          .get();
-      // await usersCollection.where('phone_number', isEqualTo: phn).get();
-      if (ownerSnapshot.docs.isNotEmpty) {
-        var docData = ownerSnapshot.docs.first.data();
-        if (docData.containsKey('supervisors') &&
-            docData['supervisors'] != null) {
-          if (_priorityInputController.text.isNotEmpty &&
-              int.parse(_priorityInputController.text) > 0) {
-            Map<String, dynamic> supervisors =
-                Map<String, dynamic>.from(docData['supervisors']);
-            supervisors[phonetoCheck] = {
-              'priority': _priorityInputController.text,
-              'status': activeStatus
-            };
-
-            await ownerSnapshot.docs.first.reference.update({
-              'supervisors': supervisors,
-            });
-          }
-        } else {
-          await ownerSnapshot.docs.first.reference.set({
-            'supervisors': {
-              phonetoCheck: {
+    if (otp_num.toString() == _otpConn.text) {
+      if (supervisorPhoneNo != widget.phNo) {
+        // _otpConn.text == otp_num.toString()) {
+        String phonetoCheck = supervisorPhoneNo;
+        print(phonetoCheck);
+        var usersCollection = FirebaseFirestore.instance.collection("users");
+        var ownerSnapshot = await usersCollection
+            .where('phone_number', isEqualTo: widget.phNo)
+            // .where('role', isEqualTo: 'watch wearer')
+            .get();
+        // await usersCollection.where('phone_number', isEqualTo: phn).get();
+        if (ownerSnapshot.docs.isNotEmpty) {
+          var docData = ownerSnapshot.docs.first.data();
+          if (docData.containsKey('supervisors') &&
+              docData['supervisors'] != null) {
+            if (_priorityInputController.text.isNotEmpty &&
+                int.parse(_priorityInputController.text) > 0) {
+              Map<String, dynamic> supervisors =
+                  Map<String, dynamic>.from(docData['supervisors']);
+              supervisors[phonetoCheck] = {
                 'priority': _priorityInputController.text,
                 'status': activeStatus
-              }
-            }
-          }, SetOptions(merge: true));
-        }
-      }
-      var querySnapshot = await usersCollection
-          .where('phone_number', isEqualTo: phonetoCheck)
-          .get();
-      if (querySnapshot.docs.isNotEmpty) {
-        var data = querySnapshot.docs.first.data()['relations'];
-        print(data);
-        await querySnapshot.docs.first.reference.update({
-          "relations": FieldValue.arrayUnion([widget.phNo.toString()])
-        });
+              };
 
-        Navigator.of(context, rootNavigator: true).pop();
+              await ownerSnapshot.docs.first.reference.update({
+                'supervisors': supervisors,
+              });
+            }
+          } else {
+            await ownerSnapshot.docs.first.reference.set({
+              'supervisors': {
+                phonetoCheck: {
+                  'priority': _priorityInputController.text,
+                  'status': activeStatus
+                }
+              }
+            }, SetOptions(merge: true));
+          }
+        }
+        var querySnapshot = await usersCollection
+            .where('phone_number', isEqualTo: phonetoCheck)
+            .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          var data = querySnapshot.docs.first.data()['relations'];
+          print(data);
+          await querySnapshot.docs.first.reference.update({
+            "relations": FieldValue.arrayUnion([widget.phNo.toString()])
+          });
+
+          Navigator.of(context, rootNavigator: true).pop();
+        } else {
+          // Handle email not existing case
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Phone number does not exist in the collection.")));
+        }
       } else {
-        // Handle email not existing case
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Phone number does not exist in the collection.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please enter a different number")));
       }
-    } else if (supervisorPhoneNo == widget.phNo) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter a different number")));
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
