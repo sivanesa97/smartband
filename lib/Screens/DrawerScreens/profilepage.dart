@@ -472,7 +472,7 @@ class _ProfilepageState extends ConsumerState<Profilepage> {
                                         data.phone_number.toString(),
                                     'email': _mailController.text,
                                     'date_of_birth': _birthdayController.text,
-                                    'gender': _selectedGender?.toLowerCase(),
+                                    'gender': _selectedGender.toLowerCase(),
                                     'height':
                                         double.parse(_heightController.text)
                                             .toInt(),

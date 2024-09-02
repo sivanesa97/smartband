@@ -59,13 +59,13 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
     bool madeCall = false;
     var userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .where('phone_number', isEqualTo: phone_number)
+        .where('phone_number', isEqualTo: PhoneNo)
         .get();
     if (userDoc.docs.isNotEmpty) {
       final data = userDoc.docs.first.data()['phone_number'];
       print(otp_num);
       Messaging messaging = Messaging();
-      messaging.sendSMS(data, "Your OTP is $otp_num");
+      messaging.sendSMS(PhoneNo, "Your OTP is $otp_num");
     }
     return relationDetails;
   }
