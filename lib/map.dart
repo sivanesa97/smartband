@@ -21,8 +21,7 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
   double _zoomLevel = 13.0;
 
   void _animateToLocation(LatLng location, double zoom) {
-    _mapController.move(
-        location, zoom); // Move the map to the new location and zoom level
+    _mapController.move(location, zoom);
   }
 
   @override

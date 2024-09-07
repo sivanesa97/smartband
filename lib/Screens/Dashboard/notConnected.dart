@@ -49,7 +49,9 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
       FlutterBluePlus.turnOn();
     }
     subscription.cancel();
-    scanForDevices(context);
+    if (addDeviceBtn) {
+      scanForDevices(context);
+    }
   }
 
   void connectToDevice(
@@ -65,7 +67,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
   void scanForDevices(BuildContext context) {
     if (mounted) {
       try {
-        bluetoothDeviceManager.scanForDevices(context);
+        bluetoothDeviceManager.scanForDevices(context, widget.hasDeviceId);
         setState(() {
           search_text = "Scanning for devices";
         });

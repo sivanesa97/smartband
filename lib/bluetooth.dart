@@ -67,38 +67,49 @@ class BluetoothDeviceManager {
     }
   }
 
-  void scanForDevices(BuildContext context) async {
+  void scanForDevices(BuildContext context, bool hasDeviceId) async {
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 30));
-    print("Scan started");
 
     FlutterBluePlus.scanResults.listen((results) async {
-      scanResults = [];
+      Set<ScanResult> uniqueResults = {};
+
       for (var result in results) {
         print(
-            'Device found: ${result.device.platformName} (${result.device.remoteId})');
-        // print(result);
+            'device: ${result.device.platformName} (${result.device.remoteId})');
         if (result.device.platformName.isNotEmpty) {
-          scanResults.add(result);
-          // if (result.device.platformName.startsWith("Noise"))
-          //   {
-          //     try {
-          //       connectToDevice(result.device, context, true);
-          //     }
-          //     catch (Exception){
-          //       print(Exception);
-          //     }
-          //   }
+          uniqueResults.add(result);
+
+          if (hasDeviceId) {
+            String deviceId = await getDeviceIdFromFirestore();
+            if (result.device.platformName == deviceId) {
+              try {
+                await connectToDevice(result.device, context, true);
+              } catch (e) {
+                print("error: $e");
+              }
+            }
+          }
         }
       }
+
+      // Set ஐ மீண்டும் பட்டியலாக மாற்றுகிறோம்
+      scanResults = uniqueResults.toList();
     });
+
     connectedDevices = FlutterBluePlus.connectedDevices;
     connectedDevicesController.add(connectedDevices);
-    print("Connected devices : ${connectedDevices}");
 
     Future.delayed(const Duration(seconds: 15), () {
       FlutterBluePlus.stopScan();
-      print("Scan stopped");
     });
+  }
+
+  Future<String> getDeviceIdFromFirestore() async {
+    final data = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    return data.data()?['device_id'] ?? '';
   }
 
   Future<void> connectToDevice(
@@ -163,7 +174,7 @@ class BluetoothDeviceManager {
             connectedDevicesController.add(connectedDevices);
           } else {
             print("Connected to device: ${device.platformName}");
-            if (deviceName.isEmpty) {
+            if (deviceName.isNotEmpty) {
               await FirebaseFirestore.instance
                   .collection('users')
                   .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -173,8 +184,10 @@ class BluetoothDeviceManager {
             connectedDevicesController.add(connectedDevices);
           }
         });
-        Navigator.of(context, rootNavigator: true)
-            .push(MaterialPageRoute(builder: (context) => Connected()));
+        if (!hasDeviceId) {
+          Navigator.of(context, rootNavigator: true)
+              .push(MaterialPageRoute(builder: (context) => Connected()));
+        }
       } else {
         print("Device ID doesn't match");
         showDialog(

@@ -39,14 +39,11 @@ class HomepageScreenState extends State<HomepageScreen> {
       BluetoothDeviceManager();
 
   Future<void> _initializeBluetooth() async {
-    // print(widget.hasDeviceId);
     FlutterBluePlus.adapterState.listen((state) async {
       if (state == BluetoothAdapterState.on) {
-        // Retrieve the list of connected devices
+        bluetoothDeviceManager.scanForDevices(context, widget.hasDeviceId);
         List<BluetoothDevice> devices = await FlutterBluePlus.connectedDevices;
         bluetoothDeviceManager.connectedDevicesController.add(devices);
-
-        // Listen for changes in connected devices
         bluetoothDeviceManager.connectedDevicesController
             .add(FlutterBluePlus.connectedDevices);
       } else {

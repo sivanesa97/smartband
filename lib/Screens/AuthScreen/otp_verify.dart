@@ -35,7 +35,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String _verificationId = '';
   final _otpControllers = List.generate(6, (index) => TextEditingController());
   final _focusNodes = List.generate(6, (index) => FocusNode());
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   int otp_num = 100000 + Random().nextInt(999999 - 100000 + 1);
 
   void startTimer() {

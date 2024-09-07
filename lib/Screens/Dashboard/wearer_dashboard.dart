@@ -124,9 +124,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   void _startTimer(List<String> values) {
-    _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) async {
       if (FirebaseAuth.instance.currentUser != null) {
-        final deviceOwnerData = provider.Provider.of<OwnerDeviceData>(context, listen: false);
+        final deviceOwnerData =
+            provider.Provider.of<OwnerDeviceData>(context, listen: false);
         provider.Provider.of<OwnerDeviceData>(context, listen: false)
             .updateStatus(
                 age: deviceOwnerData.age,
@@ -287,10 +288,18 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 }
 
                 final characteristicValues = snapshot.data;
-                List<String> values = (characteristicValues![
-                            "beb5483e-36e1-4688-b7f5-ea07361b26a8"] ??
-                        "--,--,0")
-                    .split(',');
+                List<String> values = ['--', '--', '0']; // Default values
+                if (characteristicValues != null &&
+                    characteristicValues[
+                            "beb5483e-36e1-4688-b7f5-ea07361b26a8"] !=
+                        null) {
+                  values = characteristicValues[
+                          "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
+                      .split(',');
+                  if (values.length < 3) {
+                    values = ['--', '--', '0']; // Fallback if not enough values
+                  }
+                }
                 if (!_isTimerRunning) {
                   _isTimerRunning = true;
                   _startTimer(values);

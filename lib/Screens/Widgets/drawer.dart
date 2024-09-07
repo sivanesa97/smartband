@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -166,7 +167,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                         ),
                                       ),
                                       OutlinedButton(
-                                        onPressed: () {
+                                        onPressed: () async {
                                           setState(() {
                                             print(
                                                 "Disconnect : ${bluetoothDeviceManager.connectedDevices}");
@@ -175,6 +176,16 @@ class _DrawerScreenState extends State<DrawerScreen> {
                                             bluetoothDeviceManager
                                                 .connectedDevices = [];
                                           });
+                                          try {
+                                            await FirebaseFirestore.instance
+                                                .collection('users')
+                                                .doc(FirebaseAuth
+                                                    .instance.currentUser!.uid)
+                                                .update({"device_id": ""});
+                                            print("Firebase removed device id");
+                                          } catch (e) {
+                                            print("Firebase Error: $e");
+                                          }
                                           Navigator.of(context).pop();
                                         },
                                         style: OutlinedButton.styleFrom(

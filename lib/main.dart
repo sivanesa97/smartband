@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,7 @@ import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
 import 'package:smartband/Screens/Widgets/SosPage.dart';
 import 'package:smartband/SplashScreen.dart';
+import 'package:smartband/bluetooth_connection_service.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:http/http.dart' as http;
 
@@ -134,58 +137,58 @@ void main() async {
   ));
 }
 
-// Future<void> initializeService() async {
-//   final service = FlutterBackgroundService();
+Future<void> initializeService() async {
+  final service = FlutterBackgroundService();
 
-//   await service.configure(
-//     androidConfiguration: AndroidConfiguration(
-//       onStart: onStart,
-//       autoStart: true,
-//       isForegroundMode: true,
-//     ),
-//     iosConfiguration: IosConfiguration(
-//       autoStart: true,
-//       onForeground: onStart,
-//       onBackground: onIosBackground,
-//     ),
-//   );
+  await service.configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onStart,
+      autoStart: true,
+      isForegroundMode: true,
+    ),
+    iosConfiguration: IosConfiguration(
+      autoStart: true,
+      onForeground: onStart,
+      onBackground: onIosBackground,
+    ),
+  );
 
-//   service.startService();
-// }
+  service.startService();
+}
 
-// @pragma('vm:entry-point')
-// void onStart(ServiceInstance service) async {
-//   DartPluginRegistrant.ensureInitialized();
+@pragma('vm:entry-point')
+void onStart(ServiceInstance service) async {
+  DartPluginRegistrant.ensureInitialized();
 
-//   if (service is AndroidServiceInstance) {
-//     service.on('setAsForeground').listen((event) {
-//       service.setAsForegroundService();
-//     });
+  if (service is AndroidServiceInstance) {
+    service.on('setAsForeground').listen((event) {
+      service.setAsForegroundService();
+    });
 
-//     service.on('setAsBackground').listen((event) {
-//       service.setAsBackgroundService();
-//     });
-//   }
+    service.on('setAsBackground').listen((event) {
+      service.setAsBackgroundService();
+    });
+  }
 
-//   service.on('stopService').listen((event) {
-//     service.stopSelf();
-//   });
+  service.on('stopService').listen((event) {
+    service.stopSelf();
+  });
 
-//   // Handle background tasks
-//   await setupOverlay();
-//   await showSOSOverlay();
+  // Handle background tasks
+  await setupOverlay();
+  await showSOSOverlay();
 
-//   // Other background tasks
-//   BluetoothConnectionService().startBluetoothService();
+  // Other background tasks
+  BluetoothConnectionService().startBluetoothService();
 
-//   Timer.periodic(Duration(minutes: 1), (timer) async {
-//     await checkLocationAndSendNotification();
-//   });
+  // Timer.periodic(Duration(minutes: 1), (timer) async {
+  //   await checkLocationAndSendNotification();
+  // });
 
-//   Timer.periodic(Duration(minutes: 1), (timer) async {
-//     await BluetoothConnectionService().checkAndReconnect();
-//   });
-// }
+  Timer.periodic(Duration(minutes: 1), (timer) async {
+    await BluetoothConnectionService().checkAndReconnect();
+  });
+}
 
 // Future<void> checkLocationAndSendNotification() async {
 //   Position currentPosition = await Geolocator.getCurrentPosition(
@@ -215,12 +218,12 @@ void main() async {
 //   }
 // }
 
-// @pragma('vm:entry-point')
-// Future<bool> onIosBackground(ServiceInstance service) async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   DartPluginRegistrant.ensureInitialized();
-//   return true;
-// }
+@pragma('vm:entry-point')
+Future<bool> onIosBackground(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  return true;
+}
 
 @pragma("vm:entry-point")
 void overlayMain() {
