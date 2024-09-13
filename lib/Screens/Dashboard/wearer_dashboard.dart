@@ -97,11 +97,11 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     bluetoothDeviceManager.discoverServicesAndCharacteristics(widget.device);
   }
 
-  // @override
-  // void dispose() {
-  //   _timer?.cancel();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   DateTime addMonths(DateTime date, int months) {
     int newYear = date.year;
@@ -124,7 +124,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   void _startTimer(List<String> values) {
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) async {
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
       if (FirebaseAuth.instance.currentUser != null) {
         final deviceOwnerData =
             provider.Provider.of<OwnerDeviceData>(context, listen: false);
@@ -298,6 +298,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       .split(',');
                   if (values.length < 3) {
                     values = ['--', '--', '0']; // Fallback if not enough values
+                  } else {
+                    _startTimer(values);
                   }
                 }
                 if (!_isTimerRunning) {
@@ -311,91 +313,6 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                     child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      // Row(
-                      //   mainAxisSize: MainAxisSize.min,
-                      //   // Adjust this to fit content
-                      //   children: [
-                      //     // Profile Picture
-                      //     GestureDetector(
-                      //       onTap: () {
-                      //         Scaffold.of(context).openDrawer();
-                      //       },
-                      //       child: Container(
-                      //         margin: EdgeInsets.all(10.0),
-                      //         child: CircleAvatar(
-                      //           radius: 20,
-                      //           backgroundImage: NetworkImage(
-                      //             FirebaseAuth.instance.currentUser!.photoURL ??
-                      //                 "https://t4.ftcdn.net/jpg/03/26/98/51/360_F_326985142_1aaKcEjMQW6ULp6oI9MYuv8lN9f8sFmj.jpg",
-                      //           ),
-                      //         ),
-                      //       ),
-                      //     ),
-                      //     SizedBox(width: 3),
-                      //     // Spacing between profile picture and text
-                      //     // Greeting Message
-                      //     Expanded(
-                      //       // Use Expanded to take up remaining space
-                      //       child: Column(
-                      //         crossAxisAlignment: CrossAxisAlignment.start,
-                      //         children: [
-                      //           Row(
-                      //             children: [
-                      //               Text(
-                      //                 "Hello ${user.name.split(' ')[0].toTitleCase()}",
-                      //                 style: TextStyle(
-                      //                   fontSize: width * 0.055,
-                      //                   fontWeight: FontWeight.bold,
-                      //                   color: Colors.black,
-                      //                 ),
-                      //               ),
-                      //               Icon(
-                      //                 Icons.keyboard_arrow_down
-                      //               )
-                      //             ],
-                      //           ),
-                      //           Text(
-                      //             DateTime.now().hour > 12
-                      //                 ? DateTime.now().hour > 16
-                      //                     ? "Good Evening ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                      //                     : "Good Afternoon ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}"
-                      //                 : "Good Morning ${DateTime.now().day.toString().padLeft(2,'0')}/${DateTime.now().month.toString().padLeft(2,'0')}/${DateTime.now().year.toString().substring(2,)}",
-                      //             style: TextStyle(
-                      //               fontSize: width * 0.04,
-                      //               color: Colors.grey[600],
-                      //             ),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     ),
-                      //     Row(
-                      //       children: [
-                      //         GestureDetector(
-                      //           child: Image.asset(
-                      //             "assets/profile_icon.png",
-                      //             width: 25,
-                      //             height: 25,
-                      //           ),
-                      //           onTap: () {
-                      //             Navigator.of(context).push(MaterialPageRoute(
-                      //                 builder: (context) => HomePage(
-                      //                     phNo: user.phone_number.toString())));
-                      //           },
-                      //         ),
-                      //         SizedBox(
-                      //           width: 10,
-                      //         ),
-                      //         Icon(
-                      //           Icons.notifications,
-                      //           size: 25,
-                      //         )
-                      //       ],
-                      //     ),
-                      //     SizedBox(
-                      //       width: width * 0.01,
-                      //     )
-                      //   ],
-                      // ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -502,26 +419,6 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
-                                      // Column(
-                                      //   children: [
-                                      //     Text(
-                                      //       "Water",
-                                      //       style: TextStyle(
-                                      //           color: Colors.white,
-                                      //           fontSize: width * 0.045),
-                                      //     ),
-                                      //     Text(
-                                      //       "2Litre",
-                                      //       style: TextStyle(
-                                      //           color: Colors.white,
-                                      //           fontSize: width * 0.03),
-                                      //     ),
-                                      //   ],
-                                      // ),
-                                      // VerticalDivider(
-                                      //   color: Colors.white,
-                                      //   thickness: 2,
-                                      // ),
                                       Column(
                                         children: [
                                           Text(

@@ -118,8 +118,6 @@ class SendNotification {
         // } else {
         //   runApp(const EmergencyDialog());
       }
-    } else {
-      globalKey.currentState?.pushNamed('/sos');
     }
     await flutterLocalNotificationsPlugin.show(
       0,
@@ -128,6 +126,60 @@ class SendNotification {
       platformChannelSpecifics,
       payload: 'item x',
     );
+  }
+
+  Future<void> sendAlarmNotification(
+      String fcmToken, String title, String body) async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      final token = await getAccessToken();
+      final url = Uri.parse(
+          'https://fcm.googleapis.com/v1/projects/smartband-keydraft/messages:send');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      final payload = json.encode({
+        'message': {
+          'token': fcmToken,
+          'notification': {
+            'title': title,
+            'body': body,
+          },
+          'android': {
+            'priority': 'high', // Move priority here
+            'notification': {
+              'sound': 'default',
+              'channel_id': 'alarm_channel',
+            },
+          },
+        },
+      });
+
+      final response = await http.post(url, headers: headers, body: payload);
+
+      if (response.statusCode == 200) {
+        print('Alarm notification sent successfully');
+      } else {
+        print('Failed to send alarm notification: ${response.body}');
+      }
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
+      print('User granted provisional permission');
+    } else {
+      print('User declined or has not accepted permission');
+    }
   }
 
   // Future<void> checkLocationAndSendNotification() async {

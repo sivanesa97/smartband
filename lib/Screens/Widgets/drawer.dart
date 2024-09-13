@@ -9,6 +9,7 @@ import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/dashboard.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
 import 'package:smartband/Screens/DrawerScreens/aboutus.dart';
+import 'package:smartband/Screens/DrawerScreens/alarmScreen.dart';
 import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/DrawerScreens/geoFencing.dart';
 import 'package:smartband/Screens/DrawerScreens/helpandsupport.dart';
@@ -320,7 +321,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                       Navigator.of(context, rootNavigator: true).push(
                           MaterialPageRoute(
                               maintainState: true,
-                              builder: (context) => const ComingSoon()));
+                              builder: (context) => const ReminderScreen()));
                     },
                     child: const ListTile(
                       leading: Icon(

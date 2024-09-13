@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cron/cron.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +13,8 @@ import 'package:flutter_background_service_android/flutter_background_service_an
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart' as overlay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart' as provider;
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Providers/SubscriptionData.dart';
@@ -18,6 +23,7 @@ import 'package:smartband/SplashScreen.dart';
 import 'package:smartband/bluetooth_connection_service.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 
@@ -46,12 +52,121 @@ Future<void> showSOSOverlay() async {
   ));
 }
 
+// @pragma('vm:entry-point')
+// void callbackDispatcher() {
+//   Workmanager().executeTask((task, inputData) async {
+//     await Firebase.initializeApp(
+//       options: DefaultFirebaseOptions.currentPlatform,
+//     );
+//     await checkAndSendReminders();
+//     return Future.value(true);
+//   });
+// }
+
+Future<void> checkAndSendReminders() async {
+  final now = DateTime.now();
+  final currentDate = DateFormat('dd-MM-yyyy').format(now);
+  final currentTime = DateFormat('hh:mm a').format(now);
+  print('Current Date: $currentDate, Current Time: $currentTime');
+
+  final reminders = await FirebaseFirestore.instance
+      .collection('reminders')
+      .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+      .get();
+
+  if (reminders.docs.isNotEmpty) {
+    for (var reminder in reminders.docs) {
+      final reminderData = reminder.data();
+      final userId = reminderData['userId'];
+      final title = reminderData['title'];
+      final reminderType = reminderData['repeat'];
+      final reminderDate = reminderData['date'];
+      final reminderTime = reminderData['time'];
+
+      bool shouldSendReminder = false;
+
+      final reminderDateTime = DateFormat('dd-MM-yyyy').parse(reminderDate);
+
+      switch (reminderType) {
+        case 'No Repeat':
+          shouldSendReminder =
+              currentDate == reminderDate && currentTime == reminderTime;
+          break;
+        case 'Daily':
+          shouldSendReminder = currentTime == reminderTime;
+          break;
+        case 'Weekly':
+          final daysDifference = now.difference(reminderDateTime).inDays;
+          shouldSendReminder =
+              daysDifference % 7 == 0 && currentTime == reminderTime;
+          break;
+        case 'Monthly':
+          final reminderDay = int.parse(reminderDate.split('-')[0]);
+          final reminderMonth = int.parse(reminderDate.split('-')[1]);
+          final monthsDifference = (now.year - reminderDateTime.year) * 12 +
+              now.month -
+              reminderMonth;
+          shouldSendReminder = now.day == reminderDay &&
+              monthsDifference > 0 &&
+              monthsDifference % 1 == 0 &&
+              currentTime == reminderTime;
+          break;
+        case 'Yearly':
+          final reminderDay = int.parse(reminderDate.split('-')[0]);
+          final reminderMonth = int.parse(reminderDate.split('-')[1]);
+          final yearsDifference = now.year - reminderDateTime.year;
+          shouldSendReminder = now.day == reminderDay &&
+              now.month == reminderMonth &&
+              yearsDifference > 0 &&
+              currentTime == reminderTime;
+          break;
+      }
+
+      if (shouldSendReminder) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        final fcmToken = userDoc.data()?['fcmKey'];
+
+        if (fcmToken != null) {
+          SendNotification sendNotification = SendNotification();
+          await sendNotification.sendAlarmNotification(
+            fcmToken,
+            'Reminder',
+            'It\'s time for: $title',
+          );
+        }
+      }
+    }
+  }
+}
+
+// Future<void> _initializeBackgroundService() async {
+//   await Workmanager().initialize(
+//     callbackDispatcher,
+//     isInDebugMode: true,
+//   );
+//   print("Background service initialized");
+//   await Workmanager().registerPeriodicTask(
+//     "reminder-check",
+//     "checkReminders",
+//     frequency: const Duration(minutes: 15), // Minimum allowed frequency
+//     initialDelay: const Duration(minutes: 1),
+//     constraints: Constraints(
+//       networkType: NetworkType.connected,
+//     ),
+//   );
+// }
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  await setupOverlay();
-  await showSOSOverlay();
+void _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // await setupOverlay();
+  // await showSOSOverlay();
 
   // Initialize local notifications
   await flutterLocalNotificationsPlugin.initialize(
@@ -67,13 +182,27 @@ void handleNotificationClick(RemoteMessage message) {
   navigatorKey.currentState?.pushNamed('/sos');
 }
 
+Future<void> handleCronJob() async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await checkAndSendReminders();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // await initializeService();
+  // await _initializeBackgroundService();
+
+  final cron = Cron();
+  cron.schedule(Schedule.parse('* * * * *'), () async {
+    await handleCronJob();
+  });
+
+  await initializeService();
 
   // Initialize notification settings
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -83,10 +212,10 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onBackgroundMessage((RemoteMessage message) async {
+    _firebaseMessagingBackgroundHandler(message);
+  });
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-    // showSOSOverlay();
-    // handleNotificationClick(message);
     SendNotification sendNotification = SendNotification();
     sendNotification.showNotification(message.notification?.title ?? "",
         message.notification?.body ?? "", navigatorKey);
@@ -102,10 +231,6 @@ void main() async {
   if (initialMessage != null) {
     handleNotificationClick(initialMessage);
   }
-
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    handleNotificationClick(message);
-  });
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -175,48 +300,55 @@ void onStart(ServiceInstance service) async {
   });
 
   // Handle background tasks
-  await setupOverlay();
-  await showSOSOverlay();
-
+  // await setupOverlay();
+  // await showSOSOverlay();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   // Other background tasks
   BluetoothConnectionService().startBluetoothService();
 
-  // Timer.periodic(Duration(minutes: 1), (timer) async {
-  //   await checkLocationAndSendNotification();
-  // });
+  Timer.periodic(Duration(seconds: 1), (timer) async {
+    await BluetoothConnectionService().checkAndReconnect();
+    await handleCronJob();
+  });
 
   Timer.periodic(Duration(minutes: 1), (timer) async {
-    await BluetoothConnectionService().checkAndReconnect();
+    await checkLocationAndSendNotification();
+  });
+
+  FirebaseMessaging.onBackgroundMessage((RemoteMessage message) async {
+    _firebaseMessagingBackgroundHandler(message);
   });
 }
 
-// Future<void> checkLocationAndSendNotification() async {
-//   Position currentPosition = await Geolocator.getCurrentPosition(
-//     desiredAccuracy: LocationAccuracy.high,
-//   );
+Future<void> checkLocationAndSendNotification() async {
+  Position currentPosition = await Geolocator.getCurrentPosition(
+    desiredAccuracy: LocationAccuracy.high,
+  );
 
-//   DocumentSnapshot userDoc = await FirebaseFirestore.instance
-//       .collection('users')
-//       .doc(FirebaseAuth.instance.currentUser!.uid)
-//       .get();
-//   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-//   GeoPoint homeLocation = userData['homeLocation'] as GeoPoint;
+  DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .get();
+  Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+  GeoPoint homeLocation = userData['homeLocation'] as GeoPoint;
 
-//   double distance = Geolocator.distanceBetween(
-//     currentPosition.latitude,
-//     currentPosition.longitude,
-//     homeLocation.latitude,
-//     homeLocation.longitude,
-//   );
+  double distance = Geolocator.distanceBetween(
+    currentPosition.latitude,
+    currentPosition.longitude,
+    homeLocation.latitude,
+    homeLocation.longitude,
+  );
 
-//   if (distance > 10000) {
-//     SendNotification sendNotification = SendNotification();
-//     sendNotification.showNotification(
-//         'Emergency!!',
-//         "Location Alert : Your current location is more than 10 km away from your home.",
-//         navigatorKey);
-//   }
-// }
+  if (distance > 10000) {
+    SendNotification sendNotification = SendNotification();
+    sendNotification.showNotification(
+        'Emergency!!',
+        "Location Alert : Your current location is more than 10 km away from your home.",
+        navigatorKey);
+  }
+}
 
 @pragma('vm:entry-point')
 Future<bool> onIosBackground(ServiceInstance service) async {
@@ -231,100 +363,3 @@ void overlayMain() {
       debugShowCheckedModeBanner: false,
       home: SafeArea(child: Material(child: SOSPage()))));
 }
-
-// class MyApp extends StatefulWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   State<MyApp> createState() => _MyAppState();
-// }
-
-// class _MyAppState extends State<MyApp> {
-//   late Widget initialScreen;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _checkLoginStatus();
-//   }
-
-//   Future<void> _checkLoginStatus() async {
-//     User? user = FirebaseAuth.instance.currentUser;
-//     print("inside checkLoginStatus");
-//     if (user == null) {
-//       initialScreen = const SignIn();
-//     } else {
-//       print("inside else of checkLoginStatus");
-//       final data = await FirebaseFirestore.instance
-//           .collection('users')
-//           .doc(user.uid)
-//           .get();
-//       var phoneNumber = data.data()?['phone_number'];
-
-//       var apiData = await BluetoothConnectionService().getApiData(phoneNumber);
-//       int ownerStatus = 0;
-//       String deviceName = "";
-//       if (apiData != null) {
-//         deviceName = apiData['deviceName'];
-//         if (deviceName == "null") {
-//           deviceName = "";
-//         }
-//         print(apiData);
-//         bool isSubscriptionActive = apiData?['isSubscriptionActive'];
-//         bool isUserActive = apiData?['isUserActive'];
-//         if (isUserActive && isSubscriptionActive) {
-//           if (deviceName != "") {
-//             ownerStatus = 1;
-//           } else {
-//             ScaffoldMessenger.of(context).showSnackBar(
-//                 const SnackBar(content: Text("Device is not assigned!")));
-//           }
-//         } else if (isUserActive && deviceName != "") {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//               const SnackBar(content: Text("Please Subscribe to use watch!")));
-//         }
-//       } else {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(content: Text("API Issue! Contact Tech Support!")));
-//       }
-
-//       String selected_role = "supervisor";
-//       if (ownerStatus == 1) {
-//         provider.Provider.of<SubscriptionDataProvider>(context, listen: false)
-//             .updateStatus(
-//                 active: true, deviceName: deviceName, subscribed: true);
-//         selected_role = "watch wearer";
-//         print("owner status is watch wearer");
-//         initialScreen = const HomepageScreen(hasDeviceId: true);
-//       } else {
-//         provider.Provider.of<SubscriptionDataProvider>(context, listen: false)
-//             .updateStatus(active: false, deviceName: "", subscribed: false);
-//         initialScreen = SupervisorDashboard(phNo: phoneNumber);
-//       }
-//     }
-//     setState(() {});
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // If initialScreen is null, show loading screen
-//     if (initialScreen == null) {
-//       return const Scaffold(
-//         body: Center(
-//           child: CircularProgressIndicator(),
-//         ),
-//       );
-//     }
-
-//     // Otherwise, display the determined initial screen
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'LifeLongCare',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//         scaffoldBackgroundColor: Colors.white,
-//       ),
-//       home: initialScreen,
-//     );
-//   }
-// }

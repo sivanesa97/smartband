@@ -28,7 +28,10 @@
         android:label="LongLifeCare"
         android:name="${applicationName}"
         android:icon="@drawable/logo"
-        android:usesCleartextTraffic="true">
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true"
+        android:largeHeap="true"
+        android:hardwareAccelerated="true">
         <service android:name="flutter.overlay.window.flutter_overlay_window.OverlayService" 
             android:exported="false"
             android:foregroundServiceType="specialUse">
@@ -36,10 +39,9 @@
                 android:value="For Emergency when smartband device owner facing issue to alert the monitoring person"/>
         </service>
         <service
-            android:name=".BackgroundService"
-            android:foregroundServiceType="location"
-            android:exported="false">
-        </service>
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location" 
+            android:exported="true" />
         <service
             android:name=".MyForegroundService"
             android:permission="android.permission.BIND_JOB_SERVICE"
