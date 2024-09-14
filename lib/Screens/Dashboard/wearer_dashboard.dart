@@ -124,8 +124,9 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   void _startTimer(List<String> values) {
-    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
+    _timer = Timer.periodic(const Duration(minutes: 1), (Timer timer) async {
       if (FirebaseAuth.instance.currentUser != null) {
+        print(values);
         final deviceOwnerData =
             provider.Provider.of<OwnerDeviceData>(context, listen: false);
         provider.Provider.of<OwnerDeviceData>(context, listen: false)
@@ -140,7 +141,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
           "metrics": {
             "spo2": values[1].toString(),
             "heart_rate": values[0].toString(),
-            "fall_axis": "-- -- --"
+            "fall_axis": "--"
           }
         });
       }
@@ -308,7 +309,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 } else if (_timer?.isActive == false) {
                   _startTimer(values);
                 }
-                bool sosClicked = values[2] == '1' ? true : false;
+                bool sosClicked = values[2] == '0' ? true : false;
+                // bool falldetection = values[3].toString() == '1' ? true : false;
                 return SafeArea(
                     child: SingleChildScrollView(
                   child: Column(

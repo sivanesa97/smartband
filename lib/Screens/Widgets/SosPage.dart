@@ -6,7 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class SOSPage extends StatefulWidget {
-  const SOSPage({super.key});
+  final String status;
+  const SOSPage({super.key, required this.status});
 
   @override
   _SOSPageState createState() => _SOSPageState();
@@ -14,23 +15,61 @@ class SOSPage extends StatefulWidget {
 
 class _SOSPageState extends State<SOSPage> {
   int countdown = 30;
+  String title = '';
+  String description = '';
+  String imagePath = '';
 
   @override
   void initState() {
     super.initState();
     _initializeFirebase();
     startCountdown();
+    _setStatusUI(widget.status);
+    print(widget.status);
   }
 
   Future<void> _initializeFirebase() async {
-    // if (!Firebase.apps.any((element) => element.name == '[DEFAULT]')) {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
     }
-    // }
   }
 
-  int endTime = 0;
+  void _setStatusUI(String status) {
+    switch (status) {
+      case '1':
+        setState(() {
+          title = 'SOS Emergency Service';
+          description =
+              'We’re here to provide users with rapid access to essential emergency services during critical situations.';
+          imagePath = 'assets/monitoring_person_background.png';
+        });
+        break;
+      case '2':
+        setState(() {
+          title = 'Fall Detection Emergency';
+          description =
+              'We’re here to provide users with rapid access to essential emergency services during critical situations.';
+          imagePath = 'assets/falldetction.png';
+        });
+        break;
+      case '3':
+        setState(() {
+          title = 'Location Alert';
+          description =
+              'We’re here to provide users with rapid access to essential emergency services during critical situations.';
+          imagePath = 'assets/location.png';
+        });
+        break;
+      default:
+        setState(() {
+          title = 'Unknown SOS Status';
+          description =
+              'We’re here to provide users with rapid access to essential emergency services during critical situations.';
+          imagePath = 'assets/monitoring_person_background.png';
+        });
+    }
+  }
+
   AudioPlayer audioPlayer = AudioPlayer();
   bool isPlaying = false;
   void playSound() async {
@@ -39,7 +78,6 @@ class _SOSPageState extends State<SOSPage> {
     await audioPlayer.play(AssetSource("sounds/security_alarm.mp3"));
     isPlaying = true;
 
-    // Stop the sound after 1 minute
     Future.delayed(Duration(seconds: 30), () {
       if (isPlaying) {
         audioPlayer.stop();
@@ -52,6 +90,8 @@ class _SOSPageState extends State<SOSPage> {
     await audioPlayer.stop();
     isPlaying = false;
   }
+
+  int endTime = 0; // Define endTime
 
   void startSOS() {
     endTime = DateTime.now().millisecondsSinceEpoch + 1000 * 5;
@@ -113,7 +153,6 @@ class _SOSPageState extends State<SOSPage> {
       print("No user is currently signed in");
     }
 
-    // Close the overlay window after updating
     FlutterOverlayWindow.closeOverlay();
     Navigator.pop(context);
   }
@@ -125,10 +164,10 @@ class _SOSPageState extends State<SOSPage> {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'assets/monitoring_person_background.png'), // Replace with your image path
+                image:
+                    AssetImage(imagePath), // Use the dynamically set imagePath
                 fit: BoxFit.fitHeight,
               ),
             ),
@@ -138,9 +177,9 @@ class _SOSPageState extends State<SOSPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'SOS Emergency Service',
-                  style: TextStyle(
+                Text(
+                  title, // Use the dynamically set title
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -148,9 +187,9 @@ class _SOSPageState extends State<SOSPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'We’re here to provide users with rapid access to essential emergency services during critical situations.',
-                  style: TextStyle(
+                Text(
+                  description, // Use the dynamically set description
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
                   ),
@@ -210,46 +249,9 @@ class _SOSPageState extends State<SOSPage> {
                   ),
                 ),
                 SizedBox(height: 20),
-                // ElevatedButton(
-                //   onPressed: () {
-                //     print("closing overlay");
-                //     FlutterOverlayWindow.closeOverlay();
-                //     stopSound();
-                //     Navigator.pop(context);
-                //   },
-                //   style: ElevatedButton.styleFrom(
-                //     backgroundColor: Colors.red,
-                //     shape: RoundedRectangleBorder(
-                //       borderRadius: BorderRadius.circular(30),
-                //     ),
-                //     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                //   ),
-                //   child: const Text(
-                //     'Skip For Now',
-                //     style: TextStyle(
-                //       fontSize: 18,
-                //       color: Colors.white,
-                //     ),
-                //   ),
-                // ),
-                // SizedBox(height: 20),
               ],
             ),
           )
-          // Gradient overlay
-          // Container(
-          //   decoration: BoxDecoration(
-          //     gradient: LinearGradient(
-          //       begin: Alignment.topCenter,
-          //       end: Alignment.bottomCenter,
-          //       colors: [
-          //         Colors.black.withOpacity(0.3),
-          //         Colors.black.withOpacity(0.3),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-          // Content
         ],
       ),
     );

@@ -37,7 +37,7 @@ Future<void> setupOverlay() async {
   }
 }
 
-Future<void> showSOSOverlay() async {
+Future<void> showSOSOverlay(String status) async {
   await overlay.FlutterOverlayWindow.showOverlay(
     height: overlay.WindowSize.fullCover,
     width: overlay.WindowSize.fullCover,
@@ -48,7 +48,7 @@ Future<void> showSOSOverlay() async {
   // Create and show the SOSPage in the overlay
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: SOSPage(),
+    home: SOSPage(status: status),
   ));
 }
 
@@ -166,7 +166,7 @@ void _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   // await setupOverlay();
-  // await showSOSOverlay();
+  // await showSOSOverlay()
 
   // Initialize local notifications
   await flutterLocalNotificationsPlugin.initialize(
@@ -178,8 +178,22 @@ void _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
 }
 
-void handleNotificationClick(RemoteMessage message) {
-  navigatorKey.currentState?.pushNamed('/sos');
+void handleNotificationClick(RemoteMessage message) async {
+  String status = getStatusFromMessage(message.notification?.title ?? "");
+  if (status == '1' || status == '2' || status == '3') {
+    await showSOSOverlay(status);
+  }
+}
+
+String getStatusFromMessage(String title) {
+  if (title.contains('Emergency!!')) {
+    return '1';
+  } else if (title.contains('Location')) {
+    return '2';
+  } else if (title.contains('Fall Detection')) {
+    return '3';
+  }
+  return '4';
 }
 
 Future<void> handleCronJob() async {
@@ -255,7 +269,10 @@ void main() async {
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey,
         routes: {
-          '/sos': (context) => SOSPage(),
+          '/sos': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments as Map;
+            return SOSPage(status: args['status']);
+          },
         },
       ),
     ),
@@ -308,13 +325,13 @@ void onStart(ServiceInstance service) async {
   // Other background tasks
   BluetoothConnectionService().startBluetoothService();
 
-  Timer.periodic(Duration(seconds: 1), (timer) async {
-    await BluetoothConnectionService().checkAndReconnect();
+  Timer.periodic(Duration(minutes: 1), (timer) async {
     await handleCronJob();
   });
 
   Timer.periodic(Duration(minutes: 1), (timer) async {
     await checkLocationAndSendNotification();
+    await BluetoothConnectionService().checkAndReconnect();
   });
 
   FirebaseMessaging.onBackgroundMessage((RemoteMessage message) async {
@@ -326,27 +343,123 @@ Future<void> checkLocationAndSendNotification() async {
   Position currentPosition = await Geolocator.getCurrentPosition(
     desiredAccuracy: LocationAccuracy.high,
   );
-
   DocumentSnapshot userDoc = await FirebaseFirestore.instance
       .collection('users')
       .doc(FirebaseAuth.instance.currentUser!.uid)
       .get();
   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-  GeoPoint homeLocation = userData['homeLocation'] as GeoPoint;
+  String role = userData['role'].toString();
+  double minimum_km = 0;
+  if (userData.containsKey('minimum_km')) {
+    minimum_km = double.parse(userData['minimum_km'].toString());
+  }
+  if (role == 'watch wearer' && minimum_km > 0) {
+    GeoPoint homeLocation = userData['home_location'] as GeoPoint;
 
-  double distance = Geolocator.distanceBetween(
-    currentPosition.latitude,
-    currentPosition.longitude,
-    homeLocation.latitude,
-    homeLocation.longitude,
-  );
+    double distance = Geolocator.distanceBetween(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      homeLocation.latitude,
+      homeLocation.longitude,
+    );
 
-  if (distance > 10000) {
-    SendNotification sendNotification = SendNotification();
-    sendNotification.showNotification(
-        'Emergency!!',
-        "Location Alert : Your current location is more than 10 km away from your home.",
-        navigatorKey);
+    if (distance >= (minimum_km * 1000)) {
+      bool _isEmergency = true;
+
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        if (!_isEmergency) {
+          break;
+        }
+        print("Attempt $attempt");
+        // Position location = await updateLocation();
+        try {
+          SendNotification send = SendNotification();
+          Map<String, dynamic> supervisors = userData['supervisors'];
+          List<String> filteredSupervisors = supervisors.entries
+              .where((entry) => entry.value['status'] == 'active')
+              .map((entry) => entry.key)
+              .toList()
+            ..sort((a, b) => int.parse(supervisors[b]['priority'].toString())
+                .compareTo(int.parse(supervisors[a]['priority'].toString())));
+
+          for (var supervisor in filteredSupervisors) {
+            if (!_isEmergency) {
+              break;
+            }
+            print(supervisor);
+            final sup = await FirebaseFirestore.instance
+                .collection("users")
+                .where('phone_number', isEqualTo: supervisor)
+                .get();
+            await FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .set({
+              "isEmergency": true,
+              "responseStatus": false,
+              "response": "",
+              "userUid": FirebaseAuth.instance.currentUser?.uid,
+              // "heartbeatRate": deviceOwnerData.heartRate,
+              "location": "0°N 0°E",
+              // "spo2": deviceOwnerData.spo2,
+              "fallDetection": false,
+              "isManual": true,
+              "timestamp": FieldValue.serverTimestamp()
+            }, SetOptions(merge: true));
+
+            await FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .collection(sup.docs.first.id)
+                .add({
+              "isEmergency": true,
+              "responseStatus": false,
+              "response": "",
+              // "heartbeatRate": deviceOwnerData.heartRate,
+              "location": "0°N 0°E",
+              // "spo2": deviceOwnerData.spo2,
+              "fallDetection": false,
+              "isManual": true,
+              "timestamp": FieldValue.serverTimestamp()
+            });
+            send.sendNotification(supervisor, "Location",
+                "User is away from  HomeLocation. And Their Current Location is  ${currentPosition.latitude}°N ${currentPosition.longitude}°E. Please respond");
+
+            print(
+                "Message sent to supervisor with phone number: ${supervisor} and priority: ${supervisor}");
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(content: Text("Sent Alert to ${supervisor['key']}")),
+            // );
+            await Future.delayed(Duration(seconds: 30));
+            FirebaseFirestore.instance
+                .collection("emergency_alerts")
+                .doc(sup.docs.first.id)
+                .snapshots()
+                .listen((DocumentSnapshot doc) {
+              if (doc.exists && doc["responseStatus"] == true) {
+                String responderName = userData['name'] ?? "User";
+                _isEmergency = false;
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text("$responderName Responded"),
+                //   ),
+                // );
+              }
+            });
+          }
+          if (attempt == 3) {
+            _isEmergency = false;
+          }
+        } catch (e) {
+          print("Exception $e");
+        }
+      }
+    }
+    // SendNotification sendNotification = SendNotification();
+    // sendNotification.showNotification(
+    //     'Emergency!!',
+    //     "Location Alert : Your current location is more than 10 km away from your home.",
+    //     navigatorKey);
   }
 }
 
@@ -357,9 +470,9 @@ Future<bool> onIosBackground(ServiceInstance service) async {
   return true;
 }
 
-@pragma("vm:entry-point")
-void overlayMain() {
-  runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SafeArea(child: Material(child: SOSPage()))));
-}
+// @pragma("vm:entry-point")
+// void overlayMain() {
+//   runApp(MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       home: SafeArea(child: Material(child: SOSPage(status: '3')))));
+// }

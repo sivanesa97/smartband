@@ -192,7 +192,7 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                             final data = await FirebaseFirestore.instance
                                 .collection("users")
                                 .where('phone_number',
-                                    isEqualTo: "+94758543728")
+                                    isEqualTo: "+94987987987")
                                 .get();
                             SendNotification send = SendNotification();
                             for (QueryDocumentSnapshot<Map<String, dynamic>> i
@@ -305,11 +305,11 @@ class _NotConnectedPageState extends State<NotConnectedPage> {
                         }
                       }
 
-                      // await _handleSOSClick(true);
-                      setState(() {
-                        addDeviceBtn = true;
-                        scanForDevices(context);
-                      });
+                      await _handleSOSClick(true);
+                      // setState(() {
+                      //   addDeviceBtn = true;
+                      //   scanForDevices(context);
+                      // });
                     },
                     child: Align(
                       alignment: Alignment.center,

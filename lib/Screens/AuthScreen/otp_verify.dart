@@ -69,8 +69,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       print("${otp}  ${generated_otp}");
-      if (true) {
-        // if (int.parse(otp) == generated_otp) {
+      // if (true) {
+      if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)

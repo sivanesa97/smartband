@@ -108,15 +108,32 @@ class SendNotification {
       android: androidPlatformChannelSpecifics,
     );
     if (title == "Emergency!!") {
-      // showIncomingCall();
       print("Inside Emergency");
 
       final context = globalKey.currentContext;
       if (context != null) {
-        globalKey.currentState?.pushNamed('/sos');
-        //   showDialog(context: context, builder: (_) => const EmergencyDialog());
-        // } else {
-        //   runApp(const EmergencyDialog());
+        globalKey.currentState?.pushNamed('/sos', arguments: {'status': '1'});
+      }
+    } else if (title == "Location") {
+      print("Inside Location");
+
+      final context = globalKey.currentContext;
+      if (context != null) {
+        globalKey.currentState?.pushNamed('/sos', arguments: {'status': '2'});
+      }
+    } else if (title == "Fall Detection") {
+      print("Inside Fall Detection");
+
+      final context = globalKey.currentContext;
+      if (context != null) {
+        globalKey.currentState?.pushNamed('/sos', arguments: {'status': '3'});
+      }
+    } else {
+      print("Inside Emergency");
+
+      final context = globalKey.currentContext;
+      if (context != null) {
+        globalKey.currentState?.pushNamed('/sos', arguments: {'status': '1'});
       }
     }
     await flutterLocalNotificationsPlugin.show(
