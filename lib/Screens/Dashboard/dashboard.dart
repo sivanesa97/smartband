@@ -346,6 +346,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
               "isEmergency": true,
               "responseStatus": false,
               "response": "",
+              "phone_number": supervisor.key,
               "userUid": FirebaseAuth.instance.currentUser?.uid,
               "heartbeatRate": deviceOwnerData.heartRate,
               "location": "0°N 0°E",

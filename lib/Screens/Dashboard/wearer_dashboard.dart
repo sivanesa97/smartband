@@ -144,6 +144,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             "fall_axis": "--"
           }
         });
+        // await Future.delayed(Duration(minutes: 1));
       }
     });
   }
@@ -299,9 +300,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       .split(',');
                   if (values.length < 3) {
                     values = ['--', '--', '0']; // Fallback if not enough values
-                  } else {
-                    _startTimer(values);
                   }
+                  // else {
+                  //   _startTimer(values);
+                  // }
                 }
                 if (!_isTimerRunning) {
                   _isTimerRunning = true;
@@ -309,7 +311,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 } else if (_timer?.isActive == false) {
                   _startTimer(values);
                 }
-                bool sosClicked = values[2] == '0' ? true : false;
+                bool sosClicked = values[2] == '1' ? true : false;
                 // bool falldetection = values[3].toString() == '1' ? true : false;
                 return SafeArea(
                     child: SingleChildScrollView(

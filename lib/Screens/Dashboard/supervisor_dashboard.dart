@@ -57,6 +57,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
       if (userDoc.docs.isNotEmpty) {
         relationDetails.add(userDoc.docs.first.data());
       }
+      // await Future.delayed(Duration(minutes: 1));
     }
     return relationDetails;
   }

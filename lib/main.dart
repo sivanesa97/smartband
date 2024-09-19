@@ -128,6 +128,7 @@ Future<void> checkAndSendReminders() async {
             .doc(userId)
             .get();
         final fcmToken = userDoc.data()?['fcmKey'];
+        final userName = userDoc.data()?['name'];
 
         if (fcmToken != null) {
           SendNotification sendNotification = SendNotification();
@@ -136,6 +137,14 @@ Future<void> checkAndSendReminders() async {
             'Reminder',
             'It\'s time for: $title',
           );
+
+          await FirebaseFirestore.instance.collection('notifications').add({
+            'date': currentDate,
+            'time': currentTime,
+            'userId': userId,
+            'userName': userName,
+            'title': title,
+          });
         }
       }
     }
@@ -325,12 +334,15 @@ void onStart(ServiceInstance service) async {
   // Other background tasks
   BluetoothConnectionService().startBluetoothService();
 
-  Timer.periodic(Duration(minutes: 1), (timer) async {
-    await handleCronJob();
-  });
+  await setupOverlay();
+
+  // Timer.periodic(Duration(minutes: 1), (timer) async {
+  //   await handleCronJob();
+  // });
 
   Timer.periodic(Duration(minutes: 1), (timer) async {
     await checkLocationAndSendNotification();
+    await handleCronJob();
     await BluetoothConnectionService().checkAndReconnect();
   });
 
@@ -398,10 +410,11 @@ Future<void> checkLocationAndSendNotification() async {
               "isEmergency": true,
               "responseStatus": false,
               "response": "",
+              "phone_number": supervisor,
               "userUid": FirebaseAuth.instance.currentUser?.uid,
-              // "heartbeatRate": deviceOwnerData.heartRate,
+              "heartbeatRate": 0,
               "location": "0°N 0°E",
-              // "spo2": deviceOwnerData.spo2,
+              "spo2": 0,
               "fallDetection": false,
               "isManual": true,
               "timestamp": FieldValue.serverTimestamp()
@@ -415,9 +428,9 @@ Future<void> checkLocationAndSendNotification() async {
               "isEmergency": true,
               "responseStatus": false,
               "response": "",
-              // "heartbeatRate": deviceOwnerData.heartRate,
+              "heartbeatRate": 0,
               "location": "0°N 0°E",
-              // "spo2": deviceOwnerData.spo2,
+              "spo2": 0,
               "fallDetection": false,
               "isManual": true,
               "timestamp": FieldValue.serverTimestamp()
