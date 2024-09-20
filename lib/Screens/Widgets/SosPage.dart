@@ -24,8 +24,8 @@ class _SOSPageState extends State<SOSPage> {
     super.initState();
     _initializeFirebase();
     startCountdown();
+    startSOS();
     _setStatusUI(widget.status);
-    print(widget.status);
   }
 
   Future<void> _initializeFirebase() async {
@@ -44,7 +44,7 @@ class _SOSPageState extends State<SOSPage> {
           imagePath = 'assets/monitoring_person_background.png';
         });
         break;
-      case '2':
+      case '3':
         setState(() {
           title = 'Fall Detection Emergency';
           description =
@@ -52,7 +52,7 @@ class _SOSPageState extends State<SOSPage> {
           imagePath = 'assets/falldetction.png';
         });
         break;
-      case '3':
+      case '2':
         setState(() {
           title = 'Location Alert';
           description =

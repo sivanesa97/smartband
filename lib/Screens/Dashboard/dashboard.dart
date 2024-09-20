@@ -320,7 +320,7 @@ class _EmergencyCardState extends State<EmergencyCard> {
             break;
           }
           print("Sending");
-          print("Email : ${i.data()['email']}");
+          print("Email : ${i.data()['email']}"); // Fixed by adding null check
           print("Inside SOS Click");
 
           Map<String, Map<String, dynamic>> supervisors =
@@ -371,11 +371,14 @@ class _EmergencyCardState extends State<EmergencyCard> {
               "isManual": true,
               "timestamp": FieldValue.serverTimestamp()
             });
+            String responderName =
+                i.data()['name'] ?? "User"; // Fixed by adding null check
             send.sendNotification(supervisor.key, "Emergency!!",
-                "Siva has clicked the SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
+                "$responderName has clicked the SOS Button from ${location.latitude}°N ${location.longitude}°E. Please respond");
 
             print(
                 "Message sent to supervisor with phone number: ${supervisor.key} and priority: ${supervisor.value}");
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Sent Alert to ${supervisor.key}")),
             );
@@ -386,15 +389,23 @@ class _EmergencyCardState extends State<EmergencyCard> {
                 .snapshots()
                 .listen((DocumentSnapshot doc) {
               if (doc.exists && doc["responseStatus"] == true) {
-                String responderName = i.data()['name'] ?? "User";
                 setState(() {
                   _isEmergency = false;
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("$responderName Responded"),
-                  ),
-                );
+                FirebaseFirestore.instance
+                    .collection("users")
+                    .where('phone_number', isEqualTo: supervisor.key)
+                    .get()
+                    .then((QuerySnapshot snapshot) {
+                  Map<String, dynamic> data =
+                      snapshot.docs.first.data() as Map<String, dynamic>;
+                  String responder = data['name'] ?? "User";
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("$responder Responded"),
+                    ),
+                  );
+                });
               }
             });
           }

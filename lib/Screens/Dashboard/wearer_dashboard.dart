@@ -255,457 +255,496 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     return location;
   }
 
+  DateTime? _lastBackPressed;
   @override
   Widget build(BuildContext context) {
     final user_data =
         ref.watch(userModelProvider(FirebaseAuth.instance.currentUser!.uid));
     final width = MediaQuery.of(context).size.width;
     final height = MediaQuery.of(context).size.height;
-    return Scaffold(
-        drawer: DrawerScreen(
-            device: bluetoothDeviceManager.connectedDevices.first,
-            phNo: widget.phNo,
-            subscription: subscription,
-            status: status),
-        backgroundColor: Colors.white,
-        body: user_data.when(
-          data: (user) {
-            if (user == null) {
-              return const Center(child: Text("User data is unavailable"));
-            }
-            if (!_isSubscriptionFetched) {
-              fetchSubscription(user.phone_number.toString());
-            }
-            return StreamBuilder<Map<String, String>>(
-              stream: bluetoothDeviceManager.characteristicValuesStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.blueAccent));
+    return WillPopScope(
+        onWillPop: () async {
+          if (_lastBackPressed == null ||
+              DateTime.now().difference(_lastBackPressed!) >
+                  Duration(seconds: 2)) {
+            _lastBackPressed = DateTime.now();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Press back again to exit'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            return false;
+          } else {
+            return true;
+          }
+        },
+        child: Scaffold(
+            drawer: DrawerScreen(
+                device: bluetoothDeviceManager.connectedDevices.first,
+                phNo: widget.phNo,
+                subscription: subscription,
+                status: status),
+            backgroundColor: Colors.white,
+            body: user_data.when(
+              data: (user) {
+                if (user == null) {
+                  return const Center(child: Text("User data is unavailable"));
                 }
-                if (snapshot.hasError) {
-                  return const Center(
-                      child: Text("Error reading characteristic values"));
+                if (!_isSubscriptionFetched) {
+                  fetchSubscription(user.phone_number.toString());
                 }
+                return StreamBuilder<Map<String, String>>(
+                  stream: bluetoothDeviceManager.characteristicValuesStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator(
+                              color: Colors.blueAccent));
+                    }
+                    if (snapshot.hasError) {
+                      return const Center(
+                          child: Text("Error reading characteristic values"));
+                    }
 
-                final characteristicValues = snapshot.data;
-                List<String> values = ['--', '--', '0']; // Default values
-                if (characteristicValues != null &&
-                    characteristicValues[
-                            "beb5483e-36e1-4688-b7f5-ea07361b26a8"] !=
-                        null) {
-                  values = characteristicValues[
-                          "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
-                      .split(',');
-                  if (values.length < 3) {
-                    values = ['--', '--', '0']; // Fallback if not enough values
-                  }
-                  // else {
-                  //   _startTimer(values);
-                  // }
-                }
-                if (!_isTimerRunning) {
-                  _isTimerRunning = true;
-                  _startTimer(values);
-                } else if (_timer?.isActive == false) {
-                  _startTimer(values);
-                }
-                bool sosClicked = values[2] == '1' ? true : false;
-                // bool falldetection = values[3].toString() == '1' ? true : false;
-                return SafeArea(
-                    child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    final characteristicValues = snapshot.data;
+                    List<String> values = ['--', '--', '0']; // Default values
+                    if (characteristicValues != null &&
+                        characteristicValues[
+                                "beb5483e-36e1-4688-b7f5-ea07361b26a8"] !=
+                            null) {
+                      values = characteristicValues[
+                              "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
+                          .split(',');
+                      if (values.length < 3) {
+                        values = ['--', '--', '0'];
+                      } else {
+                        _startTimer(values);
+                      }
+                      print(values);
+                      if (!_isTimerRunning && values.length > 2) {
+                        _isTimerRunning = true;
+                        _startTimer(values);
+                      } else if (_timer?.isActive == false) {
+                        _startTimer(values);
+                      }
+                    }
+
+                    bool sosClicked = values[2] == '1' ? true : false;
+                    // bool falldetection = values[3].toString() == '1' ? true : false;
+                    return SafeArea(
+                        child: SingleChildScrollView(
+                      child: Column(
                         children: [
-                          Center(
-                              child: Stack(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: width * 0.9,
-                                height: height * 0.17,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(30),
-                                  // Rounded corners
-                                  child: Image.network(
-                                    "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
-                                    fit: BoxFit
-                                        .cover, // Ensure the image covers the container
+                              Center(
+                                  child: Stack(
+                                children: [
+                                  SizedBox(
+                                    width: width * 0.9,
+                                    height: height * 0.17,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      // Rounded corners
+                                      child: Image.network(
+                                        "https://miro.medium.com/v2/resize:fit:1400/1*qYUvh-EtES8dtgKiBRiLsA.png",
+                                        fit: BoxFit
+                                            .cover, // Ensure the image covers the container
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.9,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.17,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  // Rounded corners
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color.fromRGBO(0, 83, 188, 0.8),
-                                      Color.fromRGBO(0, 0, 0, 0.15),
-                                      Color.fromRGBO(0, 83, 188, 0.8),
-                                    ], // Gradient colors
-                                    begin: Alignment.center,
-                                    end: Alignment.centerRight,
+                                  Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.9,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.17,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(30),
+                                      // Rounded corners
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color.fromRGBO(0, 83, 188, 0.8),
+                                          Color.fromRGBO(0, 0, 0, 0.15),
+                                          Color.fromRGBO(0, 83, 188, 0.8),
+                                        ], // Gradient colors
+                                        begin: Alignment.center,
+                                        end: Alignment.centerRight,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.only(
-                                    left: width * 0.07, top: height * 0.02),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Location",
-                                      style: TextStyle(
-                                          fontSize: width * 0.06,
-                                          color: Colors.white),
-                                    ),
-                                    const SizedBox(
-                                      height: 5,
-                                    ),
-                                    Text(
-                                      "Current Location ID :\n${locationNew.latitude}°N ${locationNew.longitude}°E",
-                                      style: TextStyle(
-                                          fontSize: width * 0.035,
-                                          color: Colors.white),
-                                    ),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    InkWell(
-                                      onTap: () async {
-                                        // setState(() async {
-                                        await updateLocation();
-                                        // });
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(5.0),
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10.0),
-                                            color: Colors.white),
-                                        child: Text(
-                                          "Open in Maps",
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                        left: width * 0.07, top: height * 0.02),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Location",
                                           style: TextStyle(
-                                            fontSize: width * 0.035,
-                                            color: const Color.fromRGBO(
-                                                0, 90, 170, 0.8),
-                                          ),
+                                              fontSize: width * 0.06,
+                                              color: Colors.white),
                                         ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )),
-                          SizedBox(
-                            height: height * 0.015,
-                          ),
-                          Center(
-                            child: Container(
-                              height: height * 0.07,
-                              width: width * 0.9,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  color: Colors.black),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 8.0, vertical: height * 0.01),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      Column(
-                                        children: [
-                                          Text(
-                                            "Status",
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: width * 0.045),
-                                          ),
-                                          Text(
-                                            status.toTitleCase(),
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: width * 0.03),
-                                          ),
-                                        ],
-                                      ),
-                                      const VerticalDivider(
-                                        color: Colors.white,
-                                        thickness: 2,
-                                      ),
-                                      Column(
-                                        children: [
-                                          Text(
-                                            "Subscription",
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: width * 0.045),
-                                          ),
-                                          Text(
-                                            subscription,
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: width * 0.03),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Text(
-                              "For You, ",
-                              style: TextStyle(fontSize: width * 0.06),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: width * 0.475,
-                                  height: height * 0.45,
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                          flex: 2,
-                                          child: Card(
-                                            color: const Color.fromRGBO(
-                                                255, 245, 227, 1),
-                                            shape: RoundedRectangleBorder(
+                                        const SizedBox(
+                                          height: 5,
+                                        ),
+                                        Text(
+                                          "Current Location ID :\n${locationNew.latitude}°N ${locationNew.longitude}°E",
+                                          style: TextStyle(
+                                              fontSize: width * 0.035,
+                                              color: Colors.white),
+                                        ),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        InkWell(
+                                          onTap: () async {
+                                            // setState(() async {
+                                            await updateLocation();
+                                            // });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(5.0),
+                                            decoration: BoxDecoration(
                                                 borderRadius:
-                                                    BorderRadius.circular(20)),
-                                            elevation: 4,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 12.0, top: 12.0),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      const Icon(
-                                                          Icons
-                                                              .monitor_heart_outlined,
-                                                          size: 30),
-                                                      SizedBox(
-                                                          width: width * 0.02),
-                                                      Text(
-                                                        "Fall Detection",
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                width * 0.045),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Center(
-                                                    child: Image.asset(
-                                                      values[1] == '1'
-                                                          ? "assets/fallaxis.png"
-                                                          : "assets/fallaxis0.png",
-                                                      height: height * 0.15,
-                                                    ),
-                                                  ),
-                                                ],
+                                                    BorderRadius.circular(10.0),
+                                                color: Colors.white),
+                                            child: Text(
+                                              "Open in Maps",
+                                              style: TextStyle(
+                                                fontSize: width * 0.035,
+                                                color: const Color.fromRGBO(
+                                                    0, 90, 170, 0.8),
                                               ),
                                             ),
-                                          )),
-                                      Expanded(
-                                        flex: 2,
-                                        child: EmergencyCard(
-                                          relations: user.relations,
-                                          user: user,
-                                          sosClicked: sosClicked,
-                                          values: values,
-                                        ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )),
+                              SizedBox(
+                                height: height * 0.015,
+                              ),
+                              Center(
+                                child: Container(
+                                  height: height * 0.07,
+                                  width: width * 0.9,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      color: Colors.black),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: height * 0.01),
+                                    child: Center(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Column(
+                                            children: [
+                                              Text(
+                                                "Status",
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: width * 0.045),
+                                              ),
+                                              Text(
+                                                status.toTitleCase(),
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: width * 0.03),
+                                              ),
+                                            ],
+                                          ),
+                                          const VerticalDivider(
+                                            color: Colors.white,
+                                            thickness: 2,
+                                          ),
+                                          Column(
+                                            children: [
+                                              Text(
+                                                "Subscription",
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: width * 0.045),
+                                              ),
+                                              Text(
+                                                subscription,
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: width * 0.03),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
-                                Container(
-                                  height: height * 0.45,
-                                  width: width * 0.475,
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                          flex: 2,
-                                          child: Card(
-                                            color: const Color.fromRGBO(
-                                                228, 240, 254, 1),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(20)),
-                                            elevation: 4,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 12.0, left: 12.0),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
+                              ),
+                              const SizedBox(height: 16),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0),
+                                child: Text(
+                                  "For You, ",
+                                  style: TextStyle(fontSize: width * 0.06),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: width * 0.475,
+                                      height: height * 0.45,
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                              flex: 2,
+                                              child: Card(
+                                                color: const Color.fromRGBO(
+                                                    255, 245, 227, 1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20)),
+                                                elevation: 4,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 12.0,
+                                                          top: 12.0),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      const Icon(
-                                                          Icons
-                                                              .favorite_outlined,
-                                                          size: 30),
-                                                      SizedBox(
-                                                          width: width * 0.02),
-                                                      Text(
-                                                        "Heart Rate",
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                width * 0.045),
+                                                      Row(
+                                                        children: [
+                                                          const Icon(
+                                                              Icons
+                                                                  .monitor_heart_outlined,
+                                                              size: 30),
+                                                          SizedBox(
+                                                              width:
+                                                                  width * 0.02),
+                                                          Text(
+                                                            "Fall Detection",
+                                                            style: TextStyle(
+                                                                fontSize:
+                                                                    width *
+                                                                        0.045),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      Center(
+                                                        child: Image.asset(
+                                                          values[1] == '1'
+                                                              ? "assets/fallaxis.png"
+                                                              : "assets/fallaxis0.png",
+                                                          height: height * 0.15,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  Column(
+                                                ),
+                                              )),
+                                          Expanded(
+                                            flex: 2,
+                                            child: EmergencyCard(
+                                              relations: user.relations,
+                                              user: user,
+                                              sosClicked: sosClicked,
+                                              values: values,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      height: height * 0.45,
+                                      width: width * 0.475,
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                              flex: 2,
+                                              child: Card(
+                                                color: const Color.fromRGBO(
+                                                    228, 240, 254, 1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20)),
+                                                elevation: 4,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 12.0,
+                                                          left: 12.0),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      Image.asset(
-                                                        "assets/heartrate.png",
-                                                        width: width * 0.3,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 10,
-                                                      ),
                                                       Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
                                                         children: [
+                                                          const Icon(
+                                                              Icons
+                                                                  .favorite_outlined,
+                                                              size: 30),
+                                                          SizedBox(
+                                                              width:
+                                                                  width * 0.02),
                                                           Text(
-                                                            values[0],
+                                                            "Heart Rate",
                                                             style: TextStyle(
                                                                 fontSize:
                                                                     width *
-                                                                        0.07,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: const Color
-                                                                    .fromRGBO(
-                                                                    0,
-                                                                    83,
-                                                                    188,
-                                                                    1)),
+                                                                        0.045),
                                                           ),
-                                                          Text(
-                                                            " bpm",
-                                                            style: TextStyle(
-                                                                fontSize:
-                                                                    width *
-                                                                        0.03,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: const Color
-                                                                    .fromRGBO(
-                                                                    0,
-                                                                    83,
-                                                                    188,
-                                                                    1)),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Column(
+                                                        children: [
+                                                          Image.asset(
+                                                            "assets/heartrate.png",
+                                                            width: width * 0.3,
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 10,
+                                                          ),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Text(
+                                                                values[0],
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        width *
+                                                                            0.07,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: const Color
+                                                                        .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
+                                                              ),
+                                                              Text(
+                                                                " bpm",
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        width *
+                                                                            0.03,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: const Color
+                                                                        .fromRGBO(
+                                                                        0,
+                                                                        83,
+                                                                        188,
+                                                                        1)),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
                                                     ],
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                          )),
-                                      Expanded(
-                                          flex: 2,
-                                          child: Card(
-                                            color: const Color.fromRGBO(
-                                                237, 255, 228, 1),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(20)),
-                                            elevation: 4,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(16.0),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
+                                                ),
+                                              )),
+                                          Expanded(
+                                              flex: 2,
+                                              child: Card(
+                                                color: const Color.fromRGBO(
+                                                    237, 255, 228, 1),
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20)),
+                                                elevation: 4,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                      16.0),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      const Icon(
-                                                          Icons.water_drop,
-                                                          size: 30),
-                                                      SizedBox(
-                                                          width: width * 0.02),
-                                                      Text(
-                                                        "SpO₂",
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                width * 0.05),
+                                                      Row(
+                                                        children: [
+                                                          const Icon(
+                                                              Icons.water_drop,
+                                                              size: 30),
+                                                          SizedBox(
+                                                              width:
+                                                                  width * 0.02),
+                                                          Text(
+                                                            "SpO₂",
+                                                            style: TextStyle(
+                                                                fontSize:
+                                                                    width *
+                                                                        0.05),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Stack(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        children: [
+                                                          Center(
+                                                              child: SpO2Gauge(
+                                                                  percentage: values[
+                                                                              1] !=
+                                                                          "--"
+                                                                      ? int.parse(
+                                                                          values[1]
+                                                                              .toString())
+                                                                      : 25))
+                                                        ],
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  Stack(
-                                                    alignment: Alignment.center,
-                                                    children: [
-                                                      Center(
-                                                          child: SpO2Gauge(
-                                                              percentage: values[
-                                                                          1] !=
-                                                                      "--"
-                                                                  ? int.parse(
-                                                                      values[1]
-                                                                          .toString())
-                                                                  : 25))
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          )),
-                                    ],
-                                  ),
+                                                ),
+                                              )),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
+                              ),
+                            ],
+                          )
                         ],
-                      )
-                    ],
-                  ),
-                ));
+                      ),
+                    ));
+                  },
+                );
               },
-            );
-          },
-          error: (error, stackTrace) {
-            return const Center(child: Text("Error Fetching User details"));
-          },
-          loading: () {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.blueAccent));
-          },
-        ));
+              error: (error, stackTrace) {
+                return const Center(child: Text("Error Fetching User details"));
+              },
+              loading: () {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent));
+              },
+            )));
   }
 }
 

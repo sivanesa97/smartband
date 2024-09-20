@@ -435,8 +435,9 @@ Future<void> checkLocationAndSendNotification() async {
               "isManual": true,
               "timestamp": FieldValue.serverTimestamp()
             });
+            String responderName = userData['name'] ?? "User";
             send.sendNotification(supervisor, "Location",
-                "User is away from  HomeLocation. And Their Current Location is  ${currentPosition.latitude}°N ${currentPosition.longitude}°E. Please respond");
+                "$responderName is away from  HomeLocation. And Their Current Location is  ${currentPosition.latitude}°N ${currentPosition.longitude}°E. Please respond");
 
             print(
                 "Message sent to supervisor with phone number: ${supervisor} and priority: ${supervisor}");
@@ -450,7 +451,7 @@ Future<void> checkLocationAndSendNotification() async {
                 .snapshots()
                 .listen((DocumentSnapshot doc) {
               if (doc.exists && doc["responseStatus"] == true) {
-                String responderName = userData['name'] ?? "User";
+                // String responderName = userData['name'] ?? "User";
                 _isEmergency = false;
                 // ScaffoldMessenger.of(context).showSnackBar(
                 //   SnackBar(

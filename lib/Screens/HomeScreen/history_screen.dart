@@ -224,7 +224,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                   String timestampString = data['timeStamp'] as String? ?? '';
                   DateTime dateTime;
                   try {
-                    dateTime = DateFormat("dd MMMM yyyy 'at' HH:mm:ss 'UTC'z")
+                    dateTime = DateFormat("dd-MM-yyyy hh:mm a")
                         .parse("$timestampString");
                   } catch (e) {
                     print("Invalid date format: $timestampString");
@@ -241,15 +241,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                   }
                   String phoneNumber = data['phone_number'] as String? ?? '';
                   bool status = data['responseStatus'] as bool? ?? false;
-                  String fromUsername = '';
-                  _getUserNameFromFirebase(phoneNumber).then((value) {
-                    fromUsername = value;
-                  });
+                  // String fromUsername = '';
+                  // _getUserNameFromFirebase(phoneNumber).then((value) {
+                  //   fromUsername = value;
+                  // });
 
                   return [
                     '', // Store document ID for later use
                     title,
-                    fromUsername,
+                    phoneNumber,
                     dateTime,
                     // formattedTimestamp(dateTime),
                     status ? 'Responded' : 'Missed',
@@ -309,14 +309,30 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                                               0.045,
                                         ),
                                       ),
-                                      subtitle: Text(
-                                        "To " +
-                                            (emergencyAlertsItems[index][2]
+                                      subtitle: FutureBuilder<String>(
+                                        future: _getUserNameFromFirebase(
+                                            emergencyAlertsItems[index][2]
                                                 as String),
-                                        style: const TextStyle(
-                                          color:
-                                              Color.fromRGBO(115, 115, 115, 1),
-                                        ),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const Center(
+                                                child:
+                                                    CircularProgressIndicator());
+                                          } else if (snapshot.hasError) {
+                                            return Text(
+                                                'Error: ${snapshot.error}');
+                                          } else if (snapshot.hasData) {
+                                            return Text(
+                                              "To ${snapshot.data}",
+                                              style: const TextStyle(
+                                                color: Color.fromRGBO(
+                                                    115, 115, 115, 1),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
                                       ),
                                       trailing: Column(
                                         crossAxisAlignment:
@@ -373,12 +389,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   }
 
   Future<String> _getUserNameFromFirebase(String phoneNumber) async {
-    var value = await FirebaseFirestore.instance
+    final snapshot = await FirebaseFirestore.instance
         .collection("users")
         .where('phone_number', isEqualTo: phoneNumber)
         .get();
-    if (value.docs.isNotEmpty) {
-      return value.docs.first.data()['name'] as String? ?? 'Unknown';
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first.get('name') as String;
     } else {
       return 'Unknown';
     }
