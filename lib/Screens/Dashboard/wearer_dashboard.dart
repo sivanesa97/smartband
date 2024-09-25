@@ -123,12 +123,14 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     return DateTime(newYear, newMonth, newDay);
   }
 
-  void _startTimer(List<String> values) {
-    _timer = Timer.periodic(const Duration(minutes: 1), (Timer timer) async {
-      if (FirebaseAuth.instance.currentUser != null) {
-        print(values);
-        final deviceOwnerData =
-            provider.Provider.of<OwnerDeviceData>(context, listen: false);
+  void _updateMetrics(List<String> values) async {
+    if (FirebaseAuth.instance.currentUser != null) {
+      print(values);
+      final deviceOwnerData =
+          provider.Provider.of<OwnerDeviceData>(context, listen: false);
+      // Check if the values have changed before updating
+      if (deviceOwnerData.heartRate != int.parse(values[0].toString()) ||
+          deviceOwnerData.spo2 != int.parse(values[1].toString())) {
         provider.Provider.of<OwnerDeviceData>(context, listen: false)
             .updateStatus(
                 age: deviceOwnerData.age,
@@ -144,9 +146,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             "fall_axis": "--"
           }
         });
-        // await Future.delayed(Duration(minutes: 1));
       }
-    });
+    }
   }
 
   Future<void> fetchSubscription(String phno) async {
@@ -308,7 +309,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                     }
 
                     final characteristicValues = snapshot.data;
-                    List<String> values = ['--', '--', '0']; // Default values
+                    List<String> values = ['--', '--', '0'];
                     if (characteristicValues != null &&
                         characteristicValues[
                                 "beb5483e-36e1-4688-b7f5-ea07361b26a8"] !=
@@ -316,22 +317,15 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       values = characteristicValues[
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
+                      print(values);
                       if (values.length < 3) {
                         values = ['--', '--', '0'];
                       } else {
-                        _startTimer(values);
-                      }
-                      print(values);
-                      if (!_isTimerRunning && values.length > 2) {
-                        _isTimerRunning = true;
-                        _startTimer(values);
-                      } else if (_timer?.isActive == false) {
-                        _startTimer(values);
+                        _updateMetrics(values);
                       }
                     }
 
                     bool sosClicked = values[2] == '1' ? true : false;
-                    // bool falldetection = values[3].toString() == '1' ? true : false;
                     return SafeArea(
                         child: SingleChildScrollView(
                       child: Column(
@@ -713,10 +707,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                                   percentage: values[
                                                                               1] !=
                                                                           "--"
-                                                                      ? int.parse(
+                                                                      ? double.parse(
                                                                           values[1]
                                                                               .toString())
-                                                                      : 25))
+                                                                      : 25.0))
                                                         ],
                                                       ),
                                                     ],
@@ -749,7 +743,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
 }
 
 class SpO2Gauge extends StatelessWidget {
-  final int percentage;
+  final double percentage;
 
   const SpO2Gauge({required this.percentage});
 
@@ -765,7 +759,7 @@ class SpO2Gauge extends StatelessWidget {
 }
 
 class SpO2GaugePainter extends CustomPainter {
-  final int percentage;
+  final double percentage;
   final double startAngle = 3.14 * 0.75; // 135 degrees
   final double sweepAngle = 3.14 * 1.5; // 270 degrees
   final double gapAngle = (pi / 180) + 0.3;

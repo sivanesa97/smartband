@@ -141,8 +141,8 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
   void _showSupervisorDialog(int otp_num, String activeStatus) async {
     // String phn = '+94965538195';
     // if (_phoneConn.text != phn) {
-    // if (true) {
-    if (otp_num.toString() == _otpConn.text) {
+    if (true) {
+    // if (otp_num.toString() == _otpConn.text) {
       if (supervisorPhoneNo != widget.phNo) {
         // _otpConn.text == otp_num.toString()) {
         String phonetoCheck = supervisorPhoneNo;

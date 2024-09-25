@@ -1149,9 +1149,9 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                                 children: [
                                                                   Center(
                                                                       child: SpO2Gauge(
-                                                                          percentage: data.first.metrics['spo2'] != "--"
-                                                                              ? int.parse(data.first.metrics['spo2'].toString())
-                                                                              : 1))
+                                                                          percentage: data.first.metrics['spo2'] != null
+                                                                              ? (data.first.metrics['spo2'] is String ? double.parse(data.first.metrics['spo2']) : (data.first.metrics['spo2'] as num).toDouble())
+                                                                              : 25.0))
                                                                 ],
                                                               ),
                                                             ],

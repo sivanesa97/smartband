@@ -413,10 +413,11 @@ Future<void> checkLocationAndSendNotification() async {
               "phone_number": supervisor,
               "userUid": FirebaseAuth.instance.currentUser?.uid,
               "heartbeatRate": 0,
-              "location": "0°N 0°E",
+              "location":
+                  "${currentPosition.latitude}°N ${currentPosition.longitude}°E",
               "spo2": 0,
               "fallDetection": false,
-              "isManual": true,
+              "isManual": false,
               "timestamp": FieldValue.serverTimestamp()
             }, SetOptions(merge: true));
 
@@ -429,10 +430,11 @@ Future<void> checkLocationAndSendNotification() async {
               "responseStatus": false,
               "response": "",
               "heartbeatRate": 0,
-              "location": "0°N 0°E",
+              "location":
+                  "${currentPosition.latitude}°N ${currentPosition.longitude}°E",
               "spo2": 0,
               "fallDetection": false,
-              "isManual": true,
+              "isManual": false,
               "timestamp": FieldValue.serverTimestamp()
             });
             String responderName = userData['name'] ?? "User";

@@ -18,7 +18,7 @@ class UserModel {
   Map<String, dynamic> emergency;
   String gender;
   String device_id;
-  final int minimum_km;
+  double minimum_km;
 
   UserModel(
       {required this.dob,
@@ -35,7 +35,7 @@ class UserModel {
       required this.emergency,
       required this.gender,
       required this.device_id,
-      this.minimum_km = 0});
+      required this.minimum_km});
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -48,13 +48,14 @@ class UserModel {
         name: data['name'] ?? '',
         latitude: data['location'].latitude ?? 0.1,
         longitude: data['location'].longitude ?? 0.1,
-        phone_number: data['phone_number'] ?? 0,
+        phone_number: data['phone_number'] ?? '',
         relations: List<String>.from(data['relations']),
         weight: data['weight'].toDouble() ?? 0,
         role: data['role'],
         emergency: Map<String, dynamic>.from(data['emergency']),
         gender: data['gender'],
-        minimum_km: data['minimum_km'] ?? 0,
+        minimum_km:
+            data.containsKey('minimum_km') ? data['minimum_km'].toDouble() : 0,
         device_id: data['device_id']);
   }
 

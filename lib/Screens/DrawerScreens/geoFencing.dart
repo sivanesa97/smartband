@@ -263,13 +263,14 @@ class _ProfilepageState extends ConsumerState<GeoFencing> {
 
                                 GeoPoint geoPoint =
                                     convertToGeoPoint(_locationController.text);
+                                double minimumKm =
+                                    double.parse(_minKmController.text);
                                 FirebaseFirestore.instance
                                     .collection("users")
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
                                     .update({
                                   "home_location": geoPoint,
-                                  "minimum_km":
-                                      int.parse(_minKmController.text),
+                                  "minimum_km": minimumKm,
                                 });
                                 getData();
                                 final response = await http.post(
