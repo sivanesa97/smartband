@@ -220,17 +220,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
               } else if (snapshot.hasData) {
                 var emergencyAlertsItems = snapshot.data!.docs.map((doc) {
                   var data = doc.data() as Map<String, dynamic>;
-
-                  String timestampString = data['timeStamp'] as String? ?? '';
-                  DateTime dateTime;
-                  try {
-                    dateTime = DateFormat("dd-MM-yyyy hh:mm a")
-                        .parse("$timestampString");
-                  } catch (e) {
-                    print("Invalid date format: $timestampString");
-                    dateTime = DateTime.now();
-                  }
-
+                  DateTime dateTime = data['timestamp'].toDate();
+                  // String formattedDateTime =
+                  //     DateFormat('dd MMMM yyyy at hh:mm:ss a').format(dateTime);
+                  // print(formattedDateTime);
                   String title = '';
                   if (data['fallDetection'] == true) {
                     title = 'Fall Detection Alert';
@@ -241,17 +234,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                   }
                   String phoneNumber = data['phone_number'] as String? ?? '';
                   bool status = data['responseStatus'] as bool? ?? false;
-                  // String fromUsername = '';
-                  // _getUserNameFromFirebase(phoneNumber).then((value) {
-                  //   fromUsername = value;
-                  // });
 
                   return [
                     '', // Store document ID for later use
                     title,
                     phoneNumber,
                     dateTime,
-                    // formattedTimestamp(dateTime),
                     status ? 'Responded' : 'Missed',
                   ];
                 }).toList();

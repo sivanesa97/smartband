@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/bluetooth.dart';
 
@@ -22,6 +24,47 @@ class HeartrateScreen extends ConsumerStatefulWidget {
 class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
   final BluetoothDeviceManager bluetoothDeviceManager =
       BluetoothDeviceManager();
+  int age = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _setOwnerDeviceData();
+  }
+
+  void _setOwnerDeviceData() async {
+    final deviceOwnerData =
+        provider.Provider.of<OwnerDeviceData>(context, listen: false);
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+      var dob = userData['dob'];
+      if (dob != null && dob != '') {
+        try {
+          DateTime birthdate = DateFormat("yyyy-MM-dd").parse(dob.toString());
+          DateTime currentDate = DateTime.now();
+          age = currentDate.year - birthdate.year;
+          if (currentDate.month < birthdate.month ||
+              (currentDate.month == birthdate.month &&
+                  currentDate.day < birthdate.day)) {
+            age--;
+          }
+        } catch (e) {
+          print(e);
+        }
+      }
+      deviceOwnerData.updateStatus(
+          age: age,
+          heartRate: deviceOwnerData.heartRate,
+          spo2: deviceOwnerData.spo2);
+    } else {
+      print('User data not found');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +127,7 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
                                   Row(
                                     children: [
                                       Text(
-                                        deviceOwnerData.age.toString(),
+                                        age.toString(),
                                         style: TextStyle(
                                             fontSize: width * 0.1,
                                             color: Colors.white),

@@ -308,6 +308,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                           child: Text("Error reading characteristic values"));
                     }
 
+                    bool sosClicked = false;
                     final characteristicValues = snapshot.data;
                     List<String> values = ['--', '--', '0'];
                     if (characteristicValues != null &&
@@ -318,14 +319,17 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
                       print(values);
-                      if (values.length < 3) {
+                      if (values.length == 2 && values[1] == '1') {
+                        values = ['--', '--', '1'];
+                        sosClicked = true;
+                        // _updateMetrics(['--', '--', '1']);
+                      } else if (values.length < 3) {
                         values = ['--', '--', '0'];
                       } else {
                         _updateMetrics(values);
                       }
                     }
 
-                    bool sosClicked = values[2] == '1' ? true : false;
                     return SafeArea(
                         child: SingleChildScrollView(
                       child: Column(

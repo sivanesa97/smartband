@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class SOSPage extends StatefulWidget {
-  final String status;
+  final String? status;
   const SOSPage({super.key, required this.status});
 
   @override
@@ -22,10 +22,12 @@ class _SOSPageState extends State<SOSPage> {
   @override
   void initState() {
     super.initState();
-    _initializeFirebase();
-    startCountdown();
-    startSOS();
-    _setStatusUI(widget.status);
+    if (widget.status != null && widget.status != '') {
+      _initializeFirebase();
+      startCountdown();
+      startSOS();
+      _setStatusUI(widget.status!);
+    }
   }
 
   Future<void> _initializeFirebase() async {

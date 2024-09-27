@@ -128,13 +128,6 @@ class SendNotification {
       if (context != null) {
         globalKey.currentState?.pushNamed('/sos', arguments: {'status': '3'});
       }
-    } else {
-      print("Inside Emergency");
-
-      final context = globalKey.currentContext;
-      if (context != null) {
-        globalKey.currentState?.pushNamed('/sos', arguments: {'status': '1'});
-      }
     }
     await flutterLocalNotificationsPlugin.show(
       0,
@@ -177,7 +170,7 @@ class SendNotification {
           'android': {
             'priority': 'high', // Move priority here
             'notification': {
-              'sound': 'default',
+              'sound': 'custom_ringtone', // Change ringtone here
               'channel_id': 'alarm_channel',
             },
           },
