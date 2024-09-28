@@ -202,7 +202,7 @@ String getStatusFromMessage(String title) {
   } else if (title.contains('Fall Detection')) {
     return '3';
   }
-  return '';
+  return '4';
 }
 
 Future<void> handleCronJob() async {
@@ -223,10 +223,6 @@ void main() async {
   final cron = Cron();
   cron.schedule(Schedule.parse('* * * * *'), () async {
     await handleCronJob();
-    await BluetoothConnectionService().checkAndReconnect();
-  });
-  cron.schedule(Schedule.parse('*/5 * * * *'), () async {
-    await checkLocationAndSendNotification();
   });
 
   await initializeService();
@@ -342,7 +338,12 @@ void onStart(ServiceInstance service) async {
 
   Timer.periodic(Duration(minutes: 5), (timer) async {
     await checkLocationAndSendNotification();
-    // await handleCronJob();
+    await FirebaseMessaging.instance.getToken().then((token) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .update({'fcmKey': token});
+    });
   });
 
   Timer.periodic(Duration(minutes: 1), (timer) async {
@@ -471,14 +472,14 @@ Future<void> checkLocationAndSendNotification() async {
       .get();
   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
   String role = userData['role'].toString();
-  double minimum_km = 0.0;
-
+  double minimum_km = 0;
+  print(minimum_km);
   if (userData.containsKey('minimum_km')) {
     minimum_km = double.parse(userData['minimum_km'].toString());
   }
   if (role == 'watch wearer' && minimum_km > 0) {
     GeoPoint homeLocation = userData['home_location'] as GeoPoint;
-    print(minimum_km);
+
     double distance = Geolocator.distanceBetween(
       currentPosition.latitude,
       currentPosition.longitude,

@@ -120,7 +120,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               Provider.of<OwnerDeviceData>(context, listen: false).updateStatus(
                   age: age,
                   heartRate: deviceOwnerData.heartRate,
-                  spo2: deviceOwnerData.spo2);
+                  spo2: deviceOwnerData.spo2,
+                  sosClicked:false);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Device is not assigned!")));

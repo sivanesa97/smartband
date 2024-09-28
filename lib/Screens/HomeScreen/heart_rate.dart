@@ -60,7 +60,8 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
       deviceOwnerData.updateStatus(
           age: age,
           heartRate: deviceOwnerData.heartRate,
-          spo2: deviceOwnerData.spo2);
+          spo2: deviceOwnerData.spo2,
+          sosClicked: false);
     } else {
       print('User data not found');
     }

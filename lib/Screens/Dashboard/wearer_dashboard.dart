@@ -135,7 +135,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             .updateStatus(
                 age: deviceOwnerData.age,
                 heartRate: int.parse(values[0].toString()),
-                spo2: int.parse(values[1].toString()));
+                spo2: int.parse(values[1].toString()),
+                sosClicked: false);
         await FirebaseFirestore.instance
             .collection("users")
             .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -319,17 +320,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
                       print(values);
-                      if (values.length == 2 && values[1] == '1') {
-                        values = ['--', '--', '1'];
-                        sosClicked = true;
-                        // _updateMetrics(['--', '--', '1']);
-                      } else if (values.length < 3) {
+                      if (values.length < 3) {
                         values = ['--', '--', '0'];
-                      } else {
-                        _updateMetrics(values);
                       }
                     }
-
                     return SafeArea(
                         child: SingleChildScrollView(
                       child: Column(
