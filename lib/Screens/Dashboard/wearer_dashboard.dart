@@ -13,6 +13,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -300,9 +301,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                   stream: bluetoothDeviceManager.characteristicValuesStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                          child: CircularProgressIndicator(
-                              color: Colors.blueAccent));
+                      return const Center(child: GradientLoadingIndicator());
                     }
                     if (snapshot.hasError) {
                       return const Center(
@@ -322,6 +321,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       print(values);
                       if (values.length < 3) {
                         values = ['--', '--', '0'];
+                      } else if (values.length == 2 && values[1] == '1') {
+                        sosClicked = true;
                       }
                     }
                     return SafeArea(
@@ -522,10 +523,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          const Icon(
-                                                              Icons
-                                                                  .monitor_heart_outlined,
-                                                              size: 30),
+                                                          Image.asset(
+                                                            "assets/Mask.png",
+                                                            width: 30,
+                                                          ),
                                                           SizedBox(
                                                               width:
                                                                   width * 0.02),
@@ -562,6 +563,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                         ],
                                       ),
                                     ),
+                                    SizedBox(width: width * 0.01),
                                     Container(
                                       height: height * 0.45,
                                       width: width * 0.475,
@@ -733,8 +735,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 return const Center(child: Text("Error Fetching User details"));
               },
               loading: () {
-                return const Center(
-                    child: CircularProgressIndicator(color: Colors.blueAccent));
+                return const Center(child: GradientLoadingIndicator());
               },
             )));
   }

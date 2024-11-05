@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/bluetooth.dart';
 
 import '../Models/usermodel.dart';
@@ -293,8 +294,7 @@ class _HeartrateScreenState extends ConsumerState<HeartrateScreen> {
             return const Center(child: Text("Error Fetching User details"));
           },
           loading: () {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.blueAccent));
+            return const Center(child: GradientLoadingIndicator());
           },
         ));
   }

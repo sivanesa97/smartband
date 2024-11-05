@@ -97,7 +97,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             label: 'Heartrate',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.water_drop),
+            icon: Icon(Icons.water_drop_outlined),
             label: 'SpO2',
           ),
           const BottomNavigationBarItem(
@@ -174,7 +174,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 }, loading: () {
                                   return HeaderText("User");
                                 }),
-                                const Icon(Icons.keyboard_arrow_down)
+                                // const Icon(Icons.keyboard_arrow_down)
                               ],
                             ),
                             Text(

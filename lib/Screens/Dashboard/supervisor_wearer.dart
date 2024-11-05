@@ -10,6 +10,7 @@ import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/HomeScreen/settings.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
@@ -200,7 +201,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
 
   void _showSupervisorDialog(int otp_num) async {
     // String phn = '+94735833006';
-    if (otp_num.toString() == _otpConn.text) {
+    // if (otp_num.toString() == _otpConn.text) {
+    if (true) {
       if (PhoneNo != widget.phno) {
         String phonetoCheck = PhoneNo;
         print(phonetoCheck);
@@ -373,9 +375,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
               future: _fetchRelationDetails(user!.relations),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                      child:
-                          CircularProgressIndicator(color: Colors.blueAccent));
+                  return Center(child: GradientLoadingIndicator());
                 } else if (snapshot.hasError) {
                   return Center(child: Text("Error fetching relation details"));
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -417,7 +417,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
-                                      color: Color.fromRGBO(0, 83, 188, 1)
+                                      color: Color.fromRGBO(10, 81, 174, 1)
                                           .withOpacity(0.5),
                                     ),
                                     child: Padding(
@@ -443,11 +443,11 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          const Icon(
-                                            Icons.stacked_line_chart,
-                                            size: 50,
-                                            color: Colors.black,
-                                          ),
+                                          // const Icon(
+                                          //   Icons.stacked_line_chart,
+                                          //   size: 30,
+                                          //   color: Colors.black,
+                                          // ),
                                         ],
                                       ),
                                     ),
@@ -751,11 +751,10 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                                                               children: [
                                                                 Row(
                                                                   children: [
-                                                                    Icon(
-                                                                        Icons
-                                                                            .monitor_heart_outlined,
-                                                                        size:
-                                                                            30),
+                                                                    Image.asset(
+                                                                      "assets/Mask.png",
+                                                                      width: 30,
+                                                                    ),
                                                                     SizedBox(
                                                                         width: width *
                                                                             0.02),
@@ -1057,8 +1056,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
                               },
                               loading: () {
                                 return Center(
-                                  child: CircularProgressIndicator(
-                                      color: Colors.blueAccent),
+                                  child: GradientLoadingIndicator(),
                                 );
                               },
                             );
@@ -1117,7 +1115,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorWearer> {
           },
           loading: () {
             return Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent),
+              child: GradientLoadingIndicator(),
             );
           },
         ),

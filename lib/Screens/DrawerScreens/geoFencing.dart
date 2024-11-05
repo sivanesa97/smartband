@@ -10,6 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/map.dart';
 import 'package:http/http.dart' as http;
@@ -311,7 +312,7 @@ class _ProfilepageState extends ConsumerState<GeoFencing> {
               return Text("Error");
             },
             loading: () {
-              return CircularProgressIndicator();
+              return GradientLoadingIndicator();
             },
           ),
         ),

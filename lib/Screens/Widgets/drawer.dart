@@ -113,26 +113,27 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           : subscriptionStatus.deviceId != "" &&
                                   subscriptionStatus.isSubscribed &&
                                   subscriptionStatus.isActive
-                              ? Column(
+                              ? Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      "You have not connected a device",
-                                      maxLines: 2,
-                                      style: TextStyle(
-                                          fontSize: width * 0.05,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Align(
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        "assets/watch.png",
-                                        width: width * 0.2,
-                                        height: height * 0.2,
-                                        fit: BoxFit.fitWidth,
+                                    SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        "You have not link your device",
+                                        overflow: TextOverflow.visible,
+                                        softWrap: true,
+                                        style: TextStyle(
+                                            fontSize: width * 0.05,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white),
                                       ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Image.asset(
+                                      "assets/watch.png",
+                                      width: width * 0.2,
+                                      height: height * 0.2,
+                                      fit: BoxFit.fitWidth,
                                     ),
                                   ],
                                 )
@@ -291,7 +292,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                     },
                     child: const ListTile(
                       leading: Icon(
-                        Icons.info_outline,
+                        Icons.person_2_rounded,
                         color: Colors.black26,
                       ),
                       title: Text("Profile"),
@@ -309,7 +310,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                           },
                           child: const ListTile(
                             leading: Icon(
-                              Icons.info_outline,
+                              Icons.location_pin,
                               color: Colors.black26,
                             ),
                             title: Text("GeoFencing"),
@@ -340,7 +341,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                     },
                     child: const ListTile(
                       leading: Icon(
-                        Icons.upgrade,
+                        Icons.upgrade_rounded,
                         color: Colors.black26,
                       ),
                       title: Text("Upgrade"),

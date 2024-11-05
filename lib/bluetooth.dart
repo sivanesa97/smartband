@@ -14,6 +14,7 @@ import 'package:smartband/Screens/DrawerScreens/emergencycard.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/pushnotifications.dart';
+import 'package:intl/intl.dart';
 
 class BluetoothDeviceManager {
   static final BluetoothDeviceManager _instance =
@@ -278,36 +279,192 @@ class BluetoothDeviceManager {
             if (characteristic.uuid.toString() ==
                 "beb5483e-36e1-4688-b7f5-ea07361b26a8") {
               await characteristic.setNotifyValue(true);
+
+              // Fetch the latest stored heart rate, SpO2, and counts from Firestore
+              final String formattedDate =
+                  DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+              double storedHeartRate = 0;
+              int heartRateCount = 0;
+              double storedSpO2 = 0;
+              int spO2Count = 0;
+
               characteristic.value.listen((value) {
                 String decodedValue = String.fromCharCodes(value);
                 List<String> values = decodedValue.split(',');
                 print("Values: $values");
                 if (values.length >= 3) {
-                  int heartRate = int.tryParse(values[0]) ?? 0;
-                  int spo2 = int.tryParse(values[1]) ?? 0;
-                  print("Heart Rate: $heartRate");
+                  int newHeartRate = int.tryParse(values[0]) ?? 0;
+                  int newSpO2 = int.tryParse(values[1]) ?? 0;
 
-                  // Use Provider.of with listen: false to avoid rebuilds
+                  if (ownerDeviceData.heartRate != newHeartRate ||
+                      ownerDeviceData.spo2 != newSpO2) {
+                    heartRateCount++;
+                    spO2Count++;
 
-                  if (ownerDeviceData.heartRate != heartRate ||
-                      ownerDeviceData.spo2 != spo2) {
-                    print(spo2);
                     ownerDeviceData.updateStatus(
-                      heartRate: heartRate,
-                      spo2: spo2,
+                      heartRate: newHeartRate,
+                      spo2: newSpO2,
                       age: ownerDeviceData.age,
                       sosClicked: false,
                     );
+
                     FirebaseFirestore.instance
                         .collection("users")
                         .doc(FirebaseAuth.instance.currentUser!.uid)
                         .update({
                       "metrics": {
-                        "spo2": spo2.toString(),
-                        "heart_rate": heartRate.toString(),
+                        "spo2": newSpO2.toString(),
+                        "heart_rate": newHeartRate.toString(),
                         "fall_axis": "--"
                       }
                     });
+
+                    //   // Update heart rate history
+                    //   FirebaseFirestore.instance
+                    //       .collection("heartRateHistory")
+                    //       .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //       .get()
+                    //       .then((doc) {
+                    //     if (doc.exists) {
+                    //       final heartRateData =
+                    //           doc.data() as Map<String, dynamic>;
+                    //       final heartRateList =
+                    //           heartRateData["heartRate"] as List<dynamic>;
+                    //       final dateIndex = heartRateList.indexWhere(
+                    //           (element) => element["date"] == formattedDate);
+                    //       if (dateIndex != -1) {
+                    //         storedHeartRate =
+                    //             (heartRateList[dateIndex]["value"] as num)
+                    //                 .toDouble();
+                    //         heartRateCount =
+                    //             heartRateList[dateIndex]["count"] as int;
+                    //         double tempHeartRate =
+                    //             (storedHeartRate * heartRateCount +
+                    //                     newHeartRate) /
+                    //                 (heartRateCount + 1);
+                    //         int tempAverageHeartRate = tempHeartRate.round();
+                    //         FirebaseFirestore.instance
+                    //             .collection("heartRateHistory")
+                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //             .update({
+                    //           "heartRate": FieldValue.arrayRemove([
+                    //             {
+                    //               "value": heartRateList[dateIndex]["value"],
+                    //               "date": formattedDate,
+                    //               "count": heartRateList[dateIndex]["count"],
+                    //             }
+                    //           ]),
+                    //           // ignore: equal_keys_in_map
+                    //           "heartRate": FieldValue.arrayUnion([
+                    //             {
+                    //               "value": tempAverageHeartRate,
+                    //               "date": formattedDate,
+                    //               "count": heartRateCount + 1,
+                    //             }
+                    //           ])
+                    //         });
+                    //       } else {
+                    //         // Add new entry if not found
+                    //         FirebaseFirestore.instance
+                    //             .collection("heartRateHistory")
+                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //             .update({
+                    //           "heartRate": FieldValue.arrayUnion([
+                    //             {
+                    //               "value": newHeartRate,
+                    //               "date": formattedDate,
+                    //               "count": heartRateCount,
+                    //             }
+                    //           ])
+                    //         });
+                    //       }
+                    //     } else {
+                    //       // Add new entry if document does not exist
+                    //       FirebaseFirestore.instance
+                    //           .collection("heartRateHistory")
+                    //           .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //           .set({
+                    //         "heartRate": [
+                    //           {
+                    //             "value": newHeartRate,
+                    //             "date": formattedDate,
+                    //             "count": heartRateCount,
+                    //           }
+                    //         ]
+                    //       });
+                    //     }
+                    //   });
+
+                    //   // Update SpO2 history
+                    //   FirebaseFirestore.instance
+                    //       .collection("spo2History")
+                    //       .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //       .get()
+                    //       .then((doc) {
+                    //     if (doc.exists) {
+                    //       final spO2Data = doc.data() as Map<String, dynamic>;
+                    //       final spO2List = spO2Data["spo2"] as List<dynamic>;
+                    //       final dateIndex = spO2List.indexWhere(
+                    //           (element) => element["date"] == formattedDate);
+                    //       if (dateIndex != -1) {
+                    //         storedSpO2 =
+                    //             (spO2List[dateIndex]["value"] as num).toDouble();
+                    //         spO2Count = spO2List[dateIndex]["count"] as int;
+                    //         double tempSpO2 = (storedSpO2 * spO2Count + newSpO2) /
+                    //             (spO2Count + 1);
+                    //         int tempAverageSpO2 = tempSpO2.round();
+                    //         FirebaseFirestore.instance
+                    //             .collection("spo2History")
+                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //             .update({
+                    //           "spo2": FieldValue.arrayRemove([
+                    //             {
+                    //               "value": spO2List[dateIndex]["value"],
+                    //               "date": formattedDate,
+                    //               "count": spO2List[dateIndex]["count"],
+                    //             }
+                    //           ]),
+                    //           // ignore: equal_keys_in_map
+                    //           "spo2": FieldValue.arrayUnion([
+                    //             {
+                    //               "value": tempAverageSpO2,
+                    //               "date": formattedDate,
+                    //               "count": spO2Count + 1,
+                    //             }
+                    //           ])
+                    //         });
+                    //       } else {
+                    //         // Add new entry if not found
+                    //         FirebaseFirestore.instance
+                    //             .collection("spo2History")
+                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //             .update({
+                    //           "spo2": FieldValue.arrayUnion([
+                    //             {
+                    //               "value": newSpO2,
+                    //               "date": formattedDate,
+                    //               "count": spO2Count,
+                    //             }
+                    //           ])
+                    //         });
+                    //       }
+                    //     } else {
+                    //       // Add new entry if document does not exist
+                    //       FirebaseFirestore.instance
+                    //           .collection("spo2History")
+                    //           .doc(FirebaseAuth.instance.currentUser!.uid)
+                    //           .set({
+                    //         "spo2": [
+                    //           {
+                    //             "value": newSpO2,
+                    //             "date": formattedDate,
+                    //             "count": spO2Count,
+                    //           }
+                    //         ]
+                    //       });
+                    //     }
+                    //   });
                   }
                 } else {
                   int sos = int.tryParse(values[1]) ?? 0;
@@ -358,6 +515,9 @@ class BluetoothDeviceManager {
       if (!_isEmergency) {
         break;
       }
+      final now = DateTime.now();
+      final currentDate = DateFormat('dd-MM-yyyy').format(now);
+      final currentTime = DateFormat('hh:mm a').format(now);
       print("Attempt ");
       print(attempt);
       // Position location = await updateLocation();
@@ -422,6 +582,8 @@ class BluetoothDeviceManager {
               "spo2": deviceOwnerData.spo2,
               "fallDetection": false,
               "isManual": true,
+              "date": currentDate,
+              "time": currentTime,
               "timestamp": FieldValue.serverTimestamp()
             }, SetOptions(merge: true));
 

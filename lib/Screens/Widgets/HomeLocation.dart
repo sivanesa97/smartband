@@ -1,8 +1,8 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 
 class HomeLocationPage extends StatefulWidget {
   @override
@@ -22,14 +22,18 @@ class _HomeLocationPageState extends State<HomeLocationPage> {
   }
 
   Future<void> _getCurrentLocation() async {
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
     setState(() {
       _currentLocation = LatLng(position.latitude, position.longitude);
     });
   }
 
   Future<void> _getHomeLocationFromFirebase() async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc('user_id').get();
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc('user_id')
+        .get();
     if (snapshot.exists) {
       setState(() {
         _homeLocation = LatLng(snapshot['lat'], snapshot['lng']);
@@ -53,7 +57,7 @@ class _HomeLocationPageState extends State<HomeLocationPage> {
         title: Text('Select Home Location'),
       ),
       body: _currentLocation == null
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: GradientLoadingIndicator())
           : GoogleMap(
               initialCameraPosition: CameraPosition(
                 target: _homeLocation ?? _currentLocation!,

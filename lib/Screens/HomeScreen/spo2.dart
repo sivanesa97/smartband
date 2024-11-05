@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/role_screen.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import '../Models/usermodel.dart';
@@ -260,8 +261,7 @@ class _Spo2ScreenState extends ConsumerState<Spo2Screen> {
             return const Center(child: Text("Error Fetching User details"));
           },
           loading: () {
-            return const Center(
-                child: CircularProgressIndicator(color: Colors.blueAccent));
+            return const Center(child: GradientLoadingIndicator());
           },
         ));
   }

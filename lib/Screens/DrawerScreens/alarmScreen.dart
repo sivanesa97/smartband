@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -117,7 +118,7 @@ class _ProfilepageState extends ConsumerState<ReminderScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: GradientLoadingIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(child: Text('No reminders for this date.'));
@@ -262,21 +263,23 @@ class AddReminderDialog extends StatefulWidget {
 }
 
 class _AddReminderDialogState extends State<AddReminderDialog> {
-  DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
+  DateTime? selectedDate;
+  TimeOfDay? selectedTime;
   String selectedRepeat = 'No Repeat';
   final TextEditingController _titleController = TextEditingController();
+  bool isSaveButtonEnabled = false;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        _checkSaveButtonState();
       });
     }
   }
@@ -284,13 +287,22 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: selectedTime,
+      initialTime: selectedTime ?? TimeOfDay.now(),
     );
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
+        _checkSaveButtonState();
       });
     }
+  }
+
+  void _checkSaveButtonState() {
+    setState(() {
+      isSaveButtonEnabled = _titleController.text.isNotEmpty &&
+          selectedDate != null &&
+          selectedTime != null;
+    });
   }
 
   Future<void> _saveReminder() async {
@@ -298,9 +310,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     if (user != null) {
       final reminderData = {
         'title': _titleController.text,
-        'date': DateFormat('dd-MM-yyyy').format(selectedDate),
+        'date': DateFormat('dd-MM-yyyy').format(selectedDate!),
         'time': DateFormat('hh:mm a').format(
-            DateTime(2022, 1, 1, selectedTime.hour, selectedTime.minute)),
+            DateTime(2022, 1, 1, selectedTime!.hour, selectedTime!.minute)),
         'repeat': selectedRepeat,
         'userId': user.uid,
       };
@@ -347,13 +359,16 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              onChanged: (_) => _checkSaveButtonState(),
             ),
             SizedBox(height: 15),
             Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
             TextField(
               readOnly: true,
               controller: TextEditingController(
-                text: DateFormat('dd-MM-yyyy').format(selectedDate),
+                text: selectedDate != null
+                    ? DateFormat('dd-MM-yyyy').format(selectedDate!)
+                    : '',
               ),
               decoration: InputDecoration(
                 hintText: 'Choose calendar',
@@ -371,8 +386,10 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
             TextField(
               readOnly: true,
               controller: TextEditingController(
-                text: DateFormat('hh:mm a').format(DateTime(
-                    2022, 1, 1, selectedTime.hour, selectedTime.minute)),
+                text: selectedTime != null
+                    ? DateFormat('hh:mm a').format(DateTime(
+                        2022, 1, 1, selectedTime!.hour, selectedTime!.minute))
+                    : '',
               ),
               decoration: InputDecoration(
                 hintText: 'Choose time',
@@ -424,7 +441,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                 ),
                 SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: _saveReminder,
+                  onPressed: isSaveButtonEnabled ? _saveReminder : null,
                   child: Text('Save Reminder',
                       style: TextStyle(color: Colors.blue)),
                   style: ElevatedButton.styleFrom(
