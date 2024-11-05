@@ -125,7 +125,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
 
   void _updateMetrics(List<String> values) async {
     if (FirebaseAuth.instance.currentUser != null) {
-      print(values);
+      // print(values);
       final deviceOwnerData =
           provider.Provider.of<OwnerDeviceData>(context, listen: false);
       // Check if the values have changed before updating
@@ -318,7 +318,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       values = characteristicValues[
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
-                      print(values);
+                      // print(values);
                       if (values.length == 2 && values[1] == '1') {
                         values = ['--', '--', '1'];
                         sosClicked = true;
