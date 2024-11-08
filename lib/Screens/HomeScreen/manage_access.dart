@@ -202,7 +202,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Please enter a different number")));
       }
-    } 
+    }
   }
 
   Stream<List<Map<String, String>>> _fetchRelationDetails(String phNo) {
@@ -359,12 +359,12 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
 
                                   // Assuming there's a function to fetch user details from Firebase
                                   // This is a placeholder for the actual implementation
-                                  fetchUserDetails(phone).then((value) {
-                                    setState(() {
-                                      userName =
-                                          value['name'] ?? 'Unknown User';
-                                    });
-                                  });
+                                  // fetchUserDetails(phone).then((value) {
+                                  //   setState(() {
+                                  //     userName =
+                                  //         value['name'] ?? 'Unknown User';
+                                  //   });
+                                  // });
 
                                   return Container(
                                     padding: const EdgeInsets.only(
@@ -390,7 +390,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                         SizedBox(
                                           width: width * 0.45,
                                           child: Text(
-                                            userName,
+                                            phone,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               color: Colors.black,
