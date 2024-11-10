@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.4.3 <4.0.0'
+  sdk: '>=2.17.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -15,14 +15,14 @@ dependencies:
   firebase_core: ^3.1.1
   firebase_auth: ^5.1.1
   google_sign_in: ^6.2.1
-  flutter_blue: ^0.8.0
+  # flutter_blue: ^0.8.0
   permission_handler: ^11.3.1
   cloud_firestore: ^5.0.2
   smooth_page_indicator: ^1.1.0
   flutter_riverpod: ^2.5.1
   rxdart: ^0.26.0
   geolocator: ^7.0.1
-  flutter_blue_plus: ^1.32.8
+  flutter_blue_plus: ^1.12.0
   flutter_background_service: ^5.0.7
   flutter_background_service_android: ^6.2.4
   font_awesome_flutter: ^10.7.0
@@ -47,7 +47,7 @@ dependencies:
   intl: ^0.19.0
   http: ^1.2.2
   provider: ^6.1.2
-  android_intent_plus: ^5.1.0
+  android_intent_plus: ^5.2.0
   google_maps_flutter: ^2.9.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
@@ -63,25 +63,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/logo.jpg
-    - assets/logo1.png
-    - assets/fallaxis.png
-    - assets/fallaxis0.png
-    - assets/fall_axis_icon.png
-    - assets/watch.png
-    - assets/heartrate.png
-    - assets/profile_icon.png
-    - assets/phone.png
-    - assets/heart_rate.png
-    - assets/heart_rate_icon.png
-    - assets/spo2_icon.png
-    - assets/heart_rate_1.png
-    - assets/otp_page.png
-    - assets/service_account.json
-    - assets/sounds/security_alarm.mp3
-    - assets/monitoring_person_background.png
-    - assets/image230.png
-    - assets/image231.png
-    - assets/user.png
-    - assets/falldetction.png
-    - assets/location.png
+    - assets/

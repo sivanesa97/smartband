@@ -13,6 +13,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:smartband/Providers/OwnerDeviceData.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -135,7 +136,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
             .updateStatus(
                 age: deviceOwnerData.age,
                 heartRate: int.parse(values[0].toString()),
-                spo2: int.parse(values[1].toString()));
+                spo2: int.parse(values[1].toString()),
+                sosClicked: false);
         await FirebaseFirestore.instance
             .collection("users")
             .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -299,9 +301,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                   stream: bluetoothDeviceManager.characteristicValuesStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                          child: CircularProgressIndicator(
-                              color: Colors.blueAccent));
+                      return const Center(child: GradientLoadingIndicator());
                     }
                     if (snapshot.hasError) {
                       return const Center(
@@ -318,18 +318,22 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       values = characteristicValues[
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
+<<<<<<< HEAD
                       // print(values);
                       if (values.length == 2 && values[1] == '1') {
                         values = ['--', '--', '1'];
                         sosClicked = true;
                         // _updateMetrics(['--', '--', '1']);
                       } else if (values.length < 3) {
+=======
+                      print(values);
+                      if (values.length < 3) {
+>>>>>>> ea2a766b9ff3773c02028c4402f166fc59359d0b
                         values = ['--', '--', '0'];
-                      } else {
-                        _updateMetrics(values);
+                      } else if (values.length == 2 && values[1] == '1') {
+                        sosClicked = true;
                       }
                     }
-
                     return SafeArea(
                         child: SingleChildScrollView(
                       child: Column(
@@ -528,10 +532,10 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          const Icon(
-                                                              Icons
-                                                                  .monitor_heart_outlined,
-                                                              size: 30),
+                                                          Image.asset(
+                                                            "assets/Mask.png",
+                                                            width: 30,
+                                                          ),
                                                           SizedBox(
                                                               width:
                                                                   width * 0.02),
@@ -568,6 +572,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                                         ],
                                       ),
                                     ),
+                                    SizedBox(width: width * 0.01),
                                     Container(
                                       height: height * 0.45,
                                       width: width * 0.475,
@@ -739,8 +744,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                 return const Center(child: Text("Error Fetching User details"));
               },
               loading: () {
-                return const Center(
-                    child: CircularProgressIndicator(color: Colors.blueAccent));
+                return const Center(child: GradientLoadingIndicator());
               },
             )));
   }

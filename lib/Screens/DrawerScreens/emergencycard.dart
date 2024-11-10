@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartband/Screens/Models/usermodel.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 import 'package:smartband/Screens/Widgets/drawer.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 
 class Emergencycard extends ConsumerStatefulWidget {
   const Emergencycard({super.key});
@@ -180,7 +181,8 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                     ),
                                                   )
                                                 : Text(
-                                                    data?.emergency['name'] ?? "",
+                                                    data?.emergency['name'] ??
+                                                        "",
                                                     style:
                                                         TextStyle(fontSize: 16),
                                                   )),
@@ -225,7 +227,9 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['blood_group'] ?? "",
+                                                  data?.emergency[
+                                                          'blood_group'] ??
+                                                      "",
                                                   style:
                                                       TextStyle(fontSize: 16),
                                                 ),
@@ -273,7 +277,9 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['medical_notes'] ?? "",
+                                                  data?.emergency[
+                                                          'medical_notes'] ??
+                                                      "",
                                                   style:
                                                       TextStyle(fontSize: 16),
                                                 ),
@@ -320,7 +326,8 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['address'] ?? "",
+                                                  data?.emergency['address'] ??
+                                                      "",
                                                   style:
                                                       TextStyle(fontSize: 16),
                                                 ),
@@ -368,7 +375,9 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['medications'] ?? "",
+                                                  data?.emergency[
+                                                          'medications'] ??
+                                                      "",
                                                   style:
                                                       TextStyle(fontSize: 16),
                                                 ),
@@ -416,7 +425,8 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['organ_donor'] ==
+                                                  data?.emergency[
+                                                              'organ_donor'] ==
                                                           true
                                                       ? "Yes"
                                                       : "No",
@@ -466,7 +476,9 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                                                   ),
                                                 )
                                               : Text(
-                                                  data?.emergency['contact'].toString() ?? "",
+                                                  data?.emergency['contact']
+                                                          .toString() ??
+                                                      "",
                                                   style:
                                                       TextStyle(fontSize: 16),
                                                 ),
@@ -483,7 +495,7 @@ class _EmergencycardState extends ConsumerState<Emergencycard> {
                     }, error: (error, StackTrace) {
                       return Text("Error fetching data");
                     }, loading: () {
-                      return CircularProgressIndicator();
+                      return GradientLoadingIndicator();
                     })
                   ],
                 ),

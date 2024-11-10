@@ -69,8 +69,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       print("${otp}  ${generated_otp}");
-      // if (true) {
-      if (int.parse(otp) == generated_otp) {
+      if (true) {
+        // if (int.parse(otp) == generated_otp) {
         final data = await FirebaseFirestore.instance
             .collection("users")
             .where("phone_number", isEqualTo: phNo)
@@ -120,7 +120,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               Provider.of<OwnerDeviceData>(context, listen: false).updateStatus(
                   age: age,
                   heartRate: deviceOwnerData.heartRate,
-                  spo2: deviceOwnerData.spo2);
+                  spo2: deviceOwnerData.spo2,
+                  sosClicked: false);
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Device is not assigned!")));

@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   final BluetoothDevice device;
@@ -73,8 +74,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
             stream: _notificationsHistory.snapshots(),
             builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: Colors.blueAccent));
+                return const Center(child: GradientLoadingIndicator());
               } else if (snapshot.hasError) {
                 return const Center(
                     child: Text("Error Fetching Notifications"));
@@ -212,15 +212,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
             stream: _emergencyAlertsHistory.snapshots(),
             builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: Colors.blueAccent));
+                return const Center(child: GradientLoadingIndicator());
               } else if (snapshot.hasError) {
                 return const Center(
                     child: Text("Error Fetching Emergency Alerts"));
               } else if (snapshot.hasData) {
                 var emergencyAlertsItems = snapshot.data!.docs.map((doc) {
                   var data = doc.data() as Map<String, dynamic>;
-                  DateTime dateTime = data['timestamp'].toDate();
+                  String timestampString = data['time'] as String? ?? '';
+                  String date = data['date'] as String? ?? '';
+                  DateTime dateTime = DateTime.now();
+                  try {
+                    dateTime = DateFormat("dd-MM-yyyy hh:mm a")
+                        .parse("$date $timestampString");
+                  } catch (e) {
+                    print("Invalid date format: $timestampString");
+                    dateTime = DateTime.now();
+                  }
                   // String formattedDateTime =
                   //     DateFormat('dd MMMM yyyy at hh:mm:ss a').format(dateTime);
                   // print(formattedDateTime);
@@ -236,7 +244,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                   bool status = data['responseStatus'] as bool? ?? false;
 
                   return [
-                    '', // Store document ID for later use
+                    '',
                     title,
                     phoneNumber,
                     dateTime,
@@ -306,7 +314,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                                               ConnectionState.waiting) {
                                             return const Center(
                                                 child:
-                                                    CircularProgressIndicator());
+                                                    GradientLoadingIndicator());
                                           } else if (snapshot.hasError) {
                                             return Text(
                                                 'Error: ${snapshot.error}');
@@ -389,7 +397,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
   }
 
   String formattedTimestamp(DateTime dateTime) {
-    print(dateTime);
     final now = DateTime.now();
     final difference = now.difference(dateTime);
     if (difference.inDays > 0) {

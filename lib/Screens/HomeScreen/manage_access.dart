@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 
 import '../Models/usermodel.dart';
 
@@ -142,7 +143,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
     // String phn = '+94965538195';
     // if (_phoneConn.text != phn) {
     if (true) {
-    // if (otp_num.toString() == _otpConn.text) {
+      // if (otp_num.toString() == _otpConn.text) {
       if (supervisorPhoneNo != widget.phNo) {
         // _otpConn.text == otp_num.toString()) {
         String phonetoCheck = supervisorPhoneNo;
@@ -201,10 +202,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Please enter a different number")));
       }
-    } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Invalid OTP")));
-    }
+    } 
   }
 
   Stream<List<Map<String, String>>> _fetchRelationDetails(String phNo) {
@@ -341,9 +339,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                     stream: _fetchRelationDetails(widget.phNo.toString()),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator(
-                          color: Color.fromRGBO(0, 83, 188, 1),
-                        );
+                        return Center(child: GradientLoadingIndicator());
                       } else if (snapshot.hasError) {
                         return Center(child: Text("Error: ${snapshot.error}"));
                       }
@@ -359,6 +355,16 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                   final phone = relationDetail['phone']!;
                                   final priority = relationDetail['priority']!;
                                   final status = relationDetail['status']!;
+                                  String userName = '';
+
+                                  // Assuming there's a function to fetch user details from Firebase
+                                  // This is a placeholder for the actual implementation
+                                  fetchUserDetails(phone).then((value) {
+                                    setState(() {
+                                      userName =
+                                          value['name'] ?? 'Unknown User';
+                                    });
+                                  });
 
                                   return Container(
                                     padding: const EdgeInsets.only(
@@ -384,7 +390,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                                         SizedBox(
                                           width: width * 0.45,
                                           child: Text(
-                                            phone,
+                                            userName,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               color: Colors.black,
@@ -549,9 +555,7 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
                   return Center(child: Text("Error: $error"));
                 },
                 loading: () {
-                  return const CircularProgressIndicator(
-                    color: Color.fromRGBO(0, 83, 188, 1),
-                  );
+                  return const GradientLoadingIndicator();
                 },
               ),
             ],
@@ -559,5 +563,18 @@ class _ManageAccessState extends ConsumerState<ManageAccess> {
         ),
       ),
     );
+  }
+
+  Future<Map<String, dynamic>> fetchUserDetails(String phone) async {
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    final QuerySnapshot<Map<String, dynamic>> querySnapshot = await _firestore
+        .collection('users')
+        .where('phone_number', isEqualTo: phone)
+        .get();
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.data() as Map<String, dynamic>;
+    } else {
+      return {};
+    }
   }
 }

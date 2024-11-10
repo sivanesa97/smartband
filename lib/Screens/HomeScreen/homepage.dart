@@ -10,6 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/AuthScreen/signin.dart';
 import 'package:smartband/Screens/Dashboard/supervisor_dashboard.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/bluetooth.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:http/http.dart' as http;
@@ -198,7 +199,7 @@ class HomepageScreenState extends State<HomepageScreen> {
           print(snapshot.data);
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: GradientLoadingIndicator(),
             ),
           );
         } else if (snapshot.hasError) {
@@ -227,7 +228,7 @@ class HomepageScreenState extends State<HomepageScreen> {
           return role1 == ""
               ? const Scaffold(
                   body: Center(
-                    child: CircularProgressIndicator(),
+                    child: GradientLoadingIndicator(),
                   ),
                 )
               : NotConnectedPage(

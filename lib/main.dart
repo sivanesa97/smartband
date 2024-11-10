@@ -202,7 +202,7 @@ String getStatusFromMessage(String title) {
   } else if (title.contains('Fall Detection')) {
     return '3';
   }
-  return '';
+  return '4';
 }
 
 Future<void> handleCronJob() async {
@@ -223,10 +223,6 @@ void main() async {
   final cron = Cron();
   cron.schedule(Schedule.parse('* * * * *'), () async {
     await handleCronJob();
-    await BluetoothConnectionService().checkAndReconnect();
-  });
-  cron.schedule(Schedule.parse('*/5 * * * *'), () async {
-    await checkLocationAndSendNotification();
   });
 
   await initializeService();
@@ -342,11 +338,18 @@ void onStart(ServiceInstance service) async {
 
   Timer.periodic(Duration(minutes: 5), (timer) async {
     await checkLocationAndSendNotification();
-    // await handleCronJob();
+    await FirebaseMessaging.instance.getToken().then((token) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .update({'fcmKey': token});
+    });
   });
 
   Timer.periodic(Duration(minutes: 1), (timer) async {
     await handleCronJob();
+  });
+  Timer.periodic(Duration(seconds: 1), (timer) async {
     await BluetoothConnectionService().checkAndReconnect();
   });
 
@@ -354,112 +357,6 @@ void onStart(ServiceInstance service) async {
     _firebaseMessagingBackgroundHandler(message);
   });
 }
-
-// Future<void> checkLocationAndSendNotification() async {
-//   Position currentPosition = await Geolocator.getCurrentPosition(
-//     desiredAccuracy: LocationAccuracy.high,
-//   );
-//   DocumentSnapshot userDoc = await FirebaseFirestore.instance
-//       .collection('users')
-//       .doc(FirebaseAuth.instance.currentUser!.uid)
-//       .get();
-//   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-//   String role = userData['role'].toString();
-//   double minimum_km = 0;
-//   if (userData.containsKey('minimum_km')) {
-//     minimum_km = double.parse(userData['minimum_km'].toString());
-//   }
-//   if (role == 'watch wearer' && minimum_km > 0) {
-//     GeoPoint homeLocation = userData['home_location'] as GeoPoint;
-
-//     double distance = Geolocator.distanceBetween(
-//       currentPosition.latitude,
-//       currentPosition.longitude,
-//       homeLocation.latitude,
-//       homeLocation.longitude,
-//     );
-
-//     if (distance >= (minimum_km * 1000)) {
-//       bool _isEmergency = true;
-
-//       try {
-//         SendNotification send = SendNotification();
-//         Map<String, dynamic> supervisors = userData['supervisors'];
-//         List<String> filteredSupervisors = supervisors.entries
-//             .where((entry) => entry.value['status'] == 'active')
-//             .map((entry) => entry.key)
-//             .toList()
-//           ..sort((a, b) => int.parse(supervisors[b]['priority'].toString())
-//               .compareTo(int.parse(supervisors[a]['priority'].toString())));
-
-//         String supervisor =
-//             filteredSupervisors.first; // Send to the first supervisor only
-//         print(supervisor);
-//         final sup = await FirebaseFirestore.instance
-//             .collection("users")
-//             .where('phone_number', isEqualTo: supervisor)
-//             .get();
-//         await FirebaseFirestore.instance
-//             .collection("emergency_alerts")
-//             .doc(sup.docs.first.id)
-//             .set({
-//           "isEmergency": true,
-//           "responseStatus": false,
-//           "response": "",
-//           "phone_number": supervisor,
-//           "userUid": FirebaseAuth.instance.currentUser?.uid,
-//           "heartbeatRate": 0,
-//           "location":
-//               "${currentPosition.latitude}°N ${currentPosition.longitude}°E",
-//           "spo2": 0,
-//           "fallDetection": false,
-//           "isManual": false,
-//           "timestamp": FieldValue.serverTimestamp()
-//         }, SetOptions(merge: true));
-
-//         await FirebaseFirestore.instance
-//             .collection("emergency_alerts")
-//             .doc(sup.docs.first.id)
-//             .collection(sup.docs.first.id)
-//             .add({
-//           "isEmergency": true,
-//           "responseStatus": false,
-//           "response": "",
-//           "heartbeatRate": 0,
-//           "location":
-//               "${currentPosition.latitude}°N ${currentPosition.longitude}°E",
-//           "spo2": 0,
-//           "fallDetection": false,
-//           "isManual": false,
-//           "timestamp": FieldValue.serverTimestamp()
-//         });
-//         String responderName = userData['name'] ?? "User";
-//         send.sendNotification(supervisor, "Location",
-//             "$responderName is away from  HomeLocation. And Their Current Location is  ${currentPosition.latitude}°N ${currentPosition.longitude}°E. Please respond");
-
-//         print(
-//             "Message sent to supervisor with phone number: ${supervisor} and priority: ${supervisors[supervisor]['priority']}");
-
-//         await Future.delayed(Duration(seconds: 30));
-//         FirebaseFirestore.instance
-//             .collection("emergency_alerts")
-//             .doc(sup.docs.first.id)
-//             .snapshots()
-//             .listen((DocumentSnapshot doc) {
-//           if (doc.exists && doc["responseStatus"] == true) {
-//             _isEmergency = false;
-//             FirebaseFirestore.instance
-//                 .collection('users')
-//                 .doc(FirebaseAuth.instance.currentUser!.uid)
-//                 .update({"minimum_km": 0.0});
-//           }
-//         });
-//       } catch (e) {
-//         print("Exception $e");
-//       }
-//     }
-//   }
-// }
 
 Future<void> checkLocationAndSendNotification() async {
   Position currentPosition = await Geolocator.getCurrentPosition(
@@ -471,14 +368,13 @@ Future<void> checkLocationAndSendNotification() async {
       .get();
   Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
   String role = userData['role'].toString();
-  double minimum_km = 0.0;
-
+  double minimum_km = 0;
   if (userData.containsKey('minimum_km')) {
     minimum_km = double.parse(userData['minimum_km'].toString());
   }
   if (role == 'watch wearer' && minimum_km > 0) {
     GeoPoint homeLocation = userData['home_location'] as GeoPoint;
-    print(minimum_km);
+
     double distance = Geolocator.distanceBetween(
       currentPosition.latitude,
       currentPosition.longitude,
@@ -493,6 +389,9 @@ Future<void> checkLocationAndSendNotification() async {
         if (!_isEmergency) {
           break;
         }
+        final now = DateTime.now();
+        final currentDate = DateFormat('dd-MM-yyyy').format(now);
+        final currentTime = DateFormat('hh:mm a').format(now);
         print("Attempt $attempt");
         // Position location = await updateLocation();
         try {
@@ -529,6 +428,8 @@ Future<void> checkLocationAndSendNotification() async {
               "spo2": 0,
               "fallDetection": false,
               "isManual": false,
+              "date": currentDate,
+              "time": currentTime,
               "timestamp": FieldValue.serverTimestamp()
             }, SetOptions(merge: true));
 
@@ -555,7 +456,7 @@ Future<void> checkLocationAndSendNotification() async {
             print(
                 "Message sent to supervisor with phone number: ${supervisor} and priority: ${supervisor}");
             // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(content: Text("Sent Alert to ${supervisor['key']}")),
+            //   SnackBar(content: Text("Sent Alert to ${supervisor}")),
             // );
             await Future.delayed(Duration(seconds: 30));
             FirebaseFirestore.instance

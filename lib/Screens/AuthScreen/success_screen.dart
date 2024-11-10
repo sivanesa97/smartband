@@ -99,7 +99,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         backgroundColor: Colors.blue,
                         padding: EdgeInsets.symmetric(
                           horizontal: MediaQuery.of(context).size.height * 0.05,
-                          vertical: MediaQuery.of(context).size.width * 0.02,
+                          vertical: MediaQuery.of(context).size.width * 0.05,
                         ),
                       ),
                     ),

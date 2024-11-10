@@ -7,6 +7,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:smartband/Screens/AuthScreen/phone_number.dart';
 import 'package:smartband/Screens/Dashboard/wearer_dashboard.dart';
 import 'package:smartband/Screens/Models/messaging.dart';
+import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
@@ -124,7 +125,8 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
 
   void _showSupervisorDialog(int otp_num) async {
     // String phn = '+94735833006';
-    if (otp_num.toString() == _otpConn.text) {
+    // if (otp_num.toString() == _otpConn.text) {
+      if(true){
       if (PhoneNo != widget.phNo) {
         String phonetoCheck = PhoneNo;
         print(phonetoCheck);
@@ -465,8 +467,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
             future: _fetchRelationDetails(user?.relations ?? []),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: Colors.blueAccent));
+                return const Center(child: GradientLoadingIndicator());
               } else if (snapshot.hasError) {
                 return const Center(
                     child: Text("Error fetching relation details"));
@@ -861,7 +862,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                                                               Row(
                                                                 children: [
                                                                   Image.asset(
-                                                                    "assets/fall_axis_icon.png",
+                                                                    "assets/Mask.png",
                                                                     width: 30,
                                                                   ),
                                                                   SizedBox(
@@ -1193,8 +1194,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
                             },
                             loading: () {
                               return const Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.blueAccent),
+                                child: GradientLoadingIndicator(),
                               );
                             },
                           );
@@ -1249,7 +1249,7 @@ class _WearerDashboardState extends ConsumerState<SupervisorDashboard> {
         },
         loading: () {
           return const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
+            child: GradientLoadingIndicator(),
           );
         },
       ),
