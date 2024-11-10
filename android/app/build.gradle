@@ -48,7 +48,6 @@ android {
     }
 
     defaultConfig {
-<<<<<<< HEAD
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.keydraft.smartband"
         // You can update the following values to match your application needs.
@@ -57,14 +56,6 @@ android {
         targetSdk = 34
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
-=======
-        applicationId "com.keydraft.smartband"
-        minSdkVersion 26  // Android 8
-        targetSdkVersion 34  // Android 14
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-        multiDexEnabled true
->>>>>>> ea2a766b9ff3773c02028c4402f166fc59359d0b
     }
     
    signingConfigs {
