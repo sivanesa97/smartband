@@ -42,10 +42,12 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   bool _isSubscriptionFetched = false;
   final BluetoothDeviceManager bluetoothDeviceManager =
       BluetoothDeviceManager();
-  Position locationNew = const Position(
+  Position locationNew = Position(
       latitude: 12.239842,
       longitude: 80.247384,
-      timestamp: null,
+      timestamp: DateTime.now(),
+      altitudeAccuracy: 1.0,
+      headingAccuracy: 1.0,
       accuracy: 1.0,
       altitude: 1.0,
       heading: 1.0,
@@ -247,6 +249,17 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   Future<Position> updateLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.whileInUse && 
+          permission != LocationPermission.always) {
+        // Handle permission denied case
+        print("Location permission denied");
+        return Future.error('Location permission denied');
+      }
+    }
+
     Position location = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
@@ -318,17 +331,8 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                       values = characteristicValues[
                               "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
                           .split(',');
-<<<<<<< HEAD
-                      // print(values);
-                      if (values.length == 2 && values[1] == '1') {
-                        values = ['--', '--', '1'];
-                        sosClicked = true;
-                        // _updateMetrics(['--', '--', '1']);
-                      } else if (values.length < 3) {
-=======
                       print(values);
                       if (values.length < 3) {
->>>>>>> ea2a766b9ff3773c02028c4402f166fc59359d0b
                         values = ['--', '--', '0'];
                       } else if (values.length == 2 && values[1] == '1') {
                         sosClicked = true;
