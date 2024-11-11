@@ -252,7 +252,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse && 
+      if (permission != LocationPermission.whileInUse &&
           permission != LocationPermission.always) {
         // Handle permission denied case
         print("Location permission denied");
