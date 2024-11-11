@@ -42,10 +42,12 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   bool _isSubscriptionFetched = false;
   final BluetoothDeviceManager bluetoothDeviceManager =
       BluetoothDeviceManager();
-  Position locationNew = const Position(
+  Position locationNew = Position(
       latitude: 12.239842,
       longitude: 80.247384,
-      timestamp: null,
+      timestamp: DateTime.now(),
+      altitudeAccuracy: 1.0,
+      headingAccuracy: 1.0,
       accuracy: 1.0,
       altitude: 1.0,
       heading: 1.0,
@@ -126,7 +128,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
 
   void _updateMetrics(List<String> values) async {
     if (FirebaseAuth.instance.currentUser != null) {
-      print(values);
+      // print(values);
       final deviceOwnerData =
           provider.Provider.of<OwnerDeviceData>(context, listen: false);
       // Check if the values have changed before updating
@@ -247,6 +249,17 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   }
 
   Future<Position> updateLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.whileInUse && 
+          permission != LocationPermission.always) {
+        // Handle permission denied case
+        print("Location permission denied");
+        return Future.error('Location permission denied');
+      }
+    }
+
     Position location = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
