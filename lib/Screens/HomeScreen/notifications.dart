@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:smartband/Screens/Widgets/appBar.dart';
 
 class Notificationscreen extends StatefulWidget {
@@ -41,7 +40,7 @@ class _NotificationscreenState extends State<Notificationscreen> {
           ),
           SwitchListTile(
             title: const Text('Water Time'),
-            secondary: const Icon(FontAwesomeIcons.glassWater),
+            secondary: const Icon(Icons.water_drop_outlined),
             value: isWaterTimeEnabled,
             onChanged: (bool value) {
               setState(() {
@@ -51,7 +50,7 @@ class _NotificationscreenState extends State<Notificationscreen> {
           ),
           SwitchListTile(
             title: const Text('Tablet Time'),
-            secondary: const Icon(FontAwesomeIcons.pills),
+            secondary: const Icon(Icons.medication_outlined),
             value: isTabletTimeEnabled,
             onChanged: (bool value) {
               setState(() {
@@ -61,7 +60,7 @@ class _NotificationscreenState extends State<Notificationscreen> {
           ),
           SwitchListTile(
             title: const Text('Walking Time'),
-            secondary: const Icon(FontAwesomeIcons.personWalking),
+            secondary: const Icon(Icons.directions_walk_outlined),
             value: isWalkingTimeEnabled,
             onChanged: (bool value) {
               setState(() {
@@ -71,7 +70,7 @@ class _NotificationscreenState extends State<Notificationscreen> {
           ),
           SwitchListTile(
             title: const Text('Exercise Time'),
-            secondary: const Icon(FontAwesomeIcons.dumbbell),
+            secondary: const Icon(Icons.fitness_center_outlined),
             value: isExerciseTimeEnabled,
             onChanged: (bool value) {
               setState(() {
@@ -82,3 +81,4 @@ class _NotificationscreenState extends State<Notificationscreen> {
         ]));
   }
 }
+
