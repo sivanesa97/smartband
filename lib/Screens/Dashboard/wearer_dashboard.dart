@@ -21,6 +21,7 @@ import 'package:http/http.dart' as http;
 import 'package:android_intent_plus/android_intent.dart';
 import 'dart:io' show Platform;
 import 'package:provider/provider.dart' as provider;
+import 'package:smartband/Constants/api_constants.dart';
 
 import '../Models/usermodel.dart';
 import '../Widgets/drawer.dart';
@@ -157,7 +158,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   Future<void> fetchSubscription(String phno) async {
     // print(phno);
     final response = await http.post(
-      Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+      Uri.parse(ApiConstants.checkMobileUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

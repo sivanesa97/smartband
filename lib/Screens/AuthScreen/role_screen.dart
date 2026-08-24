@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartband/Screens/AuthScreen/signup.dart';
 import 'package:http/http.dart' as http;
+import 'package:smartband/Constants/api_constants.dart';
 
 class HomePage extends StatefulWidget {
   String phNo;
@@ -204,8 +205,7 @@ class _MainScreenState extends State<MainScreen> {
                     onPressed: () async {
                       if (selected_role == 'watch wearer') {
                         final response = await http.post(
-                          Uri.parse(
-                              "https://snvisualworks.com/public/api/auth/check-mobile"),
+                          Uri.parse(ApiConstants.checkMobileUrl),
                           headers: <String, String>{
                             'Content-Type': 'application/json; charset=UTF-8',
                           },

@@ -49,6 +49,9 @@
             android:foregroundServiceType="mediaPlayback"/>
         <service android:name="com.keydraft.smartband.OverlayService" />
         <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBJJX8JHKR0R1cC2F2OdfFP53DxJybwZ6E" />
+        <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default_channel_id" />
         <activity

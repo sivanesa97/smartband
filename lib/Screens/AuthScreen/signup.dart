@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'dart:math';
 
 import 'package:smartband/Screens/Models/messaging.dart';
+import 'package:smartband/Constants/api_constants.dart';
 
 class SignupScreen extends StatefulWidget {
   String phNo;
@@ -142,7 +143,7 @@ class _SignupScreenState extends State<SignupScreen> {
           print("second one");
           if (widget.role == "watch wearer") {
             final response = await http.post(
-              Uri.parse("https://snvisualworks.com/public/api/auth/register"),
+              Uri.parse(ApiConstants.registerUrl),
               headers: <String, String>{
                 'Content-Type': 'application/json; charset=UTF-8',
               },

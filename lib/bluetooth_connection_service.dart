@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart' as intl;
+import 'package:smartband/Constants/api_constants.dart';
 
 class BluetoothConnectionService {
   static final BluetoothConnectionService _instance =
@@ -29,7 +30,7 @@ class BluetoothConnectionService {
         return;
       }
       final response = await http.post(
-        Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+        Uri.parse(ApiConstants.checkMobileUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -85,7 +86,7 @@ class BluetoothConnectionService {
       bool isSubscriptionActive = false;
       // var phoneNumber = data.data()?["phone_number"];
       final response = await http.post(
-        Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+        Uri.parse(ApiConstants.checkMobileUrl),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

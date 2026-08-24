@@ -14,6 +14,7 @@ import 'package:smartband/Screens/Widgets/loading.dart';
 import 'package:smartband/Screens/Widgets/string_extensions.dart';
 import 'package:smartband/map.dart';
 import 'package:http/http.dart' as http;
+import 'package:smartband/Constants/api_constants.dart';
 
 class GeoFencing extends ConsumerStatefulWidget {
   const GeoFencing({super.key});
@@ -275,8 +276,7 @@ class _ProfilepageState extends ConsumerState<GeoFencing> {
                                 });
                                 getData();
                                 final response = await http.post(
-                                  Uri.parse(
-                                      "https://snvisualworks.com/public/api/auth/register"),
+                                  Uri.parse(ApiConstants.registerUrl),
                                   headers: <String, String>{
                                     'Content-Type':
                                         'application/json; charset=UTF-8',

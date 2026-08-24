@@ -15,6 +15,7 @@ import 'package:smartband/bluetooth.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart' as intl;
+import 'package:smartband/Constants/api_constants.dart';
 
 import '../Dashboard/dashboard.dart';
 import '../Dashboard/notConnected.dart';
@@ -100,7 +101,7 @@ class HomepageScreenState extends State<HomepageScreen> {
 
   Future<void> fetchSubscription(String phno) async {
     final response = await http.post(
-      Uri.parse("https://snvisualworks.com/public/api/auth/check-mobile"),
+      Uri.parse(ApiConstants.checkMobileUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
