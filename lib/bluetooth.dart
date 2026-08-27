@@ -355,6 +355,8 @@ class BluetoothDeviceManager {
                         WatchDataPayload.fromBytes(value);
                     print("Received SmartSync Watch Payload: $payload");
 
+                    bool isNewSOS = payload.sosStatus && !ownerDeviceData.sosClicked;
+
                     ownerDeviceData.updateStatus(
                       heartRate: payload.heartRate,
                       spo2: payload.spo2,
@@ -373,10 +375,16 @@ class BluetoothDeviceManager {
                         .collection("users")
                         .doc(FirebaseAuth.instance.currentUser!.uid)
                         .update({
-                      "metrics": payload.toMap(),
+                      "isSOSClicked": payload.sosStatus,
+                      "metrics": {
+                        "spo2": payload.spo2.toString(),
+                        "heart_rate": payload.heartRate.toString(),
+                        "fall_axis": "-- -- --"
+                      }
                     });
 
-                    if (payload.sosStatus && ownerDeviceData.sosClicked != true) {
+                    if (payload.sosStatus) {
+                      print("Triggering SOS Alert!");
                       _handleSOSClick(true, context);
                     }
                   } catch (e) {
@@ -459,9 +467,10 @@ class BluetoothDeviceManager {
               .collection("users")
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .update({
+            "isSOSClicked": true,
             "metrics": {
-              "spo2": deviceOwnerData.spo2,
-              "heart_rate": deviceOwnerData.heartRate,
+              "spo2": deviceOwnerData.spo2.toString(),
+              "heart_rate": deviceOwnerData.heartRate.toString(),
               "fall_axis": "-- -- --"
             }
           });
