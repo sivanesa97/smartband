@@ -103,6 +103,20 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           .where("phone_number", isEqualTo: phNo)
           .get();
       var apiData = await BluetoothConnectionService().getApiData(phNo);
+      
+      print("==================== [USER VERIFY DATA] ====================");
+      print("Phone Number: $phNo");
+      print("API Data: $apiData");
+      if (data.docs.isNotEmpty) {
+        print("Firestore User Found (${data.docs.length} docs):");
+        for (var doc in data.docs) {
+          print("User ID: ${doc.id} => Data: ${doc.data()}");
+        }
+      } else {
+        print("Firestore User Data: No user document found for this phone number");
+      }
+      print("============================================================");
+
       final prefs = await SharedPreferences.getInstance();
       int ownerStatus = 0;
       String deviceName = "";
@@ -191,6 +205,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
       if (data.docs.isNotEmpty) {
         final email = data.docs.first.data()['email'];
+        print("Existing User Logging In: Email=$email, UID=${FirebaseAuth.instance.currentUser?.uid}, ownerStatus=$ownerStatus");
         await FirebaseAuth.instance
             .signInWithEmailAndPassword(email: email, password: "admin123");
         await FirebaseFirestore.instance
@@ -199,6 +214,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             .update({'fcmKey': await FirebaseMessaging.instance.getToken()});
         if (!mounted) return;
         if (ownerStatus == 1) {
+          print("Navigating to RoleSelectionScreen with Role: 'watch wearer', Status: '1'");
           Navigator.of(context, rootNavigator: true).pushReplacement(
               MaterialPageRoute(
                   maintainState: true,
@@ -208,6 +224,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       deviceId: '',
                       status: '1')));
         } else {
+          print("Navigating to RoleSelectionScreen with Role: 'supervisor', Status: '1'");
           Provider.of<SubscriptionDataProvider>(context, listen: false)
               .updateStatus(
                   active: false,
@@ -237,6 +254,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   subscribed: false,
                   phoneNumber: widget.phoneNumber);
         }
+        print("New User Flow: SelectedRole=$selectedRole, DeviceName=$deviceName, Status='2'");
         if (!mounted) return;
         Navigator.of(context).push(MaterialPageRoute(
             builder: (context) => RoleSelectionScreen(

@@ -40,20 +40,21 @@ class BluetoothConnectionService {
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        if (data['status'].toString() == 'active' && data['deviceId'] != null) {
+        if (data['status'].toString() == 'active' && data['device_id'] != null) {
           deviceId = data['device_id'].toString();
         }
       } else {
         print(response.statusCode);
       }
     }
-    if (deviceId == null) {
+    if (deviceId == null || deviceId!.isEmpty) {
       return;
     }
     FlutterBluePlus.scanResults.listen((results) {
       // Filter for your specific device
       for (ScanResult r in results) {
-        if (r.device.platformName == deviceId) {
+        if (r.device.remoteId.str.toUpperCase() == deviceId?.toUpperCase() ||
+            r.device.platformName.toLowerCase() == deviceId?.toLowerCase()) {
           _connectToDevice(r.device);
           break;
         }

@@ -23,7 +23,7 @@ import 'dart:io' show Platform;
 import 'package:provider/provider.dart' as provider;
 import 'package:smartband/Constants/api_constants.dart';
 
-import '../Models/usermodel.dart';
+import 'package:smartband/Screens/Models/usermodel.dart';
 import '../Widgets/drawer.dart';
 import 'dashboard.dart';
 
@@ -325,18 +325,30 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
                     bool sosClicked = false;
                     final characteristicValues = snapshot.data;
                     List<String> values = ['--', '--', '0'];
-                    if (characteristicValues != null &&
-                        characteristicValues[
-                                "beb5483e-36e1-4688-b7f5-ea07361b26a8"] !=
-                            null) {
-                      values = characteristicValues[
-                              "beb5483e-36e1-4688-b7f5-ea07361b26a8"]!
-                          .split(',');
-                      print(values);
-                      if (values.length < 3) {
-                        values = ['--', '--', '0'];
-                      } else if (values.length == 2 && values[1] == '1') {
-                        sosClicked = true;
+                    if (characteristicValues != null) {
+                      String? bswData = characteristicValues["6e40ff03-b5a3-f393-e0a9-e50e24dcca9e"];
+                      String? legacyData = characteristicValues["beb5483e-36e1-4688-b7f5-ea07361b26a8"];
+
+                      if (bswData != null) {
+                        try {
+                          Map<String, dynamic> map = jsonDecode(bswData);
+                          values = [
+                            map['heart_rate'] ?? '--',
+                            map['spo2'] ?? '--',
+                            map['sos_status'] ?? '0'
+                          ];
+                          if (map['sos_status'] == '1') {
+                            sosClicked = true;
+                          }
+                        } catch (_) {}
+                      } else if (legacyData != null) {
+                        values = legacyData.split(',');
+                        print(values);
+                        if (values.length < 3) {
+                          values = ['--', '--', '0'];
+                        } else if (values.length == 2 && values[1] == '1') {
+                          sosClicked = true;
+                        }
                       }
                     }
                     return SafeArea(

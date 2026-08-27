@@ -16,8 +16,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:smartband/pushnotifications.dart';
 import 'package:intl/intl.dart';
 import 'package:smartband/Constants/api_constants.dart';
+import 'package:smartband/Screens/Models/watch_data_payload.dart';
 
 class BluetoothDeviceManager {
+  static const String watchDataServiceUuid = "6e40ff01-b5a3-f393-e0a9-e50e24dcca9e";
+  static const String watchDataCharUuid = "6e40ff03-b5a3-f393-e0a9-e50e24dcca9e";
+  static const String timeSyncServiceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+  static const String timeSyncRxCharUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+  static const String timeSyncTxCharUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
   static final BluetoothDeviceManager _instance =
       BluetoothDeviceManager._internal();
 
@@ -91,7 +98,9 @@ class BluetoothDeviceManager {
 
           if (hasDeviceId) {
             String deviceId = await getDeviceIdFromFirestore();
-            if (result.device.platformName == deviceId) {
+            if (deviceId.isNotEmpty &&
+                (result.device.remoteId.str.toUpperCase() == deviceId.toUpperCase() ||
+                 result.device.platformName.toLowerCase() == deviceId.toLowerCase())) {
               try {
                 await connectToDevice(result.device, context, true);
               } catch (e) {
@@ -153,14 +162,17 @@ class BluetoothDeviceManager {
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         if (data['status'].toString() == 'active' &&
-            data['deviceId'].toString().isNotEmpty) {
+            data['device_id'] != null &&
+            data['device_id'].toString().isNotEmpty) {
           deviceName = data['device_id'].toString();
         }
       } else {
         print(response.statusCode);
       }
 
-      if (deviceName == device.platformName) {
+      if (deviceName.isEmpty ||
+          device.remoteId.str.toUpperCase() == deviceName.toUpperCase() ||
+          device.platformName.toLowerCase() == deviceName.toLowerCase()) {
         // if (true) {
         await device.connect();
         // Navigator.of(context).push(
@@ -183,12 +195,12 @@ class BluetoothDeviceManager {
             connectedDevices.remove(device);
             connectedDevicesController.add(connectedDevices);
           } else {
-            print("Connected to device: ${device.platformName}");
+            print("Connected to device: ${device.platformName} (${device.remoteId})");
             if (deviceName.isNotEmpty) {
               await FirebaseFirestore.instance
                   .collection('users')
                   .doc(FirebaseAuth.instance.currentUser!.uid)
-                  .update({"device_id": device.platformName});
+                  .update({"device_id": device.remoteId.str.isNotEmpty ? device.remoteId.str : device.platformName});
             }
             isComplete = true;
             connectedDevicesController.add(connectedDevices);
@@ -224,6 +236,40 @@ class BluetoothDeviceManager {
     }
   }
 
+  Future<void> syncTimeToWatch(BluetoothDevice device) async {
+    try {
+      List<BluetoothService> services = await device.discoverServices();
+      for (BluetoothService service in services) {
+        if (service.uuid.toString().toLowerCase() == timeSyncServiceUuid) {
+          for (BluetoothCharacteristic characteristic
+              in service.characteristics) {
+            if (characteristic.uuid.toString().toLowerCase() ==
+                timeSyncRxCharUuid) {
+              String timeStr =
+                  "#time:${DateFormat('yyMMddHHmmss').format(DateTime.now())}";
+              print("Sending Time Sync: $timeStr");
+              await characteristic.write(
+                utf8.encode(timeStr),
+                withoutResponse:
+                    characteristic.properties.writeWithoutResponse,
+              );
+            }
+            if (characteristic.uuid.toString().toLowerCase() ==
+                timeSyncTxCharUuid) {
+              await characteristic.setNotifyValue(true);
+              characteristic.lastValueStream.listen((val) {
+                String resp = utf8.decode(val, allowMalformed: true);
+                print("Time Sync Response: $resp");
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print("Error syncing time to watch: $e");
+    }
+  }
+
   Future<void> discoverServicesAndCharacteristics(
       BluetoothDevice device) async {
     try {
@@ -236,7 +282,7 @@ class BluetoothDeviceManager {
             Timer.periodic(Duration(seconds: 3), (timer) async {
               try {
                 List<int> value = await characteristic.read();
-                String decodedValue = utf8.decode(value).toString();
+                String decodedValue = utf8.decode(value, allowMalformed: true).toString();
                 characteristicValues[characteristic.uuid.toString()] =
                     decodedValue;
                 characteristicValuesController.add(characteristicValues);
@@ -251,9 +297,23 @@ class BluetoothDeviceManager {
             try {
               await characteristic.setNotifyValue(true);
               characteristic.lastValueStream.listen((value) {
-                String decodedValue = utf8.decode(value).toString();
-                characteristicValues[characteristic.uuid.toString()] =
-                    decodedValue;
+                String uuidStr = characteristic.uuid.toString().toLowerCase();
+                if (uuidStr == watchDataCharUuid && value.length >= 17) {
+                  try {
+                    WatchDataPayload payload =
+                        WatchDataPayload.fromBytes(value);
+                    characteristicValues[characteristic.uuid.toString()] =
+                        jsonEncode(payload.toMap());
+                  } catch (_) {
+                    characteristicValues[characteristic.uuid.toString()] =
+                        utf8.decode(value, allowMalformed: true);
+                  }
+                } else {
+                  String decodedValue =
+                      utf8.decode(value, allowMalformed: true).toString();
+                  characteristicValues[characteristic.uuid.toString()] =
+                      decodedValue;
+                }
                 characteristicValuesController.add(characteristicValues);
               });
             } catch (e) {
@@ -273,212 +333,83 @@ class BluetoothDeviceManager {
       try {
         final ownerDeviceData =
             Provider.of<OwnerDeviceData>(context, listen: false);
+
+        // Perform automatic time sync on connection
+        await syncTimeToWatch(device);
+
         List<BluetoothService> services = await device.discoverServices();
         for (BluetoothService service in services) {
           for (BluetoothCharacteristic characteristic
               in service.characteristics) {
-            if (characteristic.uuid.toString() ==
-                "beb5483e-36e1-4688-b7f5-ea07361b26a8") {
+            String charUuid = characteristic.uuid.toString().toLowerCase();
+            if (charUuid == watchDataCharUuid ||
+                charUuid == "beb5483e-36e1-4688-b7f5-ea07361b26a8") {
               await characteristic.setNotifyValue(true);
 
-              // Fetch the latest stored heart rate, SpO2, and counts from Firestore
-              final String formattedDate =
-                  DateFormat('yyyy-MM-dd').format(DateTime.now());
+              characteristic.lastValueStream.listen((value) {
+                if (value.isEmpty) return;
 
-              double storedHeartRate = 0;
-              int heartRateCount = 0;
-              double storedSpO2 = 0;
-              int spO2Count = 0;
-
-              characteristic.value.listen((value) {
-                String decodedValue = String.fromCharCodes(value);
-                List<String> values = decodedValue.split(',');
-                print("Values: $values");
-                if (values.length >= 3) {
-                  int newHeartRate = int.tryParse(values[0]) ?? 0;
-                  int newSpO2 = int.tryParse(values[1]) ?? 0;
-
-                  if (ownerDeviceData.heartRate != newHeartRate ||
-                      ownerDeviceData.spo2 != newSpO2) {
-                    heartRateCount++;
-                    spO2Count++;
+                if (value.length >= 17 && charUuid == watchDataCharUuid) {
+                  try {
+                    WatchDataPayload payload =
+                        WatchDataPayload.fromBytes(value);
+                    print("Received SmartSync Watch Payload: $payload");
 
                     ownerDeviceData.updateStatus(
-                      heartRate: newHeartRate,
-                      spo2: newSpO2,
+                      heartRate: payload.heartRate,
+                      spo2: payload.spo2,
                       age: ownerDeviceData.age,
-                      sosClicked: false,
+                      sosClicked: payload.sosStatus,
+                      systolicBp: payload.systolicBp,
+                      diastolicBp: payload.diastolicBp,
+                      bodyTemp: payload.bodyTemp,
+                      stepCount: payload.stepCount,
+                      sleepWakefulness: payload.sleepWakefulness,
+                      sleepLight: payload.sleepLight,
+                      sleepDeep: payload.sleepDeep,
                     );
 
                     FirebaseFirestore.instance
                         .collection("users")
                         .doc(FirebaseAuth.instance.currentUser!.uid)
                         .update({
-                      "metrics": {
-                        "spo2": newSpO2.toString(),
-                        "heart_rate": newHeartRate.toString(),
-                        "fall_axis": "--"
-                      }
+                      "metrics": payload.toMap(),
                     });
 
-                    //   // Update heart rate history
-                    //   FirebaseFirestore.instance
-                    //       .collection("heartRateHistory")
-                    //       .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //       .get()
-                    //       .then((doc) {
-                    //     if (doc.exists) {
-                    //       final heartRateData =
-                    //           doc.data() as Map<String, dynamic>;
-                    //       final heartRateList =
-                    //           heartRateData["heartRate"] as List<dynamic>;
-                    //       final dateIndex = heartRateList.indexWhere(
-                    //           (element) => element["date"] == formattedDate);
-                    //       if (dateIndex != -1) {
-                    //         storedHeartRate =
-                    //             (heartRateList[dateIndex]["value"] as num)
-                    //                 .toDouble();
-                    //         heartRateCount =
-                    //             heartRateList[dateIndex]["count"] as int;
-                    //         double tempHeartRate =
-                    //             (storedHeartRate * heartRateCount +
-                    //                     newHeartRate) /
-                    //                 (heartRateCount + 1);
-                    //         int tempAverageHeartRate = tempHeartRate.round();
-                    //         FirebaseFirestore.instance
-                    //             .collection("heartRateHistory")
-                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //             .update({
-                    //           "heartRate": FieldValue.arrayRemove([
-                    //             {
-                    //               "value": heartRateList[dateIndex]["value"],
-                    //               "date": formattedDate,
-                    //               "count": heartRateList[dateIndex]["count"],
-                    //             }
-                    //           ]),
-                    //           // ignore: equal_keys_in_map
-                    //           "heartRate": FieldValue.arrayUnion([
-                    //             {
-                    //               "value": tempAverageHeartRate,
-                    //               "date": formattedDate,
-                    //               "count": heartRateCount + 1,
-                    //             }
-                    //           ])
-                    //         });
-                    //       } else {
-                    //         // Add new entry if not found
-                    //         FirebaseFirestore.instance
-                    //             .collection("heartRateHistory")
-                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //             .update({
-                    //           "heartRate": FieldValue.arrayUnion([
-                    //             {
-                    //               "value": newHeartRate,
-                    //               "date": formattedDate,
-                    //               "count": heartRateCount,
-                    //             }
-                    //           ])
-                    //         });
-                    //       }
-                    //     } else {
-                    //       // Add new entry if document does not exist
-                    //       FirebaseFirestore.instance
-                    //           .collection("heartRateHistory")
-                    //           .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //           .set({
-                    //         "heartRate": [
-                    //           {
-                    //             "value": newHeartRate,
-                    //             "date": formattedDate,
-                    //             "count": heartRateCount,
-                    //           }
-                    //         ]
-                    //       });
-                    //     }
-                    //   });
-
-                    //   // Update SpO2 history
-                    //   FirebaseFirestore.instance
-                    //       .collection("spo2History")
-                    //       .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //       .get()
-                    //       .then((doc) {
-                    //     if (doc.exists) {
-                    //       final spO2Data = doc.data() as Map<String, dynamic>;
-                    //       final spO2List = spO2Data["spo2"] as List<dynamic>;
-                    //       final dateIndex = spO2List.indexWhere(
-                    //           (element) => element["date"] == formattedDate);
-                    //       if (dateIndex != -1) {
-                    //         storedSpO2 =
-                    //             (spO2List[dateIndex]["value"] as num).toDouble();
-                    //         spO2Count = spO2List[dateIndex]["count"] as int;
-                    //         double tempSpO2 = (storedSpO2 * spO2Count + newSpO2) /
-                    //             (spO2Count + 1);
-                    //         int tempAverageSpO2 = tempSpO2.round();
-                    //         FirebaseFirestore.instance
-                    //             .collection("spo2History")
-                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //             .update({
-                    //           "spo2": FieldValue.arrayRemove([
-                    //             {
-                    //               "value": spO2List[dateIndex]["value"],
-                    //               "date": formattedDate,
-                    //               "count": spO2List[dateIndex]["count"],
-                    //             }
-                    //           ]),
-                    //           // ignore: equal_keys_in_map
-                    //           "spo2": FieldValue.arrayUnion([
-                    //             {
-                    //               "value": tempAverageSpO2,
-                    //               "date": formattedDate,
-                    //               "count": spO2Count + 1,
-                    //             }
-                    //           ])
-                    //         });
-                    //       } else {
-                    //         // Add new entry if not found
-                    //         FirebaseFirestore.instance
-                    //             .collection("spo2History")
-                    //             .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //             .update({
-                    //           "spo2": FieldValue.arrayUnion([
-                    //             {
-                    //               "value": newSpO2,
-                    //               "date": formattedDate,
-                    //               "count": spO2Count,
-                    //             }
-                    //           ])
-                    //         });
-                    //       }
-                    //     } else {
-                    //       // Add new entry if document does not exist
-                    //       FirebaseFirestore.instance
-                    //           .collection("spo2History")
-                    //           .doc(FirebaseAuth.instance.currentUser!.uid)
-                    //           .set({
-                    //         "spo2": [
-                    //           {
-                    //             "value": newSpO2,
-                    //             "date": formattedDate,
-                    //             "count": spO2Count,
-                    //           }
-                    //         ]
-                    //       });
-                    //     }
-                    //   });
+                    if (payload.sosStatus && ownerDeviceData.sosClicked != true) {
+                      _handleSOSClick(true, context);
+                    }
+                  } catch (e) {
+                    print("Error parsing SmartSync Watch payload: $e");
                   }
                 } else {
-                  int sos = int.tryParse(values[1]) ?? 0;
-                  print("SOS: $sos");
-                  if (sos == 1) {
-                    if (ownerDeviceData.sosClicked != true) {
+                  // Legacy CSV string parsing fallback
+                  String decodedValue = String.fromCharCodes(value);
+                  List<String> values = decodedValue.split(',');
+                  print("Values: $values");
+                  if (values.length >= 3) {
+                    int newHeartRate = int.tryParse(values[0]) ?? 0;
+                    int newSpO2 = int.tryParse(values[1]) ?? 0;
+
+                    if (ownerDeviceData.heartRate != newHeartRate ||
+                        ownerDeviceData.spo2 != newSpO2) {
                       ownerDeviceData.updateStatus(
-                        heartRate: ownerDeviceData.heartRate,
-                        spo2: ownerDeviceData.spo2,
+                        heartRate: newHeartRate,
+                        spo2: newSpO2,
                         age: ownerDeviceData.age,
-                        sosClicked: true,
+                        sosClicked: false,
                       );
-                      _handleSOSClick(true, context);
+
+                      FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(FirebaseAuth.instance.currentUser!.uid)
+                          .update({
+                        "metrics": {
+                          "spo2": newSpO2.toString(),
+                          "heart_rate": newHeartRate.toString(),
+                          "fall_axis": "--"
+                        }
+                      });
                     }
                   }
                 }
@@ -487,10 +418,10 @@ class BluetoothDeviceManager {
           }
         }
       } catch (e) {
-        print('Error retrieving data from device: $e');
+        print("Error getting data from device: $e");
       }
     } else {
-      print('Device is not connected');
+      print("Device is not connected");
     }
   }
 
