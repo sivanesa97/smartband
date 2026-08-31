@@ -271,8 +271,11 @@ class BluetoothDeviceManager {
   }
 
   Future<void> discoverServicesAndCharacteristics(
-      BluetoothDevice device) async {
+      BluetoothDevice device, [BuildContext? context]) async {
     try {
+      // Perform time sync on service discovery
+      await syncTimeToWatch(device);
+
       List<BluetoothService> services = await device.discoverServices();
       for (BluetoothService service in services) {
         for (BluetoothCharacteristic characteristic
@@ -282,7 +285,8 @@ class BluetoothDeviceManager {
             Timer.periodic(Duration(seconds: 3), (timer) async {
               try {
                 List<int> value = await characteristic.read();
-                String decodedValue = utf8.decode(value, allowMalformed: true).toString();
+                String decodedValue =
+                    utf8.decode(value, allowMalformed: true).toString();
                 characteristicValues[characteristic.uuid.toString()] =
                     decodedValue;
                 characteristicValuesController.add(characteristicValues);
@@ -297,16 +301,86 @@ class BluetoothDeviceManager {
             try {
               await characteristic.setNotifyValue(true);
               characteristic.lastValueStream.listen((value) {
+                if (value.isEmpty) return;
                 String uuidStr = characteristic.uuid.toString().toLowerCase();
+
                 if (uuidStr == watchDataCharUuid && value.length >= 17) {
                   try {
                     WatchDataPayload payload =
                         WatchDataPayload.fromBytes(value);
+                    print("Received SmartSync Watch Payload: $payload");
+
                     characteristicValues[characteristic.uuid.toString()] =
                         jsonEncode(payload.toMap());
-                  } catch (_) {
+
+                    // Real-time update to Cloud Firestore
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(user.uid)
+                          .update({
+                        "isSOSClicked": payload.sosStatus,
+                        "metrics": {
+                          "spo2": payload.spo2.toString(),
+                          "heart_rate": payload.heartRate.toString(),
+                          "fall_axis": "-- -- --"
+                        }
+                      });
+                    }
+
+                    if (context != null) {
+                      try {
+                        final ownerDeviceData = Provider.of<OwnerDeviceData>(
+                            context,
+                            listen: false);
+                        ownerDeviceData.updateStatus(
+                          heartRate: payload.heartRate,
+                          spo2: payload.spo2,
+                          age: ownerDeviceData.age,
+                          sosClicked: payload.sosStatus,
+                          systolicBp: payload.systolicBp,
+                          diastolicBp: payload.diastolicBp,
+                          bodyTemp: payload.bodyTemp,
+                          stepCount: payload.stepCount,
+                          sleepWakefulness: payload.sleepWakefulness,
+                          sleepLight: payload.sleepLight,
+                          sleepDeep: payload.sleepDeep,
+                        );
+
+                        if (payload.sosStatus) {
+                          print("Triggering SOS Alert!");
+                          _handleSOSClick(true, context);
+                        }
+                      } catch (e) {
+                        print("Error updating provider: $e");
+                      }
+                    }
+                  } catch (e) {
+                    print("Error parsing payload: $e");
                     characteristicValues[characteristic.uuid.toString()] =
                         utf8.decode(value, allowMalformed: true);
+                  }
+                } else if (uuidStr == watchDataCharUuid ||
+                    uuidStr == "beb5483e-36e1-4688-b7f5-ea07361b26a8") {
+                  String decodedValue = String.fromCharCodes(value);
+                  characteristicValues[characteristic.uuid.toString()] =
+                      decodedValue;
+                  List<String> values = decodedValue.split(',');
+                  if (values.length >= 3) {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(user.uid)
+                          .update({
+                        "metrics": {
+                          "spo2": values[1].toString(),
+                          "heart_rate": values[0].toString(),
+                          "fall_axis": "-- -- --"
+                        }
+                      });
+                    }
                   }
                 } else {
                   String decodedValue =
@@ -330,104 +404,7 @@ class BluetoothDeviceManager {
   Future<void> getDataFromDevice(
       BluetoothDevice device, BuildContext context) async {
     if (device.isConnected) {
-      try {
-        final ownerDeviceData =
-            Provider.of<OwnerDeviceData>(context, listen: false);
-
-        // Perform automatic time sync on connection
-        await syncTimeToWatch(device);
-
-        List<BluetoothService> services = await device.discoverServices();
-        for (BluetoothService service in services) {
-          for (BluetoothCharacteristic characteristic
-              in service.characteristics) {
-            String charUuid = characteristic.uuid.toString().toLowerCase();
-            if (charUuid == watchDataCharUuid ||
-                charUuid == "beb5483e-36e1-4688-b7f5-ea07361b26a8") {
-              await characteristic.setNotifyValue(true);
-
-              characteristic.lastValueStream.listen((value) {
-                if (value.isEmpty) return;
-
-                if (value.length >= 17 && charUuid == watchDataCharUuid) {
-                  try {
-                    WatchDataPayload payload =
-                        WatchDataPayload.fromBytes(value);
-                    print("Received SmartSync Watch Payload: $payload");
-
-                    bool isNewSOS = payload.sosStatus && !ownerDeviceData.sosClicked;
-
-                    ownerDeviceData.updateStatus(
-                      heartRate: payload.heartRate,
-                      spo2: payload.spo2,
-                      age: ownerDeviceData.age,
-                      sosClicked: payload.sosStatus,
-                      systolicBp: payload.systolicBp,
-                      diastolicBp: payload.diastolicBp,
-                      bodyTemp: payload.bodyTemp,
-                      stepCount: payload.stepCount,
-                      sleepWakefulness: payload.sleepWakefulness,
-                      sleepLight: payload.sleepLight,
-                      sleepDeep: payload.sleepDeep,
-                    );
-
-                    FirebaseFirestore.instance
-                        .collection("users")
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
-                        .update({
-                      "isSOSClicked": payload.sosStatus,
-                      "metrics": {
-                        "spo2": payload.spo2.toString(),
-                        "heart_rate": payload.heartRate.toString(),
-                        "fall_axis": "-- -- --"
-                      }
-                    });
-
-                    if (payload.sosStatus) {
-                      print("Triggering SOS Alert!");
-                      _handleSOSClick(true, context);
-                    }
-                  } catch (e) {
-                    print("Error parsing SmartSync Watch payload: $e");
-                  }
-                } else {
-                  // Legacy CSV string parsing fallback
-                  String decodedValue = String.fromCharCodes(value);
-                  List<String> values = decodedValue.split(',');
-                  print("Values: $values");
-                  if (values.length >= 3) {
-                    int newHeartRate = int.tryParse(values[0]) ?? 0;
-                    int newSpO2 = int.tryParse(values[1]) ?? 0;
-
-                    if (ownerDeviceData.heartRate != newHeartRate ||
-                        ownerDeviceData.spo2 != newSpO2) {
-                      ownerDeviceData.updateStatus(
-                        heartRate: newHeartRate,
-                        spo2: newSpO2,
-                        age: ownerDeviceData.age,
-                        sosClicked: false,
-                      );
-
-                      FirebaseFirestore.instance
-                          .collection("users")
-                          .doc(FirebaseAuth.instance.currentUser!.uid)
-                          .update({
-                        "metrics": {
-                          "spo2": newSpO2.toString(),
-                          "heart_rate": newHeartRate.toString(),
-                          "fall_axis": "--"
-                        }
-                      });
-                    }
-                  }
-                }
-              });
-            }
-          }
-        }
-      } catch (e) {
-        print("Error getting data from device: $e");
-      }
+      await discoverServicesAndCharacteristics(device, context);
     } else {
       print("Device is not connected");
     }

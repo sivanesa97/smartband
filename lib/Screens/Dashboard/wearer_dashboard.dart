@@ -98,7 +98,7 @@ class _WearerDashboardState extends ConsumerState<WearerDashboard> {
   @override
   void initState() {
     super.initState();
-    bluetoothDeviceManager.discoverServicesAndCharacteristics(widget.device);
+    bluetoothDeviceManager.discoverServicesAndCharacteristics(widget.device, context);
   }
 
   @override
